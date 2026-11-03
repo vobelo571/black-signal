@@ -64,17 +64,3 @@
 [Состав и источники](docs/SOURCE_INVENTORY.md) ·
 [Недостающие и архивные работы](docs/ARCHIVE.md) ·
 [Проверки и подготовка публикации](docs/RELEASE.md)
-
-## Сборка из исходников
-
-Python 3.10+; сторонних Python-пакетов не требуется:
-
-```powershell
-python tools/validate.py
-python tools/build.py
-python tools/validate.py --archives
-```
-
-Сборка создаёт 28 самостоятельных модов, общий FOMOD, два архива исходников
-инструментов и `SHA256SUMS.txt`. В `dist/` не включаются Git, архивные версии,
-кэш, исходная музыка или полная папка GAMMA.
