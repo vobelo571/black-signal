@@ -51,15 +51,15 @@ def module_readme(m,deps):
 
 def generate_docs(pack,deps):
     table=['# Отдельные загрузки BLACK SIGNAL', '',
-       'Каждый модуль устанавливается отдельно без общего пака. Ссылки на GitHub заработают после публикации релиза; до этого ZIP доступны в локальной папке `dist/`.', '',
-       '| Модуль | Версия | Локальный ZIP | GitHub после публикации | Описание и зависимости |', '|---|---|---|---|---|']
+       'Каждый модуль устанавливается отдельно без общего пака. Скачайте нужный ZIP из GitHub Releases и установите через MO2. Обязательные библиотеки перечислены на странице каждого модуля.', '',
+       '| Модуль | Версия | Скачать ZIP | Описание и зависимости |', '|---|---|---|---|']
     for m in pack['modules']:
         folder=ROOT/'modules'/m['id']
         (folder/'README.md').write_text(module_readme(m,deps),encoding='utf-8')
         (folder/'module.json').write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         (folder/'meta.ini').write_text(f'[General]\ngameName=stalkeranomaly\nversion={m["version"]}\nmodid=0\nnotes=BLACK SIGNAL by @Flixmo - {m["id"]}\n',encoding='utf-8')
         link=f'https://github.com/vobelo571/black-signal/releases/download/v{pack["version"]}/{filename(m)}'
-        table.append(f'| {m["title"]} | {m["version"]} | [ZIP](../dist/{filename(m)}) | [Release]({link}) | [Открыть](../modules/{m["id"]}/README.md) |')
+        table.append(f'| {m["title"]} | {m["version"]} | [Скачать]({link}) | [Открыть](../modules/{m["id"]}/README.md) |')
     (ROOT/'docs'/'DOWNLOADS.md').write_text('\n'.join(table)+'\n',encoding='utf-8')
     lines=['# Сторонние зависимости', '',
        'Не входят в дистрибутив BLACK SIGNAL. В GAMMA большинство уже установлено. Проверяйте список именно выбранного модуля; xlibs и полный набор мебели не требуются каждому моду.', '',
