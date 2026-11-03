@@ -1,0 +1,239 @@
+-- Taskboard Override System
+-- Monkey-patches game functions so the taskboard can retrieve task details
+-- (title, description, icon) without an active dialog.
+-- Problem: task details are generated through give_talk_message2 which
+-- requires an active conversation. Solution: intercept and capture instead
+-- of displaying.
+
+-- API: tasks_info, original_CreateTimeEvent, StartOverride, StopOverride,
+-- clear_tasks_info, create_overrides, InstallOverride, ExecuteDeferredCalls,
+-- CreateTimeEventOverride, on_game_start
+
+-- Scripts that cache CreateTimeEvent in their module table
+local OVERRIDABLE_SCRIPTS = {
+    tasks_agent_rescue           = true,
+    tasks_assault                = true,
+    tasks_bounty                 = true,
+    tasks_chimera_scan           = true,
+    tasks_delivery               = true,
+    tasks_dominance              = true,
+    tasks_fate                   = true,
+    tasks_fetch                  = true,
+    tasks_measure                = true,
+    tasks_multifetch             = true,
+    tasks_recover_item_on_corpse = true,
+    tasks_recover_mutant_data    = true,
+    tasks_smart_control          = true,
+    tasks_stash                  = true,
+    new_tasks_addon_tasks_utils  = true,
+    tasks_intercept_artifact     = true,
+    tasks_hold_the_ground        = true,
+    tasks_mystery_of_the_swamps  = true,
+}
+
+-- Override State
+-- Each deferred call stores task_data reference so ExecuteDeferredCalls
+-- can restore the correct capture context for add_tasks_details.
+
+local enable_override = false
+local deferred_index  = 0
+local deferred_calls  = {}
+
+-- Saved original engine functions (captured before patching)
+
+original_CreateTimeEvent = nil
+
+-- Public Detail Storage
+
+tasks_info = {}
+
+function clear_tasks_info()
+    tasks_info = {}
+end
+
+-- Deferred Call System
+
+--- Replacement CreateTimeEvent: defers zero-delay calls during override window,
+--- stores task_data reference for correct capture context during replay.
+--- IMPORTANT: calls original_CreateTimeEvent for pass-through, NOT _G.CreateTimeEvent
+--- (which may point to this function, causing infinite recursion).
+function CreateTimeEventOverride(id1, id2, time, func, ...)
+    if enable_override and time == 0 then
+        local td = ui_pda_taskboard_tab.currently_processed_task_data
+        deferred_index = deferred_index + 1
+        deferred_calls[deferred_index] = {
+            f         = func,
+            p         = { ... },
+            task_data = td,
+        }
+        return
+    end
+    original_CreateTimeEvent(id1, id2, time, func, ...)
+end
+
+--- Replaces _G.CreateTimeEvent globally and patches OVERRIDABLE_SCRIPTS module tables.
+function InstallOverride()
+    original_CreateTimeEvent = _G.CreateTimeEvent
+    _G.CreateTimeEvent = CreateTimeEventOverride
+
+    for script_name, _ in pairs(OVERRIDABLE_SCRIPTS) do
+        if _G[script_name] then
+            _G[script_name].CreateTimeEvent = CreateTimeEventOverride
+        end
+    end
+end
+
+function StartOverride()
+    enable_override = true
+    deferred_calls  = {}
+    deferred_index  = 0
+end
+
+--- Deactivates override and schedules deferred call execution via original CTE.
+function StopOverride()
+    enable_override = false
+    original_CreateTimeEvent(
+        "z_taskboard_overrides", "process_deferred_calls", 0,
+        ExecuteDeferredCalls
+    )
+end
+
+--- Executes deferred calls sequentially, looping to handle cascading CTE(0) calls.
+--- Safety limit prevents infinite loops from buggy scripts.
+function ExecuteDeferredCalls()
+    local taskboard = ui_pda_taskboard_tab
+
+    -- Re-enable override to capture nested CTE(0) calls
+    enable_override = true
+
+    local safety = 0
+    repeat
+        safety = safety + 1
+        local calls_to_process = deferred_calls
+        local count = deferred_index
+        deferred_calls = {}
+        deferred_index = 0
+
+        for i = 1, count do
+            if calls_to_process[i] then
+                local call = calls_to_process[i]
+                taskboard.currently_processed_task_data = call.task_data
+                taskboard.currently_processed_npc_id = call.task_data
+                    and call.task_data.npc_id or nil
+                taskboard.set_tasks_details_capture_next(true)
+                call.f(unpack(call.p))
+            end
+        end
+    until deferred_index == 0 or safety > 10
+
+    enable_override = false
+    taskboard.currently_processed_task_data = nil
+    taskboard.currently_processed_npc_id = nil
+
+    return true
+end
+
+-- Game Function Overrides
+
+function create_overrides()
+
+    -- give_talk_message2: intercept and store task details instead of displaying
+    local original_give_talk_message2 = db.actor.give_talk_message2
+
+    db.actor.give_talk_message2 = function(...)
+        if ActorMenu.get_pda_menu():IsShown() then
+            local _, task_title, task_details, task_icon = ...
+            local task_id = select(-1, ...)
+            local capture_flag = ui_pda_taskboard_tab.get_tasks_details_capture_next()
+
+            if capture_flag then
+                ui_pda_taskboard_tab.add_tasks_details({
+                    task_title   = task_title,
+                    task_details = task_details,
+                    task_icon    = task_icon,
+                })
+            end
+
+            if task_id then
+                tasks_info[task_id] = {
+                    task_title   = task_title,
+                    task_details = task_details,
+                    task_icon    = task_icon,
+                }
+            end
+        else
+            original_give_talk_message2(...)
+        end
+    end
+
+    -- GetTalkingNpc: return taskboard-processed NPC instead of dialog partner
+    local original_GetTalkingNpc = mob_trade.GetTalkingNpc
+
+    mob_trade.GetTalkingNpc = function(...)
+        local npc_id = ui_pda_taskboard_tab.currently_processed_npc_id
+        if npc_id then
+            return level.object_by_id(npc_id)
+        end
+        return original_GetTalkingNpc(...)
+    end
+
+    -- is_talking: report actor as "talking" during taskboard processing
+    local original_is_talking = db.actor.is_talking
+
+    db.actor.is_talking = function(...)
+        if ui_pda_taskboard_tab.currently_processed_npc_id then
+            return true
+        end
+        return original_is_talking(...)
+    end
+
+    -- get_speaker: return taskboard-processed NPC as current speaker
+    local original_get_speaker = _G.get_speaker
+
+    _G.get_speaker = function(...)
+        local npc_id = ui_pda_taskboard_tab.currently_processed_npc_id
+        if npc_id then
+            return level.object_by_id(npc_id)
+        end
+        return original_get_speaker(...)
+    end
+
+    -- set_active_subdialog: route "eptTaskboard" to taskboard UI
+    local original_set_active_subdialog = pda.set_active_subdialog
+
+    pda.set_active_subdialog = function(section)
+        if section == "eptTaskboard" then
+            return ui_pda_taskboard_tab.get_ui()
+        end
+        return original_set_active_subdialog(section)
+    end
+end
+
+-- Custom xr_effect — Addon Integration
+
+--- Allows addon tasks to dispatch details through give_talk_message2.
+--- Addons add `nta_task_details` to their task INI and call this effect via condlist.
+xr_effects.dispatch_nta_task_details = function(actor, npc, p)
+    local task_id = p[1]
+    if not task_id then return end
+
+    CreateTimeEvent(0, "nta_task_details_" .. task_id, 0, function()
+        local task_ini     = task_manager.task_ini
+        local news_caption = game.translate_string(task_ini:r_string_ex(task_id, "title")) or "error"
+        local news_text    = game.translate_string(task_ini:r_string_ex(task_id, "nta_task_details")) or ""
+        local news_icon    = task_ini:r_string_ex(task_id, "icon")
+
+        db.actor:give_talk_message2(
+            news_caption, news_text, news_icon,
+            "iconed_answer_item", task_id
+        )
+        return true
+    end)
+end
+
+-- Entry Point
+
+function on_game_start()
+    RegisterScriptCallback("on_game_load", create_overrides)
+    InstallOverride()
+end

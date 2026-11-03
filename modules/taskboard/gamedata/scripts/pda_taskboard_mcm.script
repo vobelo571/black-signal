@@ -1,0 +1,41 @@
+-- Default config
+config = {
+    scanning_range          = 100,
+    taskboard_key           = DIK_keys.DIK_J,
+    companions_give_tasks   = false,
+    colorize                = true,
+    remote_turn_in          = false,
+    immediate_npc_threshold = 30,
+    bg_npcs_per_frame       = 1,
+    bg_frame_interval       = 0.2,
+    bg_logging              = false,
+    task_bonus_south_rate  = 5,
+    task_bonus_center_rate = 8,
+    task_bonus_north_rate  = 12,
+    task_bonus_window_days       = 3,
+    task_bonus_cash_cap          = 2000,
+}
+
+op = {
+    id = "pda_taskboard", sh = true, gr = {
+        {id = "banner", type = "slide", size = {512, 50}, text = "ui_mcm_pda_taskboard_banner", spacing = 20},
+        {id = "scanning_range", type = "track", val = 2, min = 50, max = 300, step = 1, def = config.scanning_range},
+        {id = "taskboard_key", type = "key_bind", val = 2, def = config.taskboard_key},
+        {id = "companions_give_tasks", type = "check", val = 1, def = config.companions_give_tasks},
+        {id = "remote_turn_in", type = "check", val = 1, def = config.remote_turn_in},
+        {id = "colorize", type = "check", val = 1, def = config.colorize},
+        {id = "task_bonus_south_rate", type = "track", val = 2, min = 0, max = 20, step = 1, def = config.task_bonus_south_rate},
+        {id = "task_bonus_center_rate", type = "track", val = 2, min = 0, max = 20, step = 1, def = config.task_bonus_center_rate},
+        {id = "task_bonus_north_rate", type = "track", val = 2, min = 0, max = 20, step = 1, def = config.task_bonus_north_rate},
+        {id = "task_bonus_cash_cap", type = "track", val = 2, min = 0, max = 5000, step = 100, def = config.task_bonus_cash_cap},
+        {id = "task_bonus_window_days", type = "track", val = 2, min = 0, max = 5, step = 1, def = config.task_bonus_window_days},
+        {id = "immediate_npc_threshold", type = "track", val = 2, min = 1, max = 50, step = 1, def = config.immediate_npc_threshold},
+        {id = "bg_npcs_per_frame", type = "track", val = 2, min = 1, max = 5, step = 1, def = config.bg_npcs_per_frame},
+        {id = "bg_frame_interval", type = "track", val = 2, min = 0.05, max = 1.0, step = 0.05, def = config.bg_frame_interval},
+        {id = "bg_logging", type = "check", val = 1, def = config.bg_logging},
+    }
+}
+
+function on_mcm_load()
+    return op
+end

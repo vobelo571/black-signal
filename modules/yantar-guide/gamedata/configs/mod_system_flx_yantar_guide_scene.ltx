@@ -1,0 +1,54 @@
+[flx_yantar_guide_prop_desk]:physic_object
+visual = dynamics\efp_props\prop_table_2.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = link,link1,link2,link3,link4,link5
+
+[flx_yantar_guide_prop_map]:physic_object
+visual = dynamics\flx_yantar_guide\route_map.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = link
+
+[flx_yantar_guide_prop_journal]:physic_object
+visual = dynamics\Decor\notes_writing_book.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = link
+
+[flx_yantar_guide_prop_radio]:physic_object
+visual = dynamics\devices\dev_detector_09\dev_detector_09.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = wpn_body,button,lid,light_bone_1,light_bone_2
+
+[flx_yantar_guide_prop_lamp]:lights_hanging_lamp
+visual = dynamics\efp_props\prop_lamp.ogf
+script_binding = bind_dynamic_light.init
+fixed_bones = link,link.001,link.002,link.003,link.004,bone_light
+
+[flx_yantar_guide_prop_guidebook]:physic_object
+visual = dynamics\Decor\guidebook1.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = link
+
+[flx_yantar_guide_prop_gear_crate]:physic_object
+visual = dynamics\box\box_metall_01.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = link
+
+[flx_yantar_guide_prop_binoculars]:physic_object
+visual = dynamics\devices\dev_binoculars\dev_binoculars.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = wpn_body,right,left
+
+[flx_yantar_guide_prop_flashlight]:physic_object
+visual = dynamics\devices\dev_flashlight\dev_flashlight.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = wpn_body
+
+[flx_yantar_guide_prop_backpack]:physic_object
+visual = dynamics\devices\dev_rukzak\dev_rukzak.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = link
+
+[flx_yantar_guide_prop_field_case]:physic_object
+visual = dynamics\efp_props\prop_case.ogf
+script_binding = flx_yantar_guide_scene.bind_static
+fixed_bones = link

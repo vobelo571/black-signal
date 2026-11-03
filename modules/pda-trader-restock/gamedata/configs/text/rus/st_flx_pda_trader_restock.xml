@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="st_flx_restock_button"><text>Обновить: 25 000 руб.</text></string>
+    <string id="st_flx_restock_hint"><text>Обновить ассортимент всех торговцев за 25 000 руб. Торговцы на других локациях получат поставку при следующем обращении к ним.</text></string>
+    <string id="st_flx_restock_confirm"><text>Обновить ассортимент всех торговцев?\n\nСтоимость: 25 000 руб. за один заказ.\nТорговцы на других локациях получат поставку при следующем обращении к ним.</text></string>
+    <string id="st_flx_restock_success"><text>Поставка заказана. Списано 25 000 руб.\n\nАссортимент доступных торговцев обновлён. Остальные получат поставку при следующем обращении к ним.</text></string>
+    <string id="st_flx_restock_no_money"><text>Недостаточно денег. Для заказа нужно 25 000 руб.\n\nДеньги не списаны.</text></string>
+    <string id="st_flx_restock_no_traders"><text>Нет доступных торговых профилей с ассортиментом.\n\nДеньги не списаны.</text></string>
+    <string id="st_flx_restock_unavailable"><text>Не удалось оформить поставку.\n\nДеньги не списаны.</text></string>
+    <string id="st_flx_restock_cooldown"><text>Предыдущий заказ уже принят. Подождите несколько секунд.\n\nПовторного списания нет.</text></string>
+    <string id="st_flx_restock_yes"><text>Подтвердить</text></string>
+    <string id="st_flx_restock_no"><text>Отмена</text></string>
+    <string id="st_flx_restock_close"><text>Закрыть</text></string>
+</string_table>

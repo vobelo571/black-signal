@@ -1,0 +1,156 @@
+-- Additive Haruka skill. No item pools or original scripts are replaced.
+local pending, candidates = {}, {}
+local marker = "flx_scrounger_seen_v1"
+local ready = false
+
+local function owned(obj)
+    local parent = obj and obj:parent()
+    return parent and db.actor and parent:id() == db.actor:id()
+end
+
+local function seen(obj)
+    local value = se_load_var(obj:id(), obj:name(), marker)
+    return type(value) == "table" and value.name == obj:name()
+end
+
+local function mark(obj)
+    se_save_var(obj:id(), obj:name(), marker, {name = obj:name()})
+end
+
+local function is_part(obj)
+    local section = obj:section()
+    return section:match("^prt_w_") or section:match("^prt_o_")
+end
+
+function quality_bonus()
+    local skill = haru_skills and haru_skills.skills_levels.scrounger
+    return math.min(30, math.max(0, skill and skill.current_level or 0)) * 0.005
+end
+
+local function queue(obj, eligible)
+    if not obj or seen(obj) then return end
+    local id = obj:id()
+    local entry = pending[id]
+    if not entry or entry.name ~= obj:name() then
+        entry = {name = obj:name(), due = time_global() + 1000}
+        pending[id] = entry
+    end
+    if eligible and not entry.eligible then
+        entry.eligible = true
+        entry.bonus = quality_bonus()
+    end
+end
+
+function before_pickup(obj)
+    if obj and not seen(obj) then
+        candidates[obj:id()] = {name = obj:name(), expires = time_global() + 15000}
+    end
+end
+
+function item_take(obj)
+    if not obj then return end
+    local candidate = candidates[obj:id()]
+    local eligible = candidate and candidate.name == obj:name()
+        and candidate.expires >= time_global()
+    candidates[obj:id()] = nil
+    queue(obj, eligible)
+end
+
+function take_from_box(source, obj)
+    if not source or not obj then return end
+    -- Living companions and traders are transfers, not scavenging.
+    if (IsStalker(source) or IsMonster(source)) and source:alive() then
+        exclude(obj)
+        return
+    end
+    queue(obj, true)
+end
+
+function exclude(obj)
+    if not obj then return end
+    candidates[obj:id()] = nil
+    pending[obj:id()] = nil
+    mark(obj)
+end
+
+function put_in_box(source, obj)
+    exclude(obj)
+end
+
+function first_update()
+    ready = true
+    candidates = {}
+    -- Inventory present when installing/loading is never a new find.
+    db.actor:iterate_inventory(function(owner, obj)
+        local entry = pending[obj:id()]
+        if not entry or entry.name ~= obj:name() then mark(obj) end
+    end, db.actor)
+    printf("[FLX Scrounger] Ready; bonus=%.1f percentage points", quality_bonus() * 100)
+end
+
+function update()
+    if not ready or not db.actor then return end
+    local now = time_global()
+    for id, candidate in pairs(candidates) do
+        if now > candidate.expires then candidates[id] = nil end
+    end
+    for id, entry in pairs(pending) do
+        if now >= entry.due then
+            local obj = level.object_by_id(id)
+            if not obj or obj:name() ~= entry.name or not owned(obj) or seen(obj) then
+                pending[id] = nil
+            else
+                -- ZCP/Repeat Loot may still be applying the original condition.
+                local processor = itms_manager and itms_manager.get_item_processor
+                    and itms_manager.get_item_processor()
+                if not (processor and processor.Cond and processor.Cond[id]) then
+                    if entry.eligible then
+                        local part = is_part(obj)
+                        local before = part and obj:condition()
+                        if part and entry.bonus > 0 then
+                            obj:set_condition(math.min(1, before + entry.bonus))
+                        end
+                        local skill = haru_skills and haru_skills.skills_levels.scrounger
+                        if skill and skill.current_level < skill.max_level then
+                            haru_skills.options.exp_multiplier_scrounger = 1
+                            haru_skills.increase_skill("scrounger", part and 20 or 10)
+                        end
+                        printf("[FLX Scrounger] Found %s; condition %s -> %s", obj:section(),
+                            tostring(before), tostring(part and obj:condition()))
+                    end
+                    mark(obj)
+                    pending[id] = nil
+                end
+            end
+        end
+    end
+end
+
+function save_state(data)
+    -- Store no wall-clock timestamps: pending work resumes after one second.
+    local saved = {}
+    for id, entry in pairs(pending) do
+        saved[id] = {name = entry.name, eligible = entry.eligible, bonus = entry.bonus}
+    end
+    data.flx_scrounger_pending = saved
+end
+
+function load_state(data)
+    ready = false
+    candidates = {}
+    pending = data.flx_scrounger_pending or {}
+    for _, entry in pairs(pending) do entry.due = time_global() + 1000 end
+end
+
+function on_game_start()
+    RegisterScriptCallback("actor_on_first_update", first_update)
+    RegisterScriptCallback("actor_on_item_before_pickup", before_pickup)
+    RegisterScriptCallback("actor_on_item_take", item_take)
+    RegisterScriptCallback("actor_on_item_take_from_box", take_from_box)
+    RegisterScriptCallback("actor_on_item_put_in_box", put_in_box)
+    RegisterScriptCallback("actor_on_item_drop", exclude)
+    RegisterScriptCallback("actor_on_trade", exclude)
+    RegisterScriptCallback("actor_on_update", update)
+    RegisterScriptCallback("save_state", save_state)
+    RegisterScriptCallback("load_state", load_state)
+end

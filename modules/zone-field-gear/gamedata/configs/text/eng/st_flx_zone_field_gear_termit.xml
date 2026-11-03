@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_zfg_termit_ecolog_outfit_name">
+    <text>Termit Ecologist Suit</text>
+  </string>
+  <string id="st_zfg_termit_ecolog_outfit_descr">
+    <text>Heat-resistant shoulder and chest layers with overlapping gauntlets. Intended for hot anomalies, with little protection from electrical discharges. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_termit_csky_outfit_name">
+    <text>Termit Clear Sky Suit</text>
+  </string>
+  <string id="st_zfg_termit_csky_outfit_descr">
+    <text>Heat-resistant shoulder and chest layers with overlapping gauntlets. Intended for hot anomalies, with little protection from electrical discharges. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_termit_army_outfit_name">
+    <text>Termit Military Suit</text>
+  </string>
+  <string id="st_zfg_termit_army_outfit_descr">
+    <text>Heat-resistant shoulder and chest layers with overlapping gauntlets. Intended for hot anomalies, with little protection from electrical discharges. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_termit_stalker_outfit_name">
+    <text>Termit Loner Suit</text>
+  </string>
+  <string id="st_zfg_termit_stalker_outfit_descr">
+    <text>Heat-resistant shoulder and chest layers with overlapping gauntlets. Intended for hot anomalies, with little protection from electrical discharges. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+</string_table>

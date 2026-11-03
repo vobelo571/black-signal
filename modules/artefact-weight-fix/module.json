@@ -1,0 +1,15 @@
+{
+  "id": "artefact-weight-fix",
+  "title": "Фикс веса артефактов",
+  "group": "Исправления",
+  "version": "1.0.0",
+  "description": "Выравнивает заданный вес секций артефактов через DLTX.",
+  "requires": [
+    "gamma",
+    "dltx"
+  ],
+  "notes": "Установить после модов артефактов.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1013- FLX Artefact Weight Fix"
+}

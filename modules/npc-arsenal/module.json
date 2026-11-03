@@ -1,0 +1,14 @@
+{
+  "id": "npc-arsenal",
+  "title": "Арсенал NPC",
+  "group": "Мир и баланс",
+  "version": "1.1.1",
+  "description": "Вооружение NPC по рангу, броне и фракции; миграция подходящих существующих NPC.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "Меняет оружие обычных NPC с сохранением результата. Резервная копия сейва обязательна для отката изменений.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1015- FLX NPC Arsenal"
+}

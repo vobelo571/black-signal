@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="flx_yantar_guide_name">
+    <text>Pavel "Waypoint" Voloshin</text>
+  </string>
+  <string id="flx_yantar_guide_bio">
+    <text>An Ecologist field guide serving Yantar scientific expeditions. Charts detours, updates maps and leads stalkers to established arrival points.</text>
+  </string>
+  <string id="flx_yantar_guide_hello_0">
+    <text>Waypoint. I guide people out of Yantar. Where are you heading?</text>
+  </string>
+  <string id="flx_yantar_guide_travel_0">
+    <text>I need a guide. Where can you take me?</text>
+  </string>
+  <string id="flx_yantar_guide_travel_1">
+    <text>Choose a destination. The fare covers one journey and is paid before departure. Each route has its own arrival point.</text>
+  </string>
+  <string id="flx_yantar_guide_about_0">
+    <text>Have you worked here long?</text>
+  </string>
+  <string id="flx_yantar_guide_about_1">
+    <text>I have escorted scientific field teams for years. They want samples; I want everyone to return alive. I keep route maps, field notes and spare gear here. The Bar has its own guide. Now you can hire me in Yantar.</text>
+  </string>
+  <string id="flx_yantar_guide_rules_0">
+    <text>What does the fare cover?</text>
+  </string>
+  <string id="flx_yantar_guide_rules_1">
+    <text>One journey to the listed point. Choose a route, then confirm payment separately. Without enough money we stay here. An escort does not make local factions friendly. Arrange your return with a guide at the destination.</text>
+  </string>
+  <string id="flx_yantar_guide_pay">
+    <text>Here is the fare. Let us go.</text>
+  </string>
+  <string id="flx_yantar_guide_no_money">
+    <text>I cannot afford it yet. I will return later.</text>
+  </string>
+  <string id="flx_yantar_guide_cancel">
+    <text>I will stay here for now.</text>
+  </string>
+  <string id="flx_yantar_guide_route_agroprom">
+    <text>Agroprom. %c[d_orange][1500 RU]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_agroprom">
+    <text>Destination: Agroprom. Fare: 1500 RU. Confirm payment and departure?</text>
+  </string>
+  <string id="flx_yantar_guide_route_garbage">
+    <text>Garbage. %c[d_orange][2500 RU]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_garbage">
+    <text>Destination: Garbage. Fare: 2500 RU. Confirm payment and departure?</text>
+  </string>
+  <string id="flx_yantar_guide_route_bar">
+    <text>Rostok — Bar. %c[d_orange][3500 RU]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_bar">
+    <text>Destination: Rostok — Bar. Fare: 3500 RU. Confirm payment and departure?</text>
+  </string>
+  <string id="flx_yantar_guide_route_cordon">
+    <text>Cordon — rookie village. %c[d_orange][4500 RU]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_cordon">
+    <text>Destination: Cordon — rookie village. Fare: 4500 RU. Confirm payment and departure?</text>
+  </string>
+  <string id="flx_yantar_guide_route_warehouses">
+    <text>Army Warehouses. %c[d_orange][5000 RU]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_warehouses">
+    <text>Destination: Army Warehouses. Fare: 5000 RU. Confirm payment and departure?</text>
+  </string>
+  <string id="flx_yantar_guide_route_cemetery">
+    <text>Truck Cemetery — Rostok entrance. %c[d_orange][6000 RU]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_cemetery">
+    <text>Destination: Truck Cemetery — Rostok entrance. Fare: 6000 RU. Confirm payment and departure?</text>
+  </string>
+  <string id="flx_yantar_guide_route_marsh">
+    <text>Great Swamps. %c[d_orange][6500 RU]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_marsh">
+    <text>Destination: Great Swamps. Fare: 6500 RU. Confirm payment and departure?</text>
+  </string>
+  <string id="flx_yantar_guide_route_jupiter">
+    <text>Jupiter — Yanov. %c[d_orange][9000 RU]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_jupiter">
+    <text>Destination: Jupiter — Yanov. Fare: 9000 RU. Confirm payment and departure?</text>
+  </string>
+</string_table>

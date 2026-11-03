@@ -1,0 +1,116 @@
+#include "presets\trade_presets.ltx"
+[trader]
+buy_condition = hunter_buy
+sell_condition = {=actor_goodwill_ge(ecolog:2000)} hunter_sell_5, {=actor_goodwill_ge(ecolog:1500)} hunter_sell_4, {=actor_goodwill_ge(ecolog:1000)} hunter_sell_3, {=actor_goodwill_ge(ecolog:500)} hunter_sell_2, hunter_sell_1
+buy_supplies = {=actor_goodwill_ge(ecolog:2000)} hunter_supplies_5, {=actor_goodwill_ge(ecolog:1500)} hunter_supplies_4, {=actor_goodwill_ge(ecolog:1000)} hunter_supplies_3, {=actor_goodwill_ge(ecolog:500)} hunter_supplies_2, hunter_supplies_1
+buy_item_condition_factor = 0.90
+buy_item_exponent = 2.25
+sell_item_exponent = 0.75
+discounts = hunter_discount
+
+[hunter_discount]
+buy = 0.2
+sell = 1.0
+
+[hunter_buy]:none
+ammo_20x70_buck = 0.50, 0.50
+ammo_12x70_buck = 0.50, 0.50
+ammo_9x18_pmm = 0.50, 0.50
+ammo_9x19_pbp = 0.50, 0.50
+ammo_11.43x23_hydro = 0.50, 0.50
+ammo_5.45x39_ep = 0.50, 0.50
+ammo_5.56x45_ss190 = 0.50, 0.50
+ammo_357_hp_mag = 0.50, 0.50
+ammo_12x76_zhekan = 0.50, 0.50
+ammo_23x75_shrapnel = 0.50, 0.50
+ammo_338_federal = 0.50, 0.50
+
+[hunter_sell_1]:none
+ammo_20x70_buck = 1.40, 1.40
+ammo_12x70_buck = 1.40, 1.40
+ammo_9x18_pmm = 1.40, 1.40
+
+[hunter_supplies_1]
+ammo_20x70_buck = 3, 1.00
+ammo_12x70_buck = 4, 1.00
+ammo_9x18_pmm = 2, 1.00
+
+[hunter_sell_2]:none
+ammo_20x70_buck = 1.40, 1.40
+ammo_12x70_buck = 1.40, 1.40
+ammo_9x18_pmm = 1.40, 1.40
+ammo_9x19_pbp = 1.40, 1.40
+ammo_11.43x23_hydro = 1.40, 1.40
+
+[hunter_supplies_2]
+ammo_20x70_buck = 3, 1.00
+ammo_12x70_buck = 4, 1.00
+ammo_9x18_pmm = 2, 1.00
+ammo_9x19_pbp = 3, 1.00
+ammo_11.43x23_hydro = 2, 1.00
+
+[hunter_sell_3]:none
+ammo_20x70_buck = 1.40, 1.40
+ammo_12x70_buck = 1.40, 1.40
+ammo_9x18_pmm = 1.40, 1.40
+ammo_9x19_pbp = 1.40, 1.40
+ammo_11.43x23_hydro = 1.40, 1.40
+ammo_5.45x39_ep = 1.40, 1.40
+ammo_5.56x45_ss190 = 1.40, 1.40
+
+[hunter_supplies_3]
+ammo_20x70_buck = 3, 1.00
+ammo_12x70_buck = 4, 1.00
+ammo_9x18_pmm = 2, 1.00
+ammo_9x19_pbp = 3, 1.00
+ammo_11.43x23_hydro = 2, 1.00
+ammo_5.45x39_ep = 3, 1.00
+ammo_5.56x45_ss190 = 3, 1.00
+
+[hunter_sell_4]:none
+ammo_20x70_buck = 1.40, 1.40
+ammo_12x70_buck = 1.40, 1.40
+ammo_9x18_pmm = 1.40, 1.40
+ammo_9x19_pbp = 1.40, 1.40
+ammo_11.43x23_hydro = 1.40, 1.40
+ammo_5.45x39_ep = 1.40, 1.40
+ammo_5.56x45_ss190 = 1.40, 1.40
+ammo_357_hp_mag = 1.40, 1.40
+ammo_12x76_zhekan = 1.40, 1.40
+
+[hunter_supplies_4]
+ammo_20x70_buck = 3, 1.00
+ammo_12x70_buck = 4, 1.00
+ammo_9x18_pmm = 2, 1.00
+ammo_9x19_pbp = 3, 1.00
+ammo_11.43x23_hydro = 2, 1.00
+ammo_5.45x39_ep = 3, 1.00
+ammo_5.56x45_ss190 = 3, 1.00
+ammo_357_hp_mag = 2, 1.00
+ammo_12x76_zhekan = 2, 1.00
+
+[hunter_sell_5]:none
+ammo_20x70_buck = 1.40, 1.40
+ammo_12x70_buck = 1.40, 1.40
+ammo_9x18_pmm = 1.40, 1.40
+ammo_9x19_pbp = 1.40, 1.40
+ammo_11.43x23_hydro = 1.40, 1.40
+ammo_5.45x39_ep = 1.40, 1.40
+ammo_5.56x45_ss190 = 1.40, 1.40
+ammo_357_hp_mag = 1.40, 1.40
+ammo_12x76_zhekan = 1.40, 1.40
+ammo_23x75_shrapnel = 1.40, 1.40
+ammo_338_federal = 1.40, 1.40
+
+[hunter_supplies_5]
+ammo_20x70_buck = 3, 1.00
+ammo_12x70_buck = 4, 1.00
+ammo_9x18_pmm = 2, 1.00
+ammo_9x19_pbp = 3, 1.00
+ammo_11.43x23_hydro = 2, 1.00
+ammo_5.45x39_ep = 3, 1.00
+ammo_5.56x45_ss190 = 3, 1.00
+ammo_357_hp_mag = 2, 1.00
+ammo_12x76_zhekan = 2, 1.00
+ammo_23x75_shrapnel = 2, 1.00
+ammo_338_federal = 1, 1.00

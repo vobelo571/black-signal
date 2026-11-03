@@ -1,0 +1,387 @@
+-- Standalone campfire rest: ordinary Anomaly/GAMMA engine, no extra mods.
+local fire, fire_id
+local last_check = 0
+local enabled, distance, multiplier = true, 4, 2
+local resting, swallowed = false, false
+local start_position, start_health
+local entering, leaving = false, false
+local effect_id = 724831
+local camera_factor = 0
+local blend_from, blend_to, blend_started, blend_duration
+local camera_pending = false
+local freelook_toggle, restore_freelook_at
+local mouse_hook_installed, previous_mouse_move
+local internal_input = false
+local wheel_weapon_setting
+local settle_until = 0
+local environment_hit_health, environment_hit_until
+
+local function pda_active()
+    if not db.actor then return false end
+    local item, pda = db.actor:active_item(), db.actor:item_in_slot(8)
+    return item and pda and item:id() == pda:id()
+end
+
+local function maintain_freelook()
+    if not (resting or leaving) or not db.actor then return end
+    -- PDA disables its cursor while native freelook is active. Give it the
+    -- ordinary camera/input path until it is put away.
+    get_console():execute("g_freelook_toggle off")
+    if pda_active() or not actor_menu.is_hud_free() then return end
+    local key = bind_to_dik(key_bindings.kFREELOOK, 0)
+    if not key or key <= 0 then key = bind_to_dik(key_bindings.kFREELOOK, 1) end
+    if not key or key <= 0 then return end
+    -- Hold starts freelook without toggling an already active camera off.
+    -- Toggle mode then keeps it active without a physically held Mouse4.
+    internal_input = true
+    level.hold_action(key)
+    internal_input = false
+    get_console():execute("g_freelook_toggle on")
+end
+
+local function restore_freelook_setting()
+    if freelook_toggle ~= nil then
+        get_console():execute("g_freelook_toggle " .. (freelook_toggle and "on" or "off"))
+        freelook_toggle = nil
+    end
+    restore_freelook_at = nil
+end
+
+local function clear_effect()
+    -- on_game_start also runs before the actor exists in the main menu.
+    if db and db.actor then level.remove_cam_effector(effect_id) end
+end
+
+local function message(id)
+    if actor_menu and actor_menu.set_msg then
+        actor_menu.set_msg(1, game.translate_string(id), 4)
+    end
+end
+
+local function release_controls()
+    if wheel_weapon_setting ~= nil then
+        get_console():execute("mouse_wheel_change_weapon " .. wheel_weapon_setting)
+        wheel_weapon_setting = nil
+    end
+    if freelook_toggle ~= nil then
+        get_console():execute("g_freelook_toggle off")
+        -- Leave hold mode active briefly so the native camera exits freelook
+        -- after a released key, then restore the user's original preference.
+        if db.actor and db.actor:alive() then restore_freelook_at = time_global() + 600
+        else restore_freelook_setting() end
+    end
+end
+
+function stop(animate)
+    local rise = animate == true and resting and db.actor and db.actor:alive()
+    resting, entering = false, false
+    start_position, start_health = nil, nil
+    environment_hit_health, environment_hit_until = nil, nil
+    fire, fire_id = nil, nil
+    if rise then
+        -- Keep the same animator alive: replacing it would render an identity
+        -- transform for its first frames and snap back to standing height.
+        leaving = true
+        camera_pending = false
+        blend_from, blend_to = camera_factor, 0
+        blend_started = time_global()
+        blend_duration = math.max(200, 800 * camera_factor)
+    else
+        leaving, camera_pending = false, false
+        blend_started, camera_factor = nil, 0
+        clear_effect()
+        release_controls()
+    end
+end
+
+local function update_camera()
+    if camera_pending then
+        -- Camera additions are deferred by the engine until the next frame.
+        if not level.check_cam_effector(effect_id) then return end
+        camera_pending = false
+        blend_started = time_global()
+    end
+    if not blend_started then return end
+    local u = math.max(0, math.min(1, (time_global() - blend_started) / blend_duration))
+    -- Zero velocity and acceleration at both ends of the transition.
+    local weight = u * u * u * (u * (u * 6 - 15) + 10)
+    camera_factor = blend_from + (blend_to - blend_from) * weight
+    level.set_cam_effector_factor(effect_id, camera_factor)
+    if u >= 1 then
+        blend_started, entering = nil, false
+        if leaving then
+            leaving = false
+            -- The offset is already zero, so removal cannot move the camera.
+            clear_effect()
+            release_controls()
+        end
+    end
+end
+
+function movement_hint()
+    message("st_chiki_rest_stand_hint")
+end
+
+function on_option_change()
+    local get = chiki_campfire_rest_mcm.get_config
+    enabled = get("enable")
+    distance = math.max(1, math.min(6, tonumber(get("distance")) or 4))
+    multiplier = math.max(1, math.min(4, tonumber(get("multiplier")) or 2))
+    if not enabled then stop() end
+end
+
+local function valid_fire(binder, continuing)
+    if not binder or not binder.object or not binder.campfire or not binder.campfire:is_on() then return false end
+    local actor = db.actor
+    if not actor or not actor:alive() then return false end
+    local d = actor:position():distance_to_sqr(binder.object:position())
+    -- Hysteresis prevents a tiny physics correction at either distance limit
+    -- from immediately cancelling a rest that just passed the start check.
+    local near = continuing and 0.6 or 0.8
+    local far = distance + (continuing and 0.25 or 0)
+    return d >= near * near and d <= far * far
+end
+
+function toggle()
+    if leaving then return end
+    if resting then
+        stop(true)
+        return
+    end
+    if not enabled then return end
+    if not db.actor or not db.actor:alive() or not actor_menu.is_hud_free() then return end
+    fire, fire_id = nil, nil
+    local closest = distance * distance + 1
+    for id, binder in pairs(bind_campfire and bind_campfire.campfires_all or {}) do
+        if valid_fire(binder) then
+            local d = db.actor:position():distance_to_sqr(binder.object:position())
+            if d < closest then fire, fire_id, closest = binder, id, d end
+        end
+    end
+    if not fire then message("st_chiki_rest_need_fire"); return end
+    if freelook_toggle == nil then freelook_toggle = get_console():get_bool("g_freelook_toggle") end
+    restore_freelook_at = nil
+    get_console():execute("g_freelook_toggle off")
+    wheel_weapon_setting = get_console():get_integer("mouse_wheel_change_weapon")
+    get_console():execute("mouse_wheel_change_weapon 0")
+    resting, entering = true, true
+    local p = db.actor:position()
+    start_position = vector():set(p.x, p.y, p.z)
+    start_health = db.actor.health
+    -- Releasing Ctrl changes the crouch capsule. On uneven ground the actor
+    -- can settle vertically while the sitting camera is still blending in.
+    settle_until = time_global() + 1800
+    local held_item = db.actor:active_item()
+    if held_item and IsWeapon(held_item) then db.actor:activate_slot(0) end
+    -- Ctrl's initial press may already have entered ordinary crouch.
+    if type(level.release_action) == "function" then
+        level.release_action(DIK_keys.DIK_LCONTROL)
+        level.release_action(DIK_keys.DIK_RCONTROL)
+        -- Clear already-held movement and aiming before installing the lock.
+        for _, action in ipairs({key_bindings.kFWD, key_bindings.kBACK,
+            key_bindings.kL_STRAFE, key_bindings.kR_STRAFE, key_bindings.kJUMP,
+            key_bindings.kWPN_ZOOM, key_bindings.kWPN_FIRE}) do
+            for index = 0, 1 do
+                local key = bind_to_dik(action, index)
+                if key and key > 0 then level.release_action(key) end
+            end
+        end
+    end
+    clear_effect()
+    camera_factor = 0
+    blend_from, blend_to, blend_started, blend_duration = 0, 1, nil, 1400
+    camera_pending = true
+    -- A nonzero initial power is required: the engine ignores a zero argument.
+    level.add_cam_effector("camera_effects\\chiki_rest_idle.anm", effect_id, true, "", 0, true, 0.000001)
+    message("st_chiki_rest_started")
+    maintain_freelook()
+end
+
+local function still_resting()
+    if not enabled or not resting then return false end
+    -- Check the registry before dereferencing a binder from a removed level/fire.
+    if not fire_id or not bind_campfire or not bind_campfire.campfires_all
+        or bind_campfire.campfires_all[fire_id] ~= fire or not valid_fire(fire, true) then
+        if printf then printf("[campfire-rest] interrupted: fire unavailable or out of range") end
+        stop()
+        return false
+    end
+    local p = db.actor:position()
+    local dx, dy, dz = p.x - start_position.x, p.y - start_position.y, p.z - start_position.z
+    -- Never follow horizontal movement: movement controls remain locked.
+    -- Allow only the small vertical correction made by the crouch capsule.
+    if dx * dx + dz * dz > 0.04
+        or math.abs(dy) > (time_global() < settle_until and 0.65 or 0.2) then
+        if printf then printf("[campfire-rest] interrupted: displaced dx=%.3f dy=%.3f dz=%.3f", dx, dy, dz) end
+        stop()
+        return false
+    end
+    if time_global() < settle_until then start_position.y = p.y end
+    -- A raw heat hit is delivered before outfit/script protection is applied.
+    -- End rest for actual resulting health loss, not a fully blocked heat tick.
+    if environment_hit_health and db.actor.health < environment_hit_health - 0.0001 then
+        if printf then printf("[campfire-rest] interrupted: environmental damage") end
+        stop()
+        return false
+    end
+    if environment_hit_until and time_global() >= environment_hit_until then
+        environment_hit_health, environment_hit_until = nil, nil
+    end
+    return true
+end
+
+-- Called by LNCT's existing one-second heal tick. Only HP/BHS rates multiply.
+-- The check here also prevents a stale bonus if the fire just went out.
+function health_multiplier()
+    return still_resting() and multiplier or 1
+end
+
+function actor_on_update()
+    update_camera()
+    if restore_freelook_at and time_global() >= restore_freelook_at then restore_freelook_setting() end
+    if swallowed then
+        local v = key_state(DIK_keys.DIK_V)
+        if v == nil or v == false or v == 0 then swallowed = false end
+    end
+    if (resting or leaving) and db.actor then
+        local item = db.actor:active_item()
+        -- Also stop drawing weapons through inventory or another script.
+        -- Do not disturb a weapon already hiding to make room for the PDA.
+        if item and IsWeapon(item) and item:get_state() ~= 2 and item:get_state() ~= 3 then
+            db.actor:activate_slot(0)
+        end
+        maintain_freelook()
+    end
+    local now = time_global()
+    if now >= last_check and now - last_check < 250 then return end
+    last_check = now
+    if not still_resting() then fire, fire_id = nil, nil end
+    if resting then start_health = db.actor.health end
+end
+
+local function key_down(key)
+    local value = key_state(key)
+    return value == true or (type(value) == "number" and value ~= 0)
+end
+
+local function world_input(disabled)
+    return not disabled and db.actor and db.actor:alive() and actor_menu.is_hud_free()
+end
+
+local function blocked_action(bind)
+    local k = key_bindings
+    return bind == k.kFWD or bind == k.kBACK or bind == k.kL_STRAFE
+        or bind == k.kR_STRAFE or bind == k.kJUMP or bind == k.kCROUCH
+        or bind == k.kACCEL or bind == k.kSPRINT_TOGGLE or bind == k.kWPN_FIRE
+        or bind == k.kUSE or bind == k.kLEFT or bind == k.kRIGHT
+        or bind == k.kUP or bind == k.kDOWN or bind == k.kL_LOOKOUT or bind == k.kR_LOOKOUT
+        or bind == k.kWPN_ZOOM or bind == k.kCAM_1 or bind == k.kCAM_2 or bind == k.kCAM_3
+        or bind == k.kWPN_RELOAD or bind == k.kWPN_FUNC
+        or bind == k.kWPN_1 or bind == k.kWPN_2 or bind == k.kWPN_3
+        or bind == k.kWPN_4 or bind == k.kWPN_5 or bind == k.kWPN_6
+        or bind == k.kWPN_NEXT or bind == k.kNEXT_SLOT or bind == k.kPREV_SLOT
+        or bind == k.kQUICK_USE_1 or bind == k.kQUICK_USE_2
+        or bind == k.kQUICK_USE_3 or bind == k.kQUICK_USE_4
+        or bind == k.kFREELOOK
+end
+
+local function pda_action(bind)
+    local k = key_bindings
+    return pda_active() and (bind == k.kWPN_FIRE or bind == k.kWPN_ZOOM
+        or bind == k.kWPN_RELOAD or bind == k.kWPN_FUNC)
+end
+
+local function weapon_selection(bind)
+    local k = key_bindings
+    return bind == k.kWPN_1 or bind == k.kWPN_2 or bind == k.kWPN_3
+        or bind == k.kWPN_4 or bind == k.kWPN_5 or bind == k.kWPN_6
+        or bind == k.kWPN_NEXT or bind == k.kNEXT_SLOT or bind == k.kPREV_SLOT
+end
+
+function on_mouse_move(dx, dy, disabled)
+    if previous_mouse_move and previous_mouse_move(dx, dy, disabled) then return true end
+    if (resting or leaving) and not disabled and pda_active() then
+        -- An unfocused 3D PDA must accept a click to enable its cursor, but
+        -- must not turn the body while that click/focus transition is pending.
+        if ActorMenu.get_menu_mode() ~= 0 then return false end
+        local menu = ActorMenu.get_pda_menu()
+        return not (menu and menu:IsShown() and menu:IsEnabled())
+    end
+    if not (resting or leaving) or not world_input(disabled) then return false end
+    -- Native freelook is unavailable during weapon/consumable animations.
+    -- Swallow mouse input then as well, so it cannot turn the torso instead.
+    if game.only_movekeys_allowed and game.only_movekeys_allowed() then return true end
+    local item = db.actor:active_item()
+    if item and item:get_state() ~= 0 then return true end
+    maintain_freelook()
+    local key = bind_to_dik(key_bindings.kFREELOOK, 0)
+    if not key or key <= 0 then key = bind_to_dik(key_bindings.kFREELOOK, 1) end
+    return not (key and key > 0)
+end
+
+function on_before_key_press(dik, bind, disabled, flags)
+    if internal_input then return end
+    if (resting or leaving) and not disabled and weapon_selection(bind) then flags.ret_value = false; return end
+    if not world_input(disabled) then return end
+    if pda_action(bind) then maintain_freelook(); return end
+    if dik == DIK_keys.DIK_V and (key_down(DIK_keys.DIK_LCONTROL) or key_down(DIK_keys.DIK_RCONTROL)) then
+        flags.ret_value = false
+        if not swallowed then swallowed = true; toggle() end
+    elseif (resting or leaving) and (dik == DIK_keys.DIK_LCONTROL or dik == DIK_keys.DIK_RCONTROL) then
+        flags.ret_value = false
+    elseif (resting or leaving) and blocked_action(bind) then
+        flags.ret_value = false
+    end
+end
+
+function on_before_key_hold(dik, bind, disabled, flags)
+    if internal_input then return end
+    if (resting or leaving) and not disabled and weapon_selection(bind) then flags.ret_value = false; return end
+    if (resting or leaving) and pda_action(bind) then return end
+    if swallowed and dik == DIK_keys.DIK_V then flags.ret_value = false; return end
+    if (resting or leaving) and (dik == DIK_keys.DIK_LCONTROL or dik == DIK_keys.DIK_RCONTROL) then flags.ret_value = false; return end
+    if (resting or leaving) and world_input(disabled) and blocked_action(bind) then flags.ret_value = false end
+end
+
+function on_before_key_release(dik, bind, disabled, flags)
+    if swallowed and dik == DIK_keys.DIK_V then
+        swallowed = false
+        flags.ret_value = false
+    end
+end
+
+function actor_on_before_hit(hit, bone, flags)
+    if not resting or not hit or hit.power <= 0 or (flags and flags.ret_value == false) then return end
+    -- Burn/light-burn/radiation/other environmental hits can be fully absorbed.
+    -- Weapon, melee, impact and explosion hits still interrupt immediately.
+    if hit.type == nil or (hit.type >= 5 and hit.type <= 9) then
+        if printf then printf("[campfire-rest] interrupted: direct hit type=%s", tostring(hit.type)) end
+        stop()
+    else
+        environment_hit_health = environment_hit_health or db.actor.health
+        environment_hit_until = time_global() + 500
+    end
+end
+
+function actor_on_net_destroy()
+    stop()
+    restore_freelook_setting()
+end
+
+function on_game_start()
+    swallowed = false
+    stop()
+    on_option_change()
+    if not mouse_hook_installed then
+        previous_mouse_move = level_input.on_mouse_move
+        level_input.on_mouse_move = on_mouse_move
+        mouse_hook_installed = true
+    end
+    RegisterScriptCallback("actor_on_update", actor_on_update)
+    RegisterScriptCallback("on_option_change", on_option_change)
+    RegisterScriptCallback("actor_on_net_destroy", actor_on_net_destroy)
+    RegisterScriptCallback("on_before_key_press", on_before_key_press)
+    RegisterScriptCallback("on_before_key_hold", on_before_key_hold)
+    RegisterScriptCallback("on_before_key_release", on_before_key_release)
+    RegisterScriptCallback("actor_on_before_hit", actor_on_before_hit)
+end

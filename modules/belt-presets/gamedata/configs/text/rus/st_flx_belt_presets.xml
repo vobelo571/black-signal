@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+<string id="flx_bp_help"><text>Клик — надеть; Shift + клик — записать.</text></string>
+<string id="flx_bp_missing"><text>Не все предметы пресета находятся в инвентаре. Пояс не изменён.</text></string>
+<string id="flx_bp_empty"><text>Пресет пуст. Shift + клик — сохранить пояс.</text></string>
+<string id="flx_bp_capacity"><text>На текущем костюме недостаточно ячеек. Пояс не изменён.</text></string>
+<string id="flx_bp_rejected"><text>Не удалось надеть набор. Восстановлен предыдущий пояс.</text></string>
+<string id="flx_bp_loaded"><text>Пресет пояса загружен.</text></string>
+<string id="flx_bp_saved"><text>Пресет пояса сохранён.</text></string>
+<string id="flx_bp_working"><text>Переключение пояса…</text></string></string_table>

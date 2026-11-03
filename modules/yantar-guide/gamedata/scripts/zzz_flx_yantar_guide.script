@@ -1,0 +1,198 @@
+-- Persistent paid guide and compact field station in the Yantar shelter.
+local section = "flx_yantar_guide"
+local current_level, checked, next_tick = nil, false, 0
+local known = {}
+local config, place
+local discovered=false
+local nav_warning=false
+local placement_vertex
+local profile_ready=false
+
+local function vector_at(x,y,z)
+    return vector():set(x,y,z)
+end
+
+local function position_config()
+    if place then return place end
+    config = ini_file("flx_yantar_guide_position.ltx")
+    place = {
+        level = config:r_string("position","level"),
+        x = config:r_float("position","x"), y = config:r_float("position","y"),
+        z = config:r_float("position","z"), yaw = config:r_float("position","yaw"),
+        gv = config:r_u32("position","game_vertex"),
+        lv = config:r_u32("position","level_vertex")
+    }
+    return place
+end
+
+local function floor_vertex(point,p)
+    if placement_vertex then return placement_vertex end
+    local best,best_distance=nil,6
+    local function consider(id)
+        if not id or id==4294967295 then return end
+        local floor=level.vertex_position(id)
+        local distance=floor:distance_to(point)
+        if math.abs(floor.y-p.y)<=0.65 and distance<best_distance then
+            best,best_distance=id,distance
+        end
+    end
+    local direct=level.vertex_id(point)
+    consider(direct)
+    if direct and direct~=4294967295 and best then placement_vertex=best;return best end
+    -- This shelter has no navigation cell at the captured standing point.
+    -- Use a nearby valid floor vertex, as the game's NPC debug spawner does,
+    -- while keeping the stationary NPC's precise server position in the shed.
+    consider(p.lv)
+    for radius=.5,4,.5 do
+        for step=0,15 do
+            local a=step*math.pi/8
+            consider(level.vertex_id(vector_at(p.x+math.cos(a)*radius,p.y,p.z+math.sin(a)*radius)))
+        end
+    end
+    if best then
+        placement_vertex=best
+        printf("[FLX Yantar Guide] Nearby floor vertex=%s distance=%s; exact station position preserved",best,best_distance)
+    elseif not nav_warning then
+        printf("[FLX Yantar Guide] No suitable floor vertex within 6 metres; placement deferred")
+        nav_warning=true
+    end
+    return best
+end
+
+-- Scene coordinates are local: +x to the trader's right, +z in front.
+local function world(x,y,z)
+    local p = position_config()
+    local c,s = math.cos(p.yaw),math.sin(p.yaw)
+    return vector_at(p.x+x*c-z*s,p.y+y,p.z+x*s+z*c)
+end
+
+local function discover()
+    known = {}
+    local wanted = {[section]=true}
+    for _,def in ipairs(flx_yantar_guide_scene.objects) do wanted[def.section]=true end
+    for id=0,65534 do
+        local obj=alife():object(id)
+        if obj and wanted[obj:section_name()] then known[obj:section_name()]=id end
+    end
+end
+
+local function create(sec,point,yaw,def,lvid)
+    local p=position_config()
+    local obj=alife():create(sec,point,lvid,p.gv)
+    if not obj then return nil end
+    obj.angle=vector_at(0,yaw,0)
+    if def then
+        if def.light then
+            local data=utils_stpk.get_lamp_data(obj)
+            data.object_flags=bit_and(data.object_flags,bit_not(128))
+            data.main_color=4294960056
+            data.main_brightness=0.65
+            data.main_range=5
+            data.light_flags=12
+            data.main_bone="bone_light"
+            data.ambient_bone="bone_light"
+            data.main_color_animator=""
+            data.health=100
+            data.glow_texture="glow\\glow_yellow"
+            data.glow_radius=0.06
+            data.lamp_fixed_bones=def.bones
+            utils_stpk.set_lamp_data(data,obj)
+        else
+            local data=utils_stpk.get_physic_data(obj)
+            data.object_flags=bit_and(data.object_flags,bit_not(128))
+            data.physic_type=3
+            data.mass=50
+            data.fixed_bones=def.bones
+            utils_stpk.set_physic_data(data,obj)
+        end
+    end
+    known[sec]=obj.id
+    printf("[FLX Yantar Guide] Created %s id=%s",sec,obj.id)
+    return obj
+end
+
+local function ensure_scene()
+    local p=position_config()
+    local point=world(0,0,0)
+    -- The placement save has the actor standing exactly on this spot. Wait for
+    -- room before creating solid objects rather than spawning inside the player.
+    if not known[section] and db.actor:position():distance_to(point)<3 then return false end
+    local lvid=floor_vertex(point,p)
+    if not lvid then return false end
+    if alife():level_name(game_graph():vertex(p.gv):level_id())~=p.level then
+        printf("[FLX Yantar Guide] Position game vertex belongs to another level; creation deferred")
+        return false
+    end
+    if not known[section] then create(section,point,p.yaw,nil,lvid) end
+    local complete=known[section]~=nil
+    for _,def in ipairs(flx_yantar_guide_scene.objects) do
+        if not known[def.section] then
+            create(def.section,world(def.x,def.y,def.z),p.yaw+math.rad(def.yaw),def,lvid)
+        end
+        complete=complete and known[def.section]~=nil
+    end
+    return complete
+end
+
+local function ensure_ecologist()
+    local id=known[section]
+    local npc=id and level.object_by_id(id)
+    if not npc then return false end
+    -- Also update the NPC if a save already contains the earlier loner version.
+    if npc:character_community()~="ecolog" then
+        npc:set_character_community("ecolog",0,0)
+        npc:set_visual_name("actors\\stalker_ecologist\\stalker_ecolog")
+        printf("[FLX Yantar Guide] Existing guide updated to Ecologist")
+    end
+    return true
+end
+
+function actor_on_first_update()
+    current_level,checked,next_tick=nil,false,0
+    known={}
+    discovered=false
+    nav_warning=false
+    placement_vertex=nil
+    profile_ready=false
+end
+
+function actor_on_update()
+    if not db.actor then return end
+    local now=time_global()
+    if now<next_tick then return end
+    next_tick=now+3000
+    local name=level.name()
+    if name~=current_level then
+        current_level,checked=name,false
+        known={}
+        discovered=false
+        profile_ready=false
+    end
+    if name~=position_config().level then return end
+    if not discovered then discover();discovered=true end
+    if not profile_ready then profile_ready=ensure_ecologist() end
+    if checked then return end
+    checked=ensure_scene()
+end
+
+function on_game_start()
+    local original=xr_remark.init_target
+    xr_remark.init_target=function(obj,target)
+        if obj and obj:section()==section and target=="flx_yantar_guide_front" then
+            return world(0,1.5,3),nil,true
+        end
+        return original(obj,target)
+    end
+    -- Installed weapon/furniture injectors assume a vanilla named trader.
+    -- A guide has no shop and must not receive injected weapons or furniture.
+    local inject=trader_autoinject.timed_update
+    trader_autoinject.timed_update=function(npc)
+        if npc and npc:section()==section then return true end
+        return inject(npc)
+    end
+    if surge_manager_ignore_npc and surge_manager_ignore_npc.ignore_npc then
+        surge_manager_ignore_npc.ignore_npc[section]=true
+    end
+    RegisterScriptCallback("actor_on_first_update",actor_on_first_update)
+    RegisterScriptCallback("actor_on_update",actor_on_update)
+end

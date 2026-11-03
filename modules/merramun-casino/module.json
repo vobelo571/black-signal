@@ -1,0 +1,15 @@
+{
+  "id": "merramun-casino",
+  "title": "Merramun: ноутбук-казино",
+  "group": "Персонажи и снаряжение",
+  "version": "0.3.0-laptop",
+  "description": "Каскадный слот на ноутбуке в бункере учёных.",
+  "requires": [
+    "gamma",
+    "dltx"
+  ],
+  "notes": "Взята установленная версия. Использует изображения и звуки Welcome to the Game III; авторы оригинала сохраняются.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1001- WTTG3 Merramun PDA Slots"
+}

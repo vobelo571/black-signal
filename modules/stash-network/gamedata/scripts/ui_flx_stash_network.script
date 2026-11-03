@@ -1,0 +1,46 @@
+-- Independent settings dialog: never initializes an inventory/loot screen.
+GUI = nil
+
+class "UIStorageNetwork" (CUIScriptWnd)
+
+function UIStorageNetwork:__init() super()
+    self:SetWndRect(Frect():set(0, 0, 1024, 768))
+    self:SetAutoDelete(true)
+    self.mode = "loot"
+    self.flx_sn_standalone = true
+end
+
+function UIStorageNetwork:GetPartner()
+    return self.box_id and level.object_by_id(self.box_id)
+end
+
+function UIStorageNetwork:Close()
+    self:HideDialog()
+    Unregister_UI("UIStorageNetwork")
+end
+
+function UIStorageNetwork:OnKeyboard(dik, action)
+    local handled = CUIScriptWnd.OnKeyboard(self, dik, action)
+    if action == ui_events.WINDOW_KEY_PRESSED and dik == DIK_keys.DIK_ESCAPE then
+        self:Close()
+        return true
+    end
+    return handled
+end
+
+function UIStorageNetwork:Update()
+    CUIScriptWnd.Update(self)
+    local box = self:GetPartner()
+    if not box or not db.actor or db.actor:position():distance_to(box:position()) > 5 then self:Close() end
+end
+
+function show(id)
+    local inventory = ui_inventory.GUI
+    if inventory and inventory:IsShown() then inventory:Close() end
+    if not GUI then GUI = UIStorageNetwork() end
+    GUI.box_id = id
+    zzzzzz_flx_stash_network.init_settings_window(GUI)
+    GUI:ShowDialog(true)
+    _GUIs_keyfree["UIStorageNetwork"] = false
+    Register_UI("UIStorageNetwork", "ui_flx_stash_network")
+end

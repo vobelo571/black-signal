@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+	<string id="flx_ecologist_rank_1"><text>Field Laboratory Assistant</text></string>
+	<string id="flx_ecologist_rank_2"><text>Senior Laboratory Assistant</text></string>
+	<string id="flx_ecologist_rank_3"><text>Research Technician</text></string>
+	<string id="flx_ecologist_rank_4"><text>Junior Researcher</text></string>
+	<string id="flx_ecologist_rank_5"><text>Researcher</text></string>
+	<string id="flx_ecologist_rank_6"><text>Senior Researcher</text></string>
+	<string id="flx_ecologist_rank_7"><text>Leading Researcher</text></string>
+	<string id="flx_ecologist_rank_8"><text>Principal Researcher</text></string>
+	<string id="flx_ecologist_rank_9"><text>Laboratory Head</text></string>
+	<string id="flx_ecologist_rank_10"><text>Scientific Expedition Leader</text></string>
+</string_table>

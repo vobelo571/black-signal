@@ -1,0 +1,74 @@
+-- Payment and level transition form one action. Selecting/reading/cancelling
+-- a destination never moves the actor and never takes money.
+local cfg
+local busy=false
+
+local function route(key)
+    cfg=cfg or ini_file("flx_yantar_guide_routes.ltx")
+    if not cfg:section_exist(key) then return nil end
+    return {
+        price=cfg:r_u32(key,"price"),
+        point=vector():set(cfg:r_float(key,"x"),cfg:r_float(key,"y"),cfg:r_float(key,"z")),
+        lv=cfg:r_u32(key,"level_vertex"), gv=cfg:r_u32(key,"game_vertex"),
+        yaw=cfg:r_float(key,"yaw")
+    }
+end
+
+local function allowed(r)
+    return r and not busy and db.actor and db.actor:alive()
+        and level.name()=="l08_yantar" and db.actor:money()>=r.price
+end
+
+local function can(key)
+    return not not allowed(route(key))
+end
+
+local function travel(key)
+    local r=route(key)
+    if not allowed(r) then return false end
+    busy=true
+    local actor=db.actor
+    -- Check money again here, rather than trusting the earlier dialogue branch.
+    actor:give_money(-r.price)
+    printf("[FLX Yantar Guide] Departing route=%s fare=%s",key,r.price)
+    local ok,err=pcall(ChangeLevel,r.point,r.lv,r.gv,vector():set(0,r.yaw,0),true)
+    if not ok then
+        actor:give_money(r.price)
+        busy=false
+        printf("[FLX Yantar Guide] Transition rejected; fare refunded: %s",tostring(err))
+        return false
+    end
+    -- ChangeLevel supplies the normal fade, stops dialogue and sends the
+    -- standard pre-transition callback. Never invoke that callback twice.
+    return true
+end
+
+function can_agroprom()return can("agroprom")end
+function cannot_agroprom()return not can("agroprom")end
+function go_agroprom()return travel("agroprom")end
+function can_garbage()return can("garbage")end
+function cannot_garbage()return not can("garbage")end
+function go_garbage()return travel("garbage")end
+function can_bar()return can("bar")end
+function cannot_bar()return not can("bar")end
+function go_bar()return travel("bar")end
+function can_cordon()return can("cordon")end
+function cannot_cordon()return not can("cordon")end
+function go_cordon()return travel("cordon")end
+function can_warehouses()return can("warehouses")end
+function cannot_warehouses()return not can("warehouses")end
+function go_warehouses()return travel("warehouses")end
+function can_cemetery()return can("cemetery")end
+function cannot_cemetery()return not can("cemetery")end
+function go_cemetery()return travel("cemetery")end
+function can_marsh()return can("marsh")end
+function cannot_marsh()return not can("marsh")end
+function go_marsh()return travel("marsh")end
+function can_jupiter()return can("jupiter")end
+function cannot_jupiter()return not can("jupiter")end
+function go_jupiter()return travel("jupiter")end
+
+function actor_on_first_update()busy=false end
+function on_game_start()
+    RegisterScriptCallback("actor_on_first_update",actor_on_first_update)
+end

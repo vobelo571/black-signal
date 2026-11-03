@@ -1,0 +1,17 @@
+-- Equipment at the guide station. Fixed display objects, not inventory items.
+objects = {
+    {section="flx_yantar_guide_prop_desk", x=-1.3, y=0.0019246, z=0.3999999999999999, yaw=0, bones="link,link1,link2,link3,link4,link5"},
+    {section="flx_yantar_guide_prop_map", x=-1.3, y=0.6486277, z=0.7, yaw=0, bones="link"},
+    {section="flx_yantar_guide_prop_journal", x=-1.49, y=0.6486277, z=0.16999999999999993, yaw=0, bones="link"},
+    {section="flx_yantar_guide_prop_radio", x=-1.07, y=0.6495580, z=0.2699999999999999, yaw=0, bones="wpn_body,button,lid,light_bone_1,light_bone_2"},
+    {section="flx_yantar_guide_prop_lamp", x=-1.09, y=0.6476255, z=-0.030000000000000027, yaw=180, bones="link,link.001,link.002,link.003,link.004,bone_light", light=true},
+    {section="flx_yantar_guide_prop_guidebook", x=-1.3, y=0.6493036, z=0.7, yaw=90, bones="link"},
+    {section="flx_yantar_guide_prop_gear_crate", x=1.25, y=0.0829824, z=-0.6, yaw=0, bones="link"},
+    {section="flx_yantar_guide_prop_binoculars", x=1.15, y=0.3220238, z=-0.6, yaw=0, bones="wpn_body,right,left"},
+    {section="flx_yantar_guide_prop_flashlight", x=1.4, y=0.3485581, z=-0.6, yaw=0, bones="wpn_body"},
+    {section="flx_yantar_guide_prop_backpack", x=1.25, y=0.0923150, z=-1.3, yaw=0, bones="link"},
+    {section="flx_yantar_guide_prop_field_case", x=1.2, y=0.0921627, z=-1.98, yaw=0, bones="link"},
+}
+
+function bind_static(obj)
+end

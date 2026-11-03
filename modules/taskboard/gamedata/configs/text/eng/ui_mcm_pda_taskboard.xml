@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="windows-1251"?>
+
+<string_table>
+    <string id="ui_mcm_menu_pda_taskboard">
+        <text>PDA Taskboard</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_banner">
+        <text>PDA Taskboard</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_scanning_range">
+        <text>Scanning range</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_taskboard_key">
+        <text>Taskboard PDA shortcut</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_companions_give_tasks">
+        <text>Allow companions to give tasks</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_colorize">
+        <text>Colorize taskboard text</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_south_rate">
+        <text>South: peak premium (%)</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_center_rate">
+        <text>Center: peak premium (%)</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_north_rate">
+        <text>North: peak premium (%)</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_window_days">
+        <text>Premium window after acceptance (days)</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_immediate_npc_threshold">
+        <text>Immediate NPC threshold</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_bg_npcs_per_frame">
+        <text>Background NPCs per frame</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_bg_frame_interval">
+        <text>Background frame interval (sec)</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_bg_logging">
+        <text>Enable background logging</text>
+    </string>
+    <string id="ui_mcm_pda_taskboard_remote_turn_in"><text>Remote task turn-in</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_cash_cap"><text>Maximum premium per task (RU)</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_south_rate_desc"><text>Rare board tasks. Rates are peak percentages, not daily multipliers. With a 3-day window: full for 24 hours, then smoothly down to zero. Base pay is unchanged. Zero disables premiums.</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_center_rate_desc"><text>Rare board tasks. Rates are peak percentages, not daily multipliers. With a 3-day window: full for 24 hours, then smoothly down to zero. Base pay is unchanged. Zero disables premiums.</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_north_rate_desc"><text>Rare board tasks. Rates are peak percentages, not daily multipliers. With a 3-day window: full for 24 hours, then smoothly down to zero. Base pay is unchanged. Zero disables premiums.</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_window_days_desc"><text>Rare board tasks. Rates are peak percentages, not daily multipliers. With a 3-day window: full for 24 hours, then smoothly down to zero. Base pay is unchanged. Zero disables premiums.</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_cash_cap_desc"><text>Rare board tasks. Rates are peak percentages, not daily multipliers. With a 3-day window: full for 24 hours, then smoothly down to zero. Base pay is unchanged. Zero disables premiums.</text></string>
+</string_table>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="st_flx_restock_button"><text>Restock: 25 000 RU</text></string>
+    <string id="st_flx_restock_hint"><text>Restock all traders for 25 000 RU. Traders on other levels receive their supplies when you next interact with them.</text></string>
+    <string id="st_flx_restock_confirm"><text>Restock all traders?\n\nPrice: 25 000 RU per order.\nTraders on other levels receive their supplies when you next interact with them.</text></string>
+    <string id="st_flx_restock_success"><text>Supply order placed. Paid 25 000 RU.\n\nAvailable traders have restocked. Other traders receive supplies when you next interact with them.</text></string>
+    <string id="st_flx_restock_no_money"><text>Not enough money. This order costs 25 000 RU.\n\nNo money was charged.</text></string>
+    <string id="st_flx_restock_no_traders"><text>No trader supply profiles are available.\n\nNo money was charged.</text></string>
+    <string id="st_flx_restock_unavailable"><text>Unable to place a supply order.\n\nNo money was charged.</text></string>
+    <string id="st_flx_restock_cooldown"><text>Your previous order was accepted. Please wait a few seconds.\n\nNo additional payment was charged.</text></string>
+    <string id="st_flx_restock_yes"><text>Confirm</text></string>
+    <string id="st_flx_restock_no"><text>Cancel</text></string>
+    <string id="st_flx_restock_close"><text>Close</text></string>
+</string_table>

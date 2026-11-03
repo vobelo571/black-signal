@@ -1,0 +1,17 @@
+{
+  "id": "skill-perks",
+  "title": "Полезные эффекты навыков",
+  "group": "Мир и баланс",
+  "version": "0.1.1",
+  "description": "Пассивные эффекты и множители опыта по уровням навыков.",
+  "requires": [
+    "gamma",
+    "skills",
+    "mcm",
+    "gamma-recoil"
+  ],
+  "notes": "Первая тестовая версия. Содержит override Enhanced Recoil текущей GAMMA.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "FLX Skill Perks"
+}

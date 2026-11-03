@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<w>
+<open x="400" y="8" width="224" height="27" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c">flx_sn_title</text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </open>
+<panel x="246" y="98" width="532" height="574" stretch="1"><texture>ui_inGame2_left_side_16</texture>
+<title x="24" y="20" width="484" height="26"><text font="letterica18" color="ui_white" align="l" complex_mode="1">flx_sn_title</text></title>
+<help x="24" y="60" width="484" height="110"><text font="letterica16" color="ui_white" align="l" complex_mode="1">flx_sn_help</text></help>
+<role x="24" y="180" width="292" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </role>
+<network x="328" y="180" width="180" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </network>
+<categories x="24" y="232" width="484" height="24"><text font="letterica16" color="ui_white" align="l" complex_mode="1">flx_sn_categories</text></categories>
+<ammo x="24" y="270" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </ammo>
+<medical x="272" y="270" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </medical>
+<mutant x="24" y="310" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </mutant>
+<food x="272" y="310" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </food>
+<artefact x="24" y="350" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </artefact>
+<weapon x="272" y="350" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </weapon>
+<outfit x="24" y="390" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </outfit>
+<repair x="272" y="390" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </repair>
+<device x="24" y="430" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </device>
+<misc x="272" y="430" width="236" height="32" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c"></text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </misc>
+<status x="24" y="488" width="484" height="24"><text font="letterica16" color="ui_white" align="l" complex_mode="1">flx_sn_nearby</text></status>
+<close x="164" y="528" width="204" height="30" stretch="1">
+    <texture>ui_inGame2_big_inventory_button</texture>
+    <text font="letterica16" align="c">flx_sn_close</text>
+    <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </close>
+</panel>
+</w>

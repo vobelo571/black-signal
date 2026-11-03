@@ -1,0 +1,8 @@
+<w>
+<file name="flx_zone_gear\ui_kontur_portraits">
+<texture id="zfg_kontur_ecolog_portrait" x="0" y="0" width="256" height="256" />
+<texture id="zfg_kontur_csky_portrait" x="256" y="0" width="256" height="256" />
+<texture id="zfg_kontur_stalker_portrait" x="512" y="0" width="256" height="256" />
+<texture id="zfg_kontur_killer_portrait" x="768" y="0" width="256" height="256" />
+</file>
+</w>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_zfg_bastion_army_outfit_name">
+    <text>Bastion Military Heavy Assault Suit</text>
+  </string>
+  <string id="st_zfg_bastion_army_outfit_descr">
+    <text>Separate chest plates and overlapping abdominal armor on a SKAT-compatible base. No powered frame: the wearer carries the full weight. Limited anomaly protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_bastion_dolg_outfit_name">
+    <text>Bastion Duty Heavy Assault Suit</text>
+  </string>
+  <string id="st_zfg_bastion_dolg_outfit_descr">
+    <text>Separate chest plates and overlapping abdominal armor on a SKAT-compatible base. No powered frame: the wearer carries the full weight. Limited anomaly protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_bastion_killer_outfit_name">
+    <text>Bastion Mercenary Heavy Assault Suit</text>
+  </string>
+  <string id="st_zfg_bastion_killer_outfit_descr">
+    <text>Separate chest plates and overlapping abdominal armor on a SKAT-compatible base. No powered frame: the wearer carries the full weight. Limited anomaly protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_bastion_monolith_outfit_name">
+    <text>Bastion Monolith Heavy Assault Suit</text>
+  </string>
+  <string id="st_zfg_bastion_monolith_outfit_descr">
+    <text>Separate chest plates and overlapping abdominal armor on a SKAT-compatible base. No powered frame: the wearer carries the full weight. Limited anomaly protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+</string_table>

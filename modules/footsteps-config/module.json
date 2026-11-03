@@ -1,0 +1,14 @@
+{
+  "id": "footsteps-config",
+  "title": "Шаги NPC: конфигурация Oleh",
+  "group": "Графика и звук",
+  "version": "1.0.0",
+  "description": "Выделенная настройка step_params исходного конфига Oleh.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "Исходный автор oleh5230. Старый вариант; не является восстановленной звуковой частью Fireteam.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "NPC Audible Footsteps - Flixmo"
+}

@@ -1,0 +1,211 @@
+-- ==============================================================================
+-- LNCT Campfire Healing
+-- Author: LNCT | Version: 0.7.1 | Date: 10.02.2026
+-- ==============================================================================
+-- CHANGELOG v0.7.1:
+-- + Added config cache system for better performance
+-- + Added safety checks for BHS timedhp table
+-- + Added safety checks for arszi_psy functions
+-- + Optimized campfire detection loop
+-- + Reduced MCM calls from ~10 per tick to 1 per config change
+-- ==============================================================================
+
+local last_update = 0
+local TICK_RATE = 1000 
+local RATIO = TICK_RATE / 1000 
+
+local math_min = math.min
+local math_max = math.max
+
+-- ============================================================================
+-- CONFIG CACHE SYSTEM
+-- ============================================================================
+local config_cache = {
+    enable = true,
+    distance = 4.0,
+    enable_vanilla = true,
+    vanilla_rate = 0.015,
+    bhs_heal_temp = true,
+    bhs_heal_perm = true,
+    bhs_rate = 0.2,
+    enable_rad = true,
+    rad_rate = 0.002,
+    enable_psy = true,
+    psy_rate = 0.01,
+    enable_stamina = true,
+    stamina_rate = 0.01,
+}
+
+local function update_config_cache()
+    local get_config = zzz_campfire_healing_mcm.get_config
+    
+    config_cache.enable = get_config("enable")
+    config_cache.distance = get_config("distance")
+    config_cache.enable_vanilla = get_config("enable_vanilla")
+    config_cache.vanilla_rate = get_config("vanilla_rate")
+    config_cache.bhs_heal_temp = get_config("bhs_heal_temp")
+    config_cache.bhs_heal_perm = get_config("bhs_heal_perm")
+    config_cache.bhs_rate = get_config("bhs_rate")
+    config_cache.enable_rad = get_config("enable_rad")
+    config_cache.rad_rate = get_config("rad_rate")
+    config_cache.enable_psy = get_config("enable_psy")
+    config_cache.psy_rate = get_config("psy_rate")
+    config_cache.enable_stamina = get_config("enable_stamina")
+    config_cache.stamina_rate = get_config("stamina_rate")
+end
+
+local function on_option_change()
+    update_config_cache()
+end
+
+-- ============================================================================
+-- CORE FUNCTIONS
+-- ============================================================================
+
+function on_game_start()
+    RegisterScriptCallback("actor_on_update", actor_on_update)
+    RegisterScriptCallback("on_option_change", on_option_change)
+    
+    -- Initialize cache on game start
+    update_config_cache()
+end
+
+function is_actor_near_lnct_fire()
+    if not config_cache.enable then return false end
+    return is_near_lit_campfire()
+end
+
+function actor_on_update()
+    local tg = time_global()
+    if tg < last_update + TICK_RATE then return end 
+    last_update = tg
+
+    if not config_cache.enable then return end
+
+    if is_near_lit_campfire() then
+        apply_benefits()
+    end
+end
+
+function is_near_lit_campfire()
+    local actor = db.actor
+    local pos = actor:position()
+    
+    local dist_limit = config_cache.distance or 4
+    local dist_sq = dist_limit * dist_limit
+    
+    if not bind_campfire or not bind_campfire.campfires_all then 
+        return false 
+    end
+    
+    for _, binder in pairs(bind_campfire.campfires_all) do
+        if binder and binder.object and binder.campfire then
+            if binder.campfire:is_on() then 
+                if pos:distance_to_sqr(binder.object:position()) <= dist_sq then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+function apply_benefits()
+    local actor = db.actor
+    local rest_bonus = chiki_campfire_rest.health_multiplier()
+    
+    -- Block regeneration for BHS compatibility
+    if zzz_player_injuries and zzz_player_injuries.medkits then
+        zzz_player_injuries.medkits.lastregen = time_global()
+    end
+
+    -- 1. Radiation Removal
+    if config_cache.enable_rad then
+        local r_rate = (config_cache.rad_rate or 0.002) * RATIO
+        if actor.radiation > 0 then
+            actor.radiation = math_max(0, actor.radiation - r_rate)
+        end
+    end
+
+    -- 2. Health Recovery
+    if config_cache.enable_vanilla then
+        local v_rate = (config_cache.vanilla_rate or 0.005) * RATIO * rest_bonus
+        if actor.health < 1.0 then
+            actor:change_health(v_rate)
+        end
+    end
+
+    -- 3. BHS Recovery (with safety checks)
+    local use_temp = config_cache.bhs_heal_temp
+    local use_perm = config_cache.bhs_heal_perm
+
+    if (use_temp or use_perm) then
+        if zzz_player_injuries and zzz_player_injuries.health and zzz_player_injuries.maxhp then
+            
+            local h = zzz_player_injuries.health
+            local m = zzz_player_injuries.maxhp
+            
+            local t = zzz_player_injuries.timedhp
+            if not t or type(t) ~= "table" then
+                t = {}
+                zzz_player_injuries.timedhp = t
+            end
+            
+            local b_rate = ((config_cache.bhs_rate or 0.1) * RATIO * rest_bonus) / 5
+
+            for limb, max_val in pairs(m) do
+                local cur_val = h[limb] or 0
+                local temp_val = t[limb] or 0
+                
+                -- PROGRESSIVE MODE (Both ON)
+                if use_temp and use_perm then
+                    if cur_val < max_val then
+                        h[limb] = math_min(max_val, cur_val + b_rate)
+                        t[limb] = (t[limb] or 0) + b_rate
+                    elseif temp_val > 0 then
+                        t[limb] = math_max(0, temp_val - b_rate)
+                    end
+
+                -- TEMPORARY ONLY (Only Temp ON)
+                elseif use_temp then
+                    if cur_val < max_val then
+                        h[limb] = math_min(max_val, cur_val + b_rate)
+                        t[limb] = (t[limb] or 0) + b_rate
+                    end
+
+                -- PERMANENT ONLY (Only Perm ON)
+                elseif use_perm then
+                    if temp_val > 0 then
+                        t[limb] = math_max(0, temp_val - b_rate)
+                    elseif cur_val < max_val then
+                        h[limb] = math_min(max_val, cur_val + b_rate)
+                    end
+                end
+            end
+        end
+    end
+
+    -- 4. PSY Health Recovery (with safety checks)
+    if config_cache.enable_psy then
+        local p_rate = (config_cache.psy_rate or 0.005) * RATIO
+        
+        if arszi_psy and type(arszi_psy.change_psy_health) == "function" and type(arszi_psy.get_psy_health) == "function" then
+            local current_psy = arszi_psy.get_psy_health()
+            if current_psy and current_psy < 1.0 then
+                arszi_psy.change_psy_health(p_rate)
+            end
+        else
+            if actor.psy_health < 1.0 then
+                actor.psy_health = math_min(1.0, actor.psy_health + p_rate)
+            end
+        end
+    end
+
+    -- 5. Stamina Recovery
+    if config_cache.enable_stamina then
+        local s_rate = (config_cache.stamina_rate or 0.01) * RATIO
+        if actor.power < 1.0 then
+            actor.power = math_min(1.0, actor.power + s_rate)
+        end
+    end
+end

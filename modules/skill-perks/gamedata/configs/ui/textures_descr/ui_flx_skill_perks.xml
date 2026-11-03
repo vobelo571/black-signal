@@ -1,0 +1,9 @@
+<w>
+    <file name="ui\ui_icons_skills">
+        <texture id="encyclopedia_flx_perks_overview_image" x="0" y="0" width="246" height="174" />
+        <texture id="encyclopedia_flx_perks_strength_image" x="0" y="0" width="123" height="87" />
+        <texture id="encyclopedia_flx_perks_endurance_image" x="123" y="0" width="123" height="87" />
+        <texture id="encyclopedia_flx_perks_scavenging_image" x="0" y="87" width="123" height="87" />
+        <texture id="encyclopedia_flx_perks_survival_image" x="123" y="87" width="123" height="87" />
+    </file>
+</w>

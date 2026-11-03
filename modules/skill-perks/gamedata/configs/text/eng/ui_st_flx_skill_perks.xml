@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="flx_perks_title"><text>Useful effects</text></string>
+    <string id="encyclopedia_flx_perks"><text>Useful effects</text></string>
+    <string id="encyclopedia_flx_perks_overview"><text>Skill progression</text></string>
+    <string id="encyclopedia_flx_perks_endurance"><text>Endurance</text></string>
+    <string id="encyclopedia_flx_perks_strength"><text>Strength</text></string>
+    <string id="encyclopedia_flx_perks_scavenging"><text>Scavenging</text></string>
+    <string id="encyclopedia_flx_perks_survival"><text>Survival</text></string>
+    <string id="flx_perks_notice"><text>Bonuses updated. PDA &gt; Guide &gt; Useful effects.</text></string>
+    <string id="flx_overview"><text>Every 2 levels: skill XP and minor bonuses.\nEvery 5 levels: new or improved perks.\nExisting characters receive their earned bonuses.\nUpgrades replace previous values.</text></string>
+    <string id="flx_base_xp"><text>Base XP multiplier</text></string>
+    <string id="flx_xp_step"><text>XP increment</text></string>
+    <string id="flx_levels"><text>levels</text></string>
+    <string id="flx_xp_bonus"><text>This skill XP</text></string>
+    <string id="flx_next"><text>Next milestone — level</text></string>
+    <string id="flx_max"><text>All milestones unlocked</text></string>
+    <string id="flx_disabled"><text>Addon disabled in MCM.</text></string>
+    <string id="flx_regen"><text>Steady breathing — stamina recovery</text></string>
+    <string id="flx_walk"><text>Steady step — walking stamina reduction</text></string>
+    <string id="flx_sprint"><text>Runner — sprint stamina reduction</text></string>
+    <string id="flx_wind"><text>Second wind — stamina restored</text></string>
+    <string id="flx_wind_rule"><text>On dropping below 10%. Cooldown: 5 in-game minutes.</text></string>
+    <string id="flx_wind_trigger"><text>Stamina restored.</text></string>
+    <string id="flx_load"><text>Porter — load stamina reduction</text></string>
+    <string id="flx_recoil"><text>Firm grip — recoil reduction</text></string>
+    <string id="flx_ads"><text>Stability — additional aimed recoil reduction</text></string>
+    <string id="flx_sale"><text>Appraiser — ordinary loot sale bonus</text></string>
+    <string id="flx_discount"><text>Knows the price — purchase discount</text></string>
+    <string id="flx_tool"><text>Careful disassembly — chance to preserve tool condition</text></string>
+    <string id="flx_hunger"><text>Frugal — slower hunger</text></string>
+    <string id="flx_bandage"><text>First aid — bandage effectiveness</text></string>
+    <string id="flx_stomach"><text>Iron stomach — harmful food health penalty reduction</text></string>
+    <string id="flx_medkit"><text>Field medicine — medkit effectiveness</text></string>
+    <string id="flx_mcm_help"><text>XP multiplies the existing Haruka settings. Every-two-level XP increments add together, then multiply the base multiplier. Effect scale does not change XP.</text></string>
+    <string id="ui_mcm_flx_skill_perks_title"><text>Useful effects</text></string>
+    <string id="ui_mcm_flx_skill_perks_enabled"><text>Enable bonuses</text></string>
+    <string id="ui_mcm_flx_skill_perks_base_xp"><text>Base XP multiplier</text></string>
+    <string id="ui_mcm_flx_skill_perks_xp_step"><text>XP per 2 levels (0.02 = 2%)</text></string>
+    <string id="ui_mcm_flx_skill_perks_effect_scale"><text>Effect scale (1 = normal)</text></string>
+    <string id="ui_mcm_flx_skill_perks_notifications"><text>Milestone notifications</text></string>
+    <string id="encyclopedia_flx_perks_overview_text"><text>Skill progression</text></string>
+    <string id="encyclopedia_flx_perks_endurance_text"><text>Endurance</text></string>
+    <string id="encyclopedia_flx_perks_strength_text"><text>Strength</text></string>
+    <string id="encyclopedia_flx_perks_scavenging_text"><text>Scavenging</text></string>
+    <string id="encyclopedia_flx_perks_survival_text"><text>Survival</text></string>
+</string_table>

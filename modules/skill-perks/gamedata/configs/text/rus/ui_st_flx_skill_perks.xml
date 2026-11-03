@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="flx_perks_title"><text>Полезные эффекты</text></string>
+    <string id="encyclopedia_flx_perks"><text>Полезные эффекты</text></string>
+    <string id="encyclopedia_flx_perks_overview"><text>Развитие навыков</text></string>
+    <string id="encyclopedia_flx_perks_endurance"><text>Выносливость</text></string>
+    <string id="encyclopedia_flx_perks_strength"><text>Сила</text></string>
+    <string id="encyclopedia_flx_perks_scavenging"><text>Мародерство</text></string>
+    <string id="encyclopedia_flx_perks_survival"><text>Выживание</text></string>
+    <string id="flx_perks_notice"><text>Бонусы обновлены. PDA &gt; Справочник &gt; Полезные эффекты.</text></string>
+    <string id="flx_overview"><text>Каждые 2 уровня: опыт навыка и небольшие бонусы.\nКаждые 5 уровней: открытие или улучшение перков.\nБонусы действуют и на существующем персонаже.\nПовторные улучшения заменяют предыдущие значения.</text></string>
+    <string id="flx_base_xp"><text>Базовый множитель опыта</text></string>
+    <string id="flx_xp_step"><text>Прибавка опыта</text></string>
+    <string id="flx_levels"><text>уровня</text></string>
+    <string id="flx_xp_bonus"><text>Опыт этого навыка</text></string>
+    <string id="flx_next"><text>Следующий этап — уровень</text></string>
+    <string id="flx_max"><text>Все этапы открыты</text></string>
+    <string id="flx_disabled"><text>Аддон выключен в MCM.</text></string>
+    <string id="flx_regen"><text>Ровное дыхание — восстановление выносливости</text></string>
+    <string id="flx_walk"><text>Ровный шаг — снижение расхода при ходьбе</text></string>
+    <string id="flx_sprint"><text>Бегун — снижение расхода при спринте</text></string>
+    <string id="flx_wind"><text>Второе дыхание — возврат выносливости</text></string>
+    <string id="flx_wind_rule"><text>При падении ниже 10%. Перезарядка: 5 игровых минут.</text></string>
+    <string id="flx_wind_trigger"><text>Выносливость восстановлена.</text></string>
+    <string id="flx_load"><text>Носильщик — снижение расхода от груза</text></string>
+    <string id="flx_recoil"><text>Уверенный хват — снижение отдачи</text></string>
+    <string id="flx_ads"><text>Устойчивость — дополнительное снижение отдачи в прицеле</text></string>
+    <string id="flx_sale"><text>Оценщик — прибавка к цене продажи хабара</text></string>
+    <string id="flx_discount"><text>Знает цену — скидка на покупки</text></string>
+    <string id="flx_tool"><text>Бережный разбор — шанс сохранить ресурс инструмента</text></string>
+    <string id="flx_hunger"><text>Бережливый — замедление голода</text></string>
+    <string id="flx_bandage"><text>Первая помощь — эффективность бинтов</text></string>
+    <string id="flx_stomach"><text>Закалённый желудок — снижение вреда от еды</text></string>
+    <string id="flx_medkit"><text>Полевая медицина — эффективность аптечек</text></string>
+    <string id="flx_mcm_help"><text>Множитель опыта применяется поверх настроек Haruka. Прибавка каждые 2 уровня складывается и умножается на базовый множитель. Масштаб эффектов не меняет опыт.</text></string>
+    <string id="ui_mcm_flx_skill_perks_title"><text>Полезные эффекты</text></string>
+    <string id="ui_mcm_flx_skill_perks_enabled"><text>Включить бонусы</text></string>
+    <string id="ui_mcm_flx_skill_perks_base_xp"><text>Базовый множитель опыта</text></string>
+    <string id="ui_mcm_flx_skill_perks_xp_step"><text>Прибавка опыта каждые 2 уровня (0,02 = 2%)</text></string>
+    <string id="ui_mcm_flx_skill_perks_effect_scale"><text>Масштаб бонусов (1 = обычный)</text></string>
+    <string id="ui_mcm_flx_skill_perks_notifications"><text>Уведомления об этапах</text></string>
+    <string id="encyclopedia_flx_perks_overview_text"><text>Развитие навыков</text></string>
+    <string id="encyclopedia_flx_perks_endurance_text"><text>Выносливость</text></string>
+    <string id="encyclopedia_flx_perks_strength_text"><text>Сила</text></string>
+    <string id="encyclopedia_flx_perks_scavenging_text"><text>Мародерство</text></string>
+    <string id="encyclopedia_flx_perks_survival_text"><text>Выживание</text></string>
+</string_table>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_zfg_zaslon_ecolog_outfit_name">
+    <text>Zaslon Ecologist Suit</text>
+  </string>
+  <string id="st_zfg_zaslon_ecolog_outfit_descr">
+    <text>A chemical-protection conversion with covered joints, double cuffs and a protected service flap. Light armor makes prolonged firefights a poor choice. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_zaslon_csky_outfit_name">
+    <text>Zaslon Clear Sky Suit</text>
+  </string>
+  <string id="st_zfg_zaslon_csky_outfit_descr">
+    <text>A chemical-protection conversion with covered joints, double cuffs and a protected service flap. Light armor makes prolonged firefights a poor choice. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_zaslon_stalker_outfit_name">
+    <text>Zaslon Loner Suit</text>
+  </string>
+  <string id="st_zfg_zaslon_stalker_outfit_descr">
+    <text>A chemical-protection conversion with covered joints, double cuffs and a protected service flap. Light armor makes prolonged firefights a poor choice. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_zaslon_killer_outfit_name">
+    <text>Zaslon Mercenary Suit</text>
+  </string>
+  <string id="st_zfg_zaslon_killer_outfit_descr">
+    <text>A chemical-protection conversion with covered joints, double cuffs and a protected service flap. Light armor makes prolonged firefights a poor choice. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+</string_table>

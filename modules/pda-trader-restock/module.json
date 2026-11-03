@@ -1,0 +1,14 @@
+{
+  "id": "pda-trader-restock",
+  "title": "Пополнение торговцев из КПК",
+  "group": "Интерфейс и удобство",
+  "version": "1.0.0",
+  "description": "Кнопка платного пополнения ассортимента: 25 000 RU за подтверждённый заказ.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "Не открывает закрытые уровни ассортимента.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1005- FLX PDA Trader Restock"
+}

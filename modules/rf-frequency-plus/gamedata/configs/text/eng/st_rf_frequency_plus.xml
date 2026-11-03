@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="rfp_charge"><text>Charge</text></string>
+    <string id="rfp_short_description"><text>A compact RF receiver for locating radio signals. Tune to the required frequency and follow the signal as it grows stronger.</text></string>
+    <string id="rfp_active_frequencies"><text>Active frequencies:</text></string>
+    <string id="rfp_no_active_frequencies"><text>No active RF quests</text></string>
+    <string id="rfp_area_unknown"><text>Area not specified</text></string>
+    <string id="rfp_direction_n"><text>North</text></string>
+    <string id="rfp_direction_ne"><text>Northeast</text></string>
+    <string id="rfp_direction_e"><text>East</text></string>
+    <string id="rfp_direction_se"><text>Southeast</text></string>
+    <string id="rfp_direction_s"><text>South</text></string>
+    <string id="rfp_direction_sw"><text>Southwest</text></string>
+    <string id="rfp_direction_w"><text>West</text></string>
+    <string id="rfp_direction_nw"><text>Northwest</text></string>
+    <string id="rfp_direction_c"><text>Center</text></string>
+    <string id="rfp_match_nw"><text>northwest</text></string>
+    <string id="rfp_match_ne"><text>northeast</text></string>
+    <string id="rfp_match_sw"><text>southwest</text></string>
+    <string id="rfp_match_se"><text>southeast</text></string>
+    <string id="rfp_match_n"><text>north</text></string>
+    <string id="rfp_match_s"><text>south</text></string>
+    <string id="rfp_match_w"><text>west</text></string>
+    <string id="rfp_match_e"><text>east</text></string>
+    <string id="rfp_match_c"><text>central</text></string>
+</string_table>

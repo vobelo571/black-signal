@@ -1,0 +1,22 @@
+-- Apply after SSFX/MCM startup. Subsequent menu edits remain available.
+local function apply_preview_lighting()
+    local commands = {
+        "r2_sunshafts_mode volumetric", "r2_sunshafts_quality st_opt_high", "r2_volumetric_lights on",
+        "texture_lod 0", "r__tf_aniso 16", "r__tf_mipbias -0.15",
+        "r2_detail_bump on", "r2_sun_quality st_opt_ultra",
+        "r2_sun_details on", "r__enable_grass_shadow on",
+        "ssfx_shadows (512,2048,0)",
+        "ssfx_il (2,0.65,1,5)", "ssfx_il_quality 32", "ssfx_ao_quality 6",
+        "ssfx_ssr_quality 4", "ssfx_ssr_2 (1.1,1.2,0.20,0.1)",
+        "ssfx_pom_refine 1", "ssfx_terrain_pom_refine 1",
+        "ssfx_sss (1,1,1,0)", "ssfx_volumetric (0,0.8,5,1)",
+        "ssfx_bloom_use_presets 1", "ssfx_bloom_2 (2.2,1.0,0.1,0.1)"
+    }
+    for _, command in ipairs(commands) do get_console():execute(command) end
+    printf("[visual-quality] lighting preset applied: IL=2/32 AO=6 SSR=4/40 shadows=2048 bloom=2.2/1.0 soft-rays AF=16 texture_lod=0")
+    get_console():execute("cfg_save visual-lighting-effective")
+end
+
+function on_game_start()
+    RegisterScriptCallback("actor_on_first_update", apply_preview_lighting)
+end

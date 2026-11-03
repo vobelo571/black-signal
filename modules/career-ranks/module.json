@@ -1,0 +1,14 @@
+{
+  "id": "career-ranks",
+  "title": "Звания и научные должности",
+  "group": "Мир и баланс",
+  "version": "1.0.0",
+  "description": "Карьерные приставки для Долга, военных и учёных.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "RU/EN. Сохраняет отдельные шкалы фракций.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "Duty and Military Career Ranks - FLX"
+}

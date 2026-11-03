@@ -1,0 +1,85 @@
+local SECTION = "wttg3_merramun_laptop"
+local STATE_KEY = "wttg3_merramun_laptop_id"
+local VERSION_KEY = "wttg3_merramun_laptop_placement"
+local PLACEMENT_VERSION = 4
+local BOX_POSITION = {x = 34.55, y = -10.43, z = -278.58}
+local BOX_LEVEL_VERTEX = 81578
+local BOX_GAME_VERTEX = 2281
+local registered = false
+local next_spawn_check = 0
+
+local function saved_laptop()
+    local state = alife_storage_manager.get_state()
+    local id = state and state[STATE_KEY]
+    local object = id and alife_object(id)
+    if object and object:section_name() == SECTION then return object end
+    if state then state[STATE_KEY] = nil end
+    return nil
+end
+
+local function spawn_near_sakharov()
+    if not db.actor or level.name() ~= "l08_yantar" then return end
+
+    local state = alife_storage_manager.get_state()
+    local existing = saved_laptop()
+    if existing and state[VERSION_KEY] ~= PLACEMENT_VERSION then
+        alife_release(existing, "relocate Merramun laptop to the boxes")
+        state[STATE_KEY] = nil
+        existing = nil
+    end
+    if existing then return end
+
+    local actor_pos = db.actor:position()
+    local pos = vector():set(BOX_POSITION.x, BOX_POSITION.y, BOX_POSITION.z)
+    if actor_pos:distance_to(pos) > 30.0 then return end
+
+    local se_object = alife_create(SECTION, pos, BOX_LEVEL_VERTEX, BOX_GAME_VERTEX)
+    if not se_object then return end
+    local facing_actor = vector():set(actor_pos.x - pos.x, 0, actor_pos.z - pos.z)
+    se_object.angle = vector():set(0, facing_actor:getH(), 0)
+    state[STATE_KEY] = se_object.id
+    state[VERSION_KEY] = PLACEMENT_VERSION
+    printf("~ WTTG3 Merramun laptop spawned [%s] at [%.2f, %.2f, %.2f]", tostring(se_object.id), pos.x, pos.y, pos.z)
+end
+
+local function actor_on_update()
+    local now = time_global()
+    if now < next_spawn_check then return end
+    next_spawn_check = now + 1000
+    spawn_near_sakharov()
+end
+
+local function physic_object_on_use_callback(object, who)
+    if not object or object:section() ~= SECTION then return end
+    if who and db.actor and who:id() ~= db.actor:id() then return end
+    ui_wttg3_merramun.open_ui()
+end
+
+local function dotmarks_on_new_object_scan(id, args)
+    if not id or not args or args.texture or not args.ret_value then return end
+    local object = get_object_by_id(id)
+    if object and object:section() == SECTION then
+        args.item_class = "Quest"
+    end
+end
+
+local function dotmarks_on_setup_pri_interact(args)
+    if not args or not args.id then return end
+    local object = get_object_by_id(args.id)
+    if object and object:section() == SECTION then
+        args.text = game.translate_string("st_wttg3_merramun_laptop_use")
+    end
+end
+
+function on_game_start()
+    next_spawn_check = 0
+    ui_wttg3_merramun.reset_ui()
+    if registered then return end
+    RegisterScriptCallback("actor_on_update", actor_on_update)
+    RegisterScriptCallback("physic_object_on_use_callback", physic_object_on_use_callback)
+    if dotmarks_callbacks and dotmarks_main then
+        RegisterScriptCallback("dotmarks_on_new_object_scan", dotmarks_on_new_object_scan)
+        RegisterScriptCallback("dotmarks_on_setup_pri_interact", dotmarks_on_setup_pri_interact)
+    end
+    registered = true
+end

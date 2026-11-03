@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+<string id="flx_arena_zhila_name"><text>Жила</text></string>
+<string id="flx_arena_zhila_trade_0"><text>Покажи трофеи.</text></string>
+<string id="flx_arena_zhila_trade_1"><text>Смотри. Только аккуратнее с образцами.</text></string>
+<string id="flx_arena_zhila_bio"><text>Бывший охотник, осевший при ростокской Арене. Разделывает мутантов и торгует трофеями. Говорят, даже из тушкана вытащит последнюю жилу.</text></string>
+<string id="flx_arena_zhila_hello_0"><text>За трофеями? Подходи. Руками в ящики не лезь — сперва скажи, что ищешь.</text></string>
+<string id="flx_arena_zhila_about_0"><text>Ты здесь заправляешь?</text></string>
+<string id="flx_arena_zhila_about_1"><text>Ареной другие заправляют. Моё дело — что после зверья остаётся. Клыки, хвосты, железы. Охотники приносят, я перебираю. Учёным образцы, сталкерам — кому для заказа, кому на пояс.</text></string>
+<string id="flx_arena_zhila_about_2"><text>Почему Жила?</text></string>
+<string id="flx_arena_zhila_about_3"><text>Напарник говорил: из любой туши последнюю жилу вытяну. Напарника давно нет, а кличка прижилась. Здесь, брат, что зверьё, что человек — всё на жилах держится.</text></string>
+<string id="flx_arena_zhila_stock_0"><text>Что по товару и ценам?</text></string>
+<string id="flx_arena_zhila_stock_1"><text>Продаю трофеи: хвосты, лапы, клыки, глаза, железы. Каждый привоз — полный список, но редкие части по одной штуке. Обновляю товар вместе с остальными торговцами. Мясо и шкуры тоже принимаю, по расценкам Мясника на Свалке. В продажу их не выставляю.</text></string>
+</string_table>

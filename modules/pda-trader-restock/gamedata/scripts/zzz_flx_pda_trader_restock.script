@@ -1,0 +1,163 @@
+-- FLX PDA Trader Restock: Contacts tab extension.
+-- Uses the game's trade profiles, supply conditions and trader autoinjectors.
+local PRICE = 25000
+local installed = false
+local config_cache = {}
+local last_purchase = -math.huge
+
+local function text(id)
+    return game.translate_string("st_flx_restock_" .. id)
+end
+
+local function log_error(err)
+    printf("[FLX Trader Restock] %s", tostring(err))
+end
+
+local function collect_traders()
+    local snapshot = {}
+    -- Public save API exposes the same profiles returned by get_trade_profile.
+    trade_manager.trade_save(snapshot)
+    local traders = {}
+    for id, profile in pairs(snapshot.trade_manager or {}) do
+        local path = profile.cfg_ltx
+        if path then
+            local config = trade_manager.get_trade_cfg(path) or config_cache[path]
+            if not config then
+                config = ini_file(path)
+                config_cache[path] = config
+            end
+            local supplies = config and config:r_string_ex("trader", "buy_supplies")
+            -- Ordinary stalkers and companions have no supply assortment.
+            if supplies and supplies:find("%S") then
+                traders[#traders + 1] = {id = id, profile = profile}
+            end
+        end
+    end
+    return traders
+end
+
+function purchase()
+    local actor = db.actor
+    if not actor or not actor:alive() then return false, text("unavailable") end
+    local now = time_global()
+    if now >= last_purchase and now - last_purchase < 3000 then
+        return false, text("cooldown")
+    end
+    if actor:money() < PRICE then return false, text("no_money") end
+
+    local ok, traders = pcall(collect_traders)
+    if not ok then
+        log_error(traders)
+        return false, text("unavailable")
+    end
+    if #traders == 0 then return false, text("no_traders") end
+
+    actor:give_money(-PRICE)
+    last_purchase = now
+    for _, entry in ipairs(traders) do
+        -- Removing the timer persists through the game's normal trade_save.
+        -- Offline/distant traders resupply on their next normal update.
+        entry.profile.resupply_time = nil
+    end
+    for _, entry in ipairs(traders) do
+        local npc = level.object_by_id(entry.id)
+        if npc and npc:alive() then
+            local updated, err = pcall(trade_manager.update, npc, true)
+            if not updated then
+                -- Keep the paid resupply pending if an addon rejected this update.
+                entry.profile.resupply_time = nil
+                log_error(err)
+            end
+        end
+    end
+    return true, text("success")
+end
+
+local function show_dialog(self, visible, result)
+    self.flx_restock_dialog_visible = visible
+    self.flx_restock_result = visible and result
+    self.flx_restock_dialog_bg:Show(visible)
+    self.flx_restock_dialog_text:Show(visible)
+    self.flx_restock_yes:Show(visible and not result)
+    self.flx_restock_no:Show(visible and not result)
+    self.flx_restock_close:Show(visible and result)
+end
+
+local function on_restock_clicked(self)
+    if self.flx_restock_dialog_visible then return end
+    self.flx_restock_dialog_text:SetText(text("confirm"))
+    show_dialog(self, true, false)
+end
+
+local function on_restock_yes(self)
+    if not self.flx_restock_dialog_visible or self.flx_restock_result then return end
+    -- Disable confirmation before applying the purchase to prevent double clicks.
+    self.flx_restock_yes:Show(false)
+    local _, message = purchase()
+    self.flx_restock_dialog_text:SetText(message)
+    show_dialog(self, true, true)
+end
+
+local function on_restock_close(self)
+    show_dialog(self, false, false)
+end
+
+-- Contacts layouts can be shifted by PDA/UI addons. Use the live widgets
+-- instead of assuming the XML coordinates are in the same coordinate space.
+local function position_restock_button(self)
+    if not self.flx_restock_button or not self.auto_chk or not self.listbox then return end
+    local check = self.auto_chk:GetWndPos()
+    local list = self.listbox:GetWndPos()
+    local width, height = 224, 24
+    self.flx_restock_button:SetWndSize(vector2():set(width, height))
+    self.flx_restock_button:SetWndPos(vector2():set(
+        list.x + (self.listbox:GetWidth() - width) / 2,
+        check.y + (self.auto_chk:GetHeight() - height) / 2
+    ))
+end
+
+local function install()
+    if installed then return end
+    local tab = ui_pda_contacts_tab and ui_pda_contacts_tab.pda_contacts_tab
+    if not tab then return end
+    local original_init = tab.InitControls
+    local original_reset = tab.Reset
+    tab.Reset = function(self, ...)
+        local result = original_reset(self, ...)
+        position_restock_button(self)
+        return result
+    end
+    tab.InitControls = function(self)
+        original_init(self)
+        local xml = CScriptXmlInit()
+        xml:ParseFile("flx_pda_trader_restock.xml")
+        self.flx_restock_button = xml:Init3tButton("btn_restock", self)
+        position_restock_button(self)
+        self:Register(self.flx_restock_button, "flx_restock_button")
+        self:AddCallback("flx_restock_button", ui_events.BUTTON_CLICKED, on_restock_clicked, self)
+        self.flx_restock_dialog_bg = xml:InitFrame("restock_dialog_bg", self)
+        self.flx_restock_dialog_text = xml:InitTextWnd("restock_dialog_text", self)
+        self.flx_restock_yes = xml:Init3tButton("restock_yes", self)
+        self.flx_restock_no = xml:Init3tButton("restock_no", self)
+        self.flx_restock_close = xml:Init3tButton("restock_close", self)
+        self:Register(self.flx_restock_yes, "flx_restock_yes")
+        self:Register(self.flx_restock_no, "flx_restock_no")
+        self:Register(self.flx_restock_close, "flx_restock_close")
+        self:AddCallback("flx_restock_yes", ui_events.BUTTON_CLICKED, on_restock_yes, self)
+        self:AddCallback("flx_restock_no", ui_events.BUTTON_CLICKED, on_restock_close, self)
+        self:AddCallback("flx_restock_close", ui_events.BUTTON_CLICKED, on_restock_close, self)
+        show_dialog(self, false, false)
+    end
+    installed = true
+end
+
+local function on_load()
+    last_purchase = -math.huge
+    config_cache = {}
+    install()
+end
+
+function on_game_start()
+    install()
+    RegisterScriptCallback("on_game_load", on_load)
+end

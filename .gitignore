@@ -1,0 +1,16 @@
+dist/
+_local/
+__pycache__/
+*.pyc
+**/bin/
+**/obj/
+**/backups/
+**/SaveReset_Backups/
+**/My Tracks/
+**/Imported Tracks Archive/
+**/.flx_tools/
+*.exe
+*.pdb
+*.scoc
+*.scop
+*.log

@@ -1,0 +1,8 @@
+<w>
+<file name="flx_zone_gear\ui_jaeger_portraits">
+<texture id="zfg_jaeger_stalker_portrait" x="0" y="0" width="256" height="256" />
+<texture id="zfg_jaeger_dolg_portrait" x="256" y="0" width="256" height="256" />
+<texture id="zfg_jaeger_freedom_portrait" x="512" y="0" width="256" height="256" />
+<texture id="zfg_jaeger_csky_portrait" x="768" y="0" width="256" height="256" />
+</file>
+</w>

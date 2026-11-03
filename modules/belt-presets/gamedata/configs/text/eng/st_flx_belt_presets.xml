@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+<string id="flx_bp_help"><text>Click to equip; Shift + click to save.</text></string>
+<string id="flx_bp_missing"><text>Some preset items are missing from your inventory. Belt unchanged.</text></string>
+<string id="flx_bp_empty"><text>Empty preset. Shift + click to save the belt.</text></string>
+<string id="flx_bp_capacity"><text>Not enough belt slots on this outfit. Belt unchanged.</text></string>
+<string id="flx_bp_rejected"><text>Cannot equip preset. Previous belt restored.</text></string>
+<string id="flx_bp_loaded"><text>Belt preset loaded.</text></string>
+<string id="flx_bp_saved"><text>Belt preset saved.</text></string>
+<string id="flx_bp_working"><text>Switching belt...</text></string></string_table>

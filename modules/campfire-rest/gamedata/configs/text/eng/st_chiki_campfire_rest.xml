@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<string_table>
+  <string id="ui_mcm_chiki_campfire_rest">
+    <text>Chiki-Briki: campfire rest</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_title">
+    <text>Campfire rest</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_enable">
+    <text>Enable Ctrl+V rest</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_distance">
+    <text>Campfire distance, m</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_multiplier">
+    <text>HP and limb healing multiplier</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_desc">
+    <text>Ctrl+V: sit or stand by a lit campfire. Move the mouse to look around automatically; the body stays fixed. Movement, jumping, leaning and drawing weapons are blocked. PDA and inventory mouse controls remain available. Ctrl+V stands up and restores controls. A hit interrupts rest. Bonus applies to LNCT Campfire Healing.</text>
+  </string>
+  <string id="st_chiki_rest_need_fire">
+    <text>A lit campfire is needed nearby. Stay clear of the flames.</text>
+  </string>
+  <string id="st_chiki_rest_cannot_sit">
+    <text>Cannot sit now: stop on solid ground.</text>
+  </string>
+  <string id="st_chiki_rest_started">
+    <text>Resting by the campfire. Ctrl+V: stand.</text>
+  </string>
+  <string id="st_chiki_rest_stand_hint">
+    <text>Press Ctrl+V to stand up</text>
+  </string>
+</string_table>

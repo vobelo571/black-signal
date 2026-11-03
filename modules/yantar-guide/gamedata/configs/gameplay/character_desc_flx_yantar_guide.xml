@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<xml><specific_character id="flx_yantar_guide" team_default="1">
+  <name>flx_yantar_guide_name</name><bio>flx_yantar_guide_bio</bio>
+  <icon>ui_inGame2_ecolog_orange</icon><class>flx_yantar_guide</class>
+  <community>ecolog</community><terrain_sect>stalker_terrain</terrain_sect>
+  <snd_config>characters_voice\human\ecolog_3\</snd_config>
+  <rank>5800</rank><reputation>1000</reputation>
+  <money min="18000" max="18000" infinitive="0"/>
+  <visual>actors\stalker_ecologist\stalker_ecolog</visual>
+  <supplies>[spawn] \n</supplies>
+  <start_dialog>flx_yantar_guide_hello</start_dialog>
+  <actor_dialog>flx_yantar_guide_travel</actor_dialog>
+  <actor_dialog>flx_yantar_guide_about</actor_dialog>
+  <actor_dialog>flx_yantar_guide_rules</actor_dialog>
+  <actor_dialog>actor_break_dialog</actor_dialog>
+</specific_character></xml>

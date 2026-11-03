@@ -1,0 +1,15 @@
+{
+  "id": "soft-rays-weather",
+  "title": "Мягкие лучи и спокойная погода",
+  "group": "Графика и звук",
+  "version": "1.0",
+  "description": "Мягкие лучи, сокращённые выборки шейдеров, ослабление дождя и отключение Airborne Pulse.",
+  "requires": [
+    "gamma",
+    "sss"
+  ],
+  "notes": "Патч текущих DX11/r3-шейдеров. Не устанавливает 4K-паки и не меняет user.ltx или MCM. Результат на других версиях SSS не проверен.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1011- FLX Soft Rays HD and Gentle Weather"
+}

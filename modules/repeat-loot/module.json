@@ -1,0 +1,14 @@
+{
+  "id": "repeat-loot",
+  "title": "Повторный обыск",
+  "group": "Мир и баланс",
+  "version": "0.2.0",
+  "description": "Небольшие дополнительные находки каждые 24 игровых часа на поддерживаемых локациях.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "Прототип 0.2.0. Меняет доступность ресурсов. More Dynamic Items поддерживается, но не обязателен.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1004- FLX Repeat Loot"
+}

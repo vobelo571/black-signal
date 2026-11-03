@@ -1,0 +1,357 @@
+-- FLX NPC Arsenal: rank/armour gates over the live system.ltx weapon catalogue.
+-- Called by the bundled Weighted NPC Random Loadouts integration, not a second
+-- spawn callback. There is exactly one weapon creation path per slot.
+local catalogue, pools, affiliations, known_npc = {}, {}, {}, {}
+local settings, outfits, blacklist
+local communities = {"stalker", "bandit", "renegade", "csky", "dolg", "army",
+    "freedom", "killer", "ecolog", "monolith", "greh", "isg", "zombied"}
+local ranks_list = {"novice", "trainee", "experienced", "professional",
+    "veteran", "expert", "master", "legend"}
+local rank_numbers = {novice=1, trainee=2, experienced=3, professional=4,
+    veteran=5, expert=6, master=7, legend=8}
+local rank_tiers = {novice=1, trainee=1, experienced=2, professional=2,
+    veteran=3, expert=3, master=4, legend=4}
+local kinds = {w_pistol="pistol", w_shotgun="shotgun", w_smg="smg",
+    w_rifle="rifle", w_sniper="sniper", w_lmg="lmg", w_explosive="heavy",
+    w_special="heavy"}
+local firearm_classes = {WP_PM=true, WP_HPSA=true, WP_USP45=true, WP_LR300=true,
+    WP_AK74=true, WP_GROZA=true, WP_VAL=true, WP_VINT=true, WP_SVD=true,
+    WP_SVU=true, WP_SHOTG=true, WP_ASHTG=true, WP_BM16=true, WP_RG6=true,
+    WP_RPG7=true, WP_GAUSS=true, WP_M134=true, WP_AK47=true}
+-- Category weight is independent of the number of installed variants.
+local styles = {
+    stalker  = {rifle=42, shotgun=25, smg=13, sniper=13, lmg=7, pistol=8},
+    bandit   = {rifle=32, shotgun=32, smg=24, sniper=8, lmg=4, pistol=12},
+    renegade = {rifle=36, shotgun=30, smg=22, sniper=8, lmg=4, pistol=12},
+    csky     = {rifle=45, shotgun=23, smg=14, sniper=12, lmg=6, pistol=8},
+    dolg     = {rifle=53, shotgun=17, smg=5, sniper=10, lmg=15, heavy=0.3},
+    army     = {rifle=62, shotgun=5, smg=3, sniper=15, lmg=15, heavy=0.6},
+    freedom  = {rifle=58, shotgun=10, smg=12, sniper=14, lmg=6},
+    killer   = {rifle=52, shotgun=12, smg=13, sniper=16, lmg=7},
+    ecolog   = {rifle=36, shotgun=25, smg=24, sniper=12, lmg=3, pistol=8},
+    monolith = {rifle=50, shotgun=13, smg=5, sniper=17, lmg=15, heavy=0.9},
+    greh     = {rifle=43, shotgun=26, smg=8, sniper=13, lmg=10, heavy=0.3},
+    isg      = {rifle=57, shotgun=9, smg=9, sniper=15, lmg=10, heavy=0.4},
+    zombied  = {rifle=40, shotgun=27, smg=17, sniper=10, lmg=6, pistol=10},
+}
+local eastern = {army=true, dolg=true, greh=true, bandit=true, renegade=true}
+local western = {freedom=true, killer=true, isg=true}
+local aliases = {army_npc="army", military="army", greh_npc="greh",
+    mercenary="killer", duty="dolg", loner="stalker", monolit="monolith"}
+
+local function read(ini, sec, key)
+    return ini and ini:section_exist(sec) and ini:r_string_ex(sec, key) or nil
+end
+
+local function number(ini, sec, key, default)
+    return tonumber(read(ini, sec, key)) or default
+end
+
+local function contains(s, part)
+    return s and string.find(s, part, 1, true) ~= nil
+end
+
+local function tokens(s)
+    local result = {}
+    for item in string.gmatch(s or "", "[^,%s]+") do
+        result[#result+1] = item
+    end
+    return result
+end
+
+local function first(s)
+    return tokens(s)[1]
+end
+
+local function canonical(section)
+    local parent = read(ini_sys, section, "parent_section")
+    return parent and ini_sys:section_exist(parent) and parent or section
+end
+
+local function origin(sec, ammo)
+    if contains(ammo, "5.45x39") or contains(ammo, "7.62x39") or
+        contains(ammo, "7.62x54") or contains(ammo, "9x39") or
+        contains(ammo, "9x18") or contains(ammo, "7.62x25") or
+        contains(ammo, "12.7x55") or contains(ammo, "23x75") then
+        return "east"
+    end
+    if contains(ammo, "5.56x45") or contains(ammo, "7.62x51") or
+        contains(ammo, "11.43x23") or contains(ammo, "5.7x28") or
+        contains(ammo, "4.6x30") or contains(ammo, "338") then
+        return "west"
+    end
+    if contains(sec, "ak") or contains(sec, "sr2") or contains(sec, "pp") or
+        contains(sec, "toz") or contains(sec, "saiga") or contains(sec, "vepr") then
+        return "east"
+    end
+    return "neutral"
+end
+
+local function family(sec)
+    -- Group prolific attachments/kits so installing 30 AK variants does not
+    -- make every NPC use an AK. Every distinct model still has a positive chance.
+    local s = string.gsub(sec, "^wpn_", "")
+    local f = string.match(s, "^([^_]+)") or s
+    if string.match(f, "^ak%d") or f == "akm" or f == "akms" then return "ak" end
+    if string.match(f, "^g36") then return "g36" end
+    if string.match(f, "^m4") or f == "xm4" or f == "ar15" then return "ar15" end
+    if string.match(f, "^glock") then return "glock" end
+    if string.match(f, "^rpk") then return "rpk" end
+    if string.match(f, "^svd") then return "svd" end
+    return f
+end
+
+function meets_rank_requirement(section, rank)
+    local base = canonical(section)
+    local group = read(settings, "family_overrides", base) or family(base)
+    local minimum = number(settings, "minimum_rank_by_family", group, 1)
+    minimum = number(settings, "minimum_rank_overrides", base, minimum)
+    return (rank_numbers[rank] or 3) >= minimum
+end
+
+function classify(section)
+    local kind = read(ini_sys, section, "kind")
+    local cls = read(ini_sys, section, "class")
+    local category = kinds[kind]
+    if not category or not firearm_classes[cls] then return nil end
+    if contains(section, "_hud") or contains(section, "_fake") or
+        contains(section, "_debug") or contains(section, "_quest") or
+        contains(section, "_unstrapped") then return nil end
+    local npc = read(ini_sys, section, "$npc")
+    -- Some working GAMMA weapons (9A-91, Vikhr) carry $npc=off but are
+    -- explicitly used in the shipped NPC loadouts. Keep that proven support.
+    if not known_npc[section] and (npc == "off" or npc == "false" or npc == "0") then return nil end
+    if read(settings, "exclude", section) then return nil end
+    if not known_npc[section] and read(blacklist, "ignore_sections", section) then return nil end
+    local ammo = read(ini_sys, section, "ammo_class")
+    local ammo_index
+    for i, a in ipairs(tokens(ammo)) do
+        if ini_sys:section_exist(a) then ammo_index = i - 1; break end
+    end
+    local cost = number(ini_sys, section, "cost", 0)
+    if ammo_index == nil or cost <= 0 or not read(ini_sys, section, "visual") or
+        not read(ini_sys, section, "hud") or
+        number(ini_sys, section, "inv_grid_width", 0) < 1 then return nil end
+    local mag = number(ini_sys, section, "ammo_mag_size", 0)
+    if mag < 1 then return nil end
+    -- Scoped sections are spawned by the original attachment resolver.
+    -- Retain named kits with their own parent_section as independent weapons.
+    if canonical(section) ~= section then return nil end
+
+    -- Anomaly labels most machine guns as w_rifle, and some packs even use
+    -- pistol engine classes for them. Prefer the actual weapon family/calibre.
+    if category == "rifle" and (contains(section, "wpn_rpk") or
+        contains(section, "wpn_pkm") or contains(section, "wpn_pkp") or
+        contains(section, "wpn_hk21") or contains(section, "wpn_m249") or
+        contains(section, "wpn_m60") or contains(section, "wpn_mg42") or
+        contains(section, "wpn_mg3") or contains(section, "wpn_rpd") or
+        (mag >= 75 and contains(read(ini_sys, section, "fire_modes"), "-1"))) then
+        category = "lmg"
+    end
+    if contains(ammo, "ammo_gauss") then category = "heavy" end
+
+    local tier
+    local old = contains(section, "mosin") or contains(section, "sks") or
+        contains(section, "svt40") or contains(section, "winchester18") or
+        contains(section, "kar98") or contains(section, "springfield")
+    local double = category == "shotgun" and (mag <= 2 or cls == "WP_BM16" or
+        contains(section, "toz34") or contains(section, "bm16"))
+    if category == "pistol" then
+        tier = cost < 10000 and 1 or cost < 22000 and 2 or cost < 40000 and 3 or 4
+    elseif double then
+        tier = 1
+    elseif old then
+        tier = cost < 40000 and 1 or 2
+    elseif category == "shotgun" then
+        tier = cost < 20000 and 1 or cost < 35000 and 2 or cost < 65000 and 3 or 4
+    elseif category == "smg" then
+        tier = cost < 25000 and 1 or cost < 45000 and 2 or 3
+    elseif category == "heavy" or cls == "WP_GAUSS" then
+        category, tier = "heavy", 4
+    elseif category == "lmg" then
+        tier = cost < 65000 and 3 or 4
+    else
+        tier = cost < 20000 and 1 or cost < 40000 and 2 or cost < 80000 and 3 or 4
+    end
+    -- Common service weapons are viable throughout a career, while the truly
+    -- primitive guns above stay in the low tiers even with a high modded price.
+    if category == "rifle" and not old and cost >= 25000 then tier = math.max(3, tier) end
+    tier = math.max(1, math.min(4, number(settings, "tier_overrides", section, tier)))
+    return {sec=section, category=category, tier=tier, cost=cost,
+        origin=read(settings, "origin_overrides", section) or origin(section, ammo),
+        family=read(settings, "family_overrides", section) or family(section),
+        primitive=old or double, double=double, ammo_index=ammo_index}
+end
+
+local function learn_affiliations(ini)
+    ini:section_for_each(function(section)
+        for i=0,ini:line_count(section)-1 do
+            local _, entry = ini:r_line_ex(section, i, "", "")
+            local weapon = string.match(entry or "", "^(wpn_[^:]+)")
+            if weapon and ini_sys:section_exist(weapon) then
+                known_npc[canonical(weapon)] = true
+            end
+        end
+    end)
+    for _, comm in ipairs(communities) do
+        affiliations[comm] = {}
+        for _, rank in ipairs(ranks_list) do
+            local loadout = comm .. "_" .. rank
+            for _, slot_type in ipairs({"primary", "secondary"}) do
+                local slot = read(ini, loadout, slot_type)
+                if slot and ini:section_exist(slot) then
+                    for i=0,ini:line_count(slot)-1 do
+                        local _, entry = ini:r_line_ex(slot, i, "", "")
+                        local section = string.match(entry or "", "^[^:]+")
+                        if section and ini_sys:section_exist(section) then
+                            affiliations[comm][canonical(section)] = true
+                            known_npc[canonical(section)] = true
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+function initialize(ini)
+    catalogue, pools, affiliations, known_npc = {}, {}, {}, {}
+    settings = ini_file("plugins\\flx_npc_arsenal.ltx")
+    outfits = ini_file("items\\settings\\death_outfits.ltx")
+    blacklist = ini_file("plugins\\spawner_blacklist.ltx")
+    learn_affiliations(ini)
+    ini_sys:section_for_each(function(section)
+        local entry = classify(section)
+        if entry then catalogue[#catalogue+1] = entry end
+    end)
+    table.sort(catalogue, function(a,b) return a.sec < b.sec end)
+    printf("[FLX NPC Arsenal] v1.1.1: %s base weapons/kits from live system.ltx", #catalogue)
+end
+
+function armour_level(visual)
+    local v = string.lower(visual or "")
+    v = string.gsub(v, "/", "\\")
+    local name = string.match(v, "([^\\]+)$") or v
+    name = string.gsub(name, "%.ogf$", "")
+    local outfit = first(read(outfits, "outfit_by_visual", name))
+    local kind = outfit and read(ini_sys, outfit, "kind") or ""
+    local hint = v .. " " .. (outfit or "") .. " " .. kind
+    if contains(hint, "nosorog") or contains(hint, "exo") then return 3 end
+    if contains(hint, "seva") or contains(hint, "o_heavy") or
+        contains(hint, "heavy_outfit") or contains(hint, "skat") or
+        contains(hint, "ps5") or contains(hint, "o_scientific") then return 2 end
+    return 1
+end
+
+local function limits(rank, armour, slot_type)
+    local level = rank_tiers[rank] or 2
+    local low = level == 4 and 3 or level == 3 and 2 or 1
+    local high = level == 1 and 2 or level == 2 and 3 or 4
+    if slot_type == "secondary" then
+        return level >= 3 and 2 or 1, math.min(4, high), level
+    end
+    if armour == 3 then low, high = 3, 4
+    elseif armour == 2 then low, high = math.max(2, low), math.max(3, high) end
+    return low, high, level
+end
+
+function eligible(entry, comm, rank, armour, slot_type)
+    if not meets_rank_requirement(entry.sec, rank) then return false end
+    local low, high, level = limits(rank, armour, slot_type)
+    if entry.tier < low or entry.tier > high then return false end
+    if slot_type == "secondary" then return entry.category == "pistol" end
+    if level == 1 and armour == 1 and entry.cost > 40000 then return false end
+    if entry.category == "pistol" and (level > 1 or armour > 1) then return false end
+    if entry.primitive and (level >= 3 or armour >= 2) then return false end
+    if entry.category == "smg" and armour == 3 then return false end
+    if entry.category == "heavy" then
+        return level == 4 and (comm == "army" or comm == "monolith" or
+            comm == "isg" or comm == "dolg" or comm == "greh")
+    end
+    return true
+end
+
+local function weighted(items)
+    local sum = 0
+    for _, item in ipairs(items) do sum = sum + item.weight end
+    if sum <= 0 then return nil end
+    local roll = math.random() * sum
+    for _, item in ipairs(items) do
+        roll = roll - item.weight
+        if roll < 0 then return item end
+    end
+    return items[#items]
+end
+
+local function build_pool(comm, rank, armour, slot_type)
+    local style = styles[comm] or styles.stalker
+    local categories, groups = {}, {}
+    local _, _, level = limits(rank, armour, slot_type)
+    for _, weapon in ipairs(catalogue) do
+        if eligible(weapon, comm, rank, armour, slot_type) then
+            local cat = weapon.category
+            if not groups[cat] then groups[cat] = {} end
+            local fam = weapon.family
+            local group = groups[cat][fam]
+            if not group then
+                group = {weight=1, items={}, affinity=0}
+                groups[cat][fam] = group
+            end
+            local native = affiliations[comm] and affiliations[comm][weapon.sec]
+            local affinity = native and 2.5 or 1
+            if eastern[comm] then
+                affinity = affinity * (weapon.origin == "east" and 2.5 or weapon.origin == "west" and 0.4 or 1)
+            elseif western[comm] then
+                affinity = affinity * (weapon.origin == "west" and 2.5 or weapon.origin == "east" and 0.4 or 1)
+            end
+            -- Prefer equipment near the NPC's grade, with rare outliers inside
+            -- the hard bounds. Legends more often carry tier four equipment.
+            local target = rank == "legend" and 4 or math.max(level, armour)
+            local quality = weapon.tier == target and 2 or 1
+            local weight = affinity * quality
+            group.items[#group.items+1] = {weight=weight, weapon=weapon}
+            group.affinity = group.affinity + weight
+        end
+    end
+    -- Sort every bucket for deterministic seeded tests, regardless of Lua hash order.
+    for _, cat in ipairs({"pistol", "smg", "shotgun", "rifle", "sniper", "lmg", "heavy"}) do
+        if groups[cat] then
+            local names, families = {}, {}
+            for fam in pairs(groups[cat]) do names[#names+1] = fam end
+            table.sort(names)
+            for _, fam in ipairs(names) do
+                local group = groups[cat][fam]
+                group.weight = group.affinity / #group.items
+                families[#families+1] = group
+            end
+            local weight = slot_type == "secondary" and 1 or (style[cat] or 1)
+            if cat == "pistol" and slot_type == "primary" then weight = style.pistol or 3 end
+            if cat == "lmg" and armour == 3 then weight = weight * 1.6 end
+            categories[#categories+1] = {weight=weight, items=families}
+        end
+    end
+    return categories
+end
+
+function pick(comm, rank, visual, slot_type)
+    if slot_type == "extra" then return nil end
+    comm = aliases[comm] or comm
+    local armour = armour_level(visual)
+    local key = comm .. ":" .. (rank or "") .. ":" .. armour .. ":" .. slot_type
+    if not pools[key] then pools[key] = build_pool(comm, rank, armour, slot_type) end
+    local category = weighted(pools[key])
+    local group = category and weighted(category.items)
+    local choice = group and weighted(group.items)
+    if not choice then return nil end
+    return {sec=choice.weapon.sec, attachment="r", ammo_type=tostring(choice.weapon.ammo_index),
+        scope_chance="d", gl_chance="d", sil_chance="d"}
+end
+
+-- Read-only diagnostics, callable from the game's script console / audit harness.
+function get_catalogue() return catalogue end
+function print_catalogue()
+    for _, w in ipairs(catalogue) do
+        printf("[FLX NPC Arsenal] %s | %s | tier=%s | %s | family=%s",
+            w.sec, w.category, w.tier, w.origin, w.family)
+    end
+end

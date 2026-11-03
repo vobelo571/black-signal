@@ -1,0 +1,20 @@
+{
+  "id": "arena-mutant-trader",
+  "title": "Жила: торговец Арены",
+  "group": "Персонажи и снаряжение",
+  "version": "1.5.5",
+  "description": "Торговец частями мутантов, мастерская и контракты.",
+  "requires": [
+    "gamma",
+    "dux",
+    "hf",
+    "hf-expansion"
+  ],
+  "notes": "Нужен доступ в помещения Арены. Внешний Taskboard необязателен.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1008- FLX Arena Mutant Trader",
+  "optional_modules": [
+    "taskboard"
+  ]
+}

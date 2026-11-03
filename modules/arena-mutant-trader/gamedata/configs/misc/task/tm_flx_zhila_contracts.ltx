@@ -1,0 +1,63 @@
+[flx_zhila_contract_day]
+icon = ui_iconsTotal_mutant
+prior = 95
+storyline = false
+title = flx_zhila_day_title
+descr = flx_zhila_day_stage_0
+descr_functor = flx_zhila_contract_descr
+target_functor = flx_zhila_contract_target
+status_functor = flx_zhila_contract_status
+stage_complete = 3
+repeat_timeout = 0
+can_cancel = true
+on_complete = %=flx_zhila_contract_complete(flx_zhila_contract_day)%
+on_fail = %=flx_zhila_contract_fail(flx_zhila_contract_day)%
+on_cancel = %=flx_zhila_contract_fail(flx_zhila_contract_day)%
+
+[flx_zhila_contract_night]
+icon = ui_iconsTotal_mutant
+prior = 95
+storyline = false
+title = flx_zhila_night_title
+descr = flx_zhila_night_stage_0
+descr_functor = flx_zhila_contract_descr
+target_functor = flx_zhila_contract_target
+status_functor = flx_zhila_contract_status
+stage_complete = 3
+repeat_timeout = 0
+can_cancel = true
+on_complete = %=flx_zhila_contract_complete(flx_zhila_contract_night)%
+on_fail = %=flx_zhila_contract_fail(flx_zhila_contract_night)%
+on_cancel = %=flx_zhila_contract_fail(flx_zhila_contract_night)%
+
+[flx_zhila_contract_forest]
+icon = ui_iconsTotal_mutant
+prior = 95
+storyline = false
+title = flx_zhila_forest_title
+descr = flx_zhila_forest_stage_0
+descr_functor = flx_zhila_contract_descr
+target_functor = flx_zhila_contract_target
+status_functor = flx_zhila_contract_status
+stage_complete = 3
+repeat_timeout = 0
+can_cancel = true
+on_complete = %=flx_zhila_contract_complete(flx_zhila_contract_forest)%
+on_fail = %=flx_zhila_contract_fail(flx_zhila_contract_forest)%
+on_cancel = %=flx_zhila_contract_fail(flx_zhila_contract_forest)%
+
+[flx_zhila_contract_rare]
+icon = ui_iconsTotal_mutant
+prior = 95
+storyline = false
+title = flx_zhila_rare_title
+descr = flx_zhila_rare_stage_0
+descr_functor = flx_zhila_contract_descr
+target_functor = flx_zhila_contract_target
+status_functor = flx_zhila_contract_status
+stage_complete = 3
+repeat_timeout = 0
+can_cancel = true
+on_complete = %=flx_zhila_contract_complete(flx_zhila_contract_rare)%
+on_fail = %=flx_zhila_contract_fail(flx_zhila_contract_rare)%
+on_cancel = %=flx_zhila_contract_fail(flx_zhila_contract_rare)%

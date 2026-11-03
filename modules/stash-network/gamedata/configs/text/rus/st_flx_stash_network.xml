@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="flx_sn_title"><text>Сеть хранения</text></string>
+  <string id="flx_sn_role"><text>Режим ящика</text></string>
+  <string id="flx_sn_off"><text>Отключён</text></string>
+  <string id="flx_sn_intake"><text>Приёмник</text></string>
+  <string id="flx_sn_receive"><text>Получатель</text></string>
+  <string id="flx_sn_network"><text>Сеть</text></string>
+  <string id="flx_sn_ammo"><text>Боеприпасы</text></string>
+  <string id="flx_sn_medical"><text>Медицина</text></string>
+  <string id="flx_sn_mutant"><text>Мясо и части мутантов</text></string>
+  <string id="flx_sn_food"><text>Еда и напитки</text></string>
+  <string id="flx_sn_artefact"><text>Артефакты</text></string>
+  <string id="flx_sn_weapon"><text>Оружие и гранаты</text></string>
+  <string id="flx_sn_outfit"><text>Броня и шлемы</text></string>
+  <string id="flx_sn_repair"><text>Ремонт и детали</text></string>
+  <string id="flx_sn_device"><text>Устройства</text></string>
+  <string id="flx_sn_misc"><text>Прочее</text></string>
+  <string id="flx_sn_nearby"><text>Других ящиков рядом</text></string>
+  <string id="flx_sn_meters"><text>м</text></string>
+  <string id="flx_sn_close"><text>Готово</text></string>
+  <string id="flx_sn_categories"><text>Категории получателя — можно выбрать несколько</text></string>
+  <string id="flx_sn_help"><text>Приёмник сразу отправляет положенные в него вещи получателям той же сети в радиусе 50 м.
+Без получателя вещи остаются в приёмнике. Инвентарь персонажа не затрагивается.
+Режим и номер сети меняются нажатием. Настройки сохраняются с игрой.</text></string>
+  <string id="flx_sn_open_box"><text>Открыть ящик</text></string>
+  <string id="flx_sn_pickup_box"><text>Взять ящик с содержимым</text></string>
+  <string id="flx_sn_pickup_help"><text>Забрать ящик и все вещи в инвентарь</text></string>
+  <string id="flx_sn_manage_box"><text>Меню ящика</text></string>
+  <string id="flx_sn_connections_help"><text>Настроить сеть, режим ящика и категории вещей</text></string>
+  <string id="flx_sn_storage_only"><text>Доступно для личных ящиков хранения</text></string>
+</string_table>

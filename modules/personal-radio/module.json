@@ -1,0 +1,18 @@
+{
+  "id": "personal-radio",
+  "title": "Личное радио КПК",
+  "group": "Графика и звук",
+  "version": "1.0.0",
+  "description": "Личный плейлист, сохранение трека и состояния, импортёр музыки.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "Музыка и FFmpeg не включены. Импортёр: Python 3.10+ с Tk и FFmpeg. Импортировать свои треки до запуска игры. PDA Radio Extended не требуется: музыка и материалы Starcry_ не включены.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1000- FLX Personal PDA Radio",
+  "optional": [
+    "python",
+    "ffmpeg"
+  ]
+}

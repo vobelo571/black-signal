@@ -1,0 +1,15 @@
+{
+  "id": "audible-footsteps",
+  "title": "Слышимые шаги врагов",
+  "group": "Графика и звук",
+  "version": "1.0.0",
+  "description": "Пространственный звук движущихся врагов из звуковой части Fireteam.",
+  "requires": [
+    "gamma",
+    "gamma-footsteps"
+  ],
+  "notes": "Не включать вместе с полным Fireteam AI; дополнительные шаги могут суммироваться с обычными.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "Audible NPC Footsteps Plus"
+}

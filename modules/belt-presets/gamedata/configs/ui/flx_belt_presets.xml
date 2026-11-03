@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<w>
+    <tooltip x="37" y="426" width="234" height="59" stretch="1">
+        <texture>ui_inGame2_hint_wnd_main_window</texture>
+        <label x="9" y="6" width="216" height="48"><text font="letterica16" color="ui_6" align="l" complex_mode="1"/></label>
+    </tooltip>
+    <preset1 x="198" y="487" width="23" height="19" stretch="1">
+        <texture>ui_inGame2_repair_button</texture>
+        <text font="letterica16" align="c">1</text>
+        <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </preset1>
+    <preset2 x="223" y="487" width="23" height="19" stretch="1">
+        <texture>ui_inGame2_repair_button</texture>
+        <text font="letterica16" align="c">2</text>
+        <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </preset2>
+    <preset3 x="248" y="487" width="23" height="19" stretch="1">
+        <texture>ui_inGame2_repair_button</texture>
+        <text font="letterica16" align="c">3</text>
+        <text_color><e color="ui_6"/><t color="ui_white"/><d color="ui_5"/><h color="ui_white"/></text_color>
+    </preset3>
+</w>

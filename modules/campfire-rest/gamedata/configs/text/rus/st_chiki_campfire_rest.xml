@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='windows-1251'?>
+<string_table>
+  <string id="ui_mcm_chiki_campfire_rest">
+    <text>Chiki-Briki: отдых у костра</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_title">
+    <text>Отдых у костра</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_enable">
+    <text>Включить отдых по Ctrl+V</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_distance">
+    <text>Расстояние до костра, м</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_multiplier">
+    <text>Множитель восстановления HP и конечностей</text>
+  </string>
+  <string id="ui_mcm_chiki_campfire_rest_desc">
+    <text>Ctrl+V — сесть или встать у горящего костра. Обзор работает обычным движением мыши без удержания клавиш; тело неподвижно. Движение, прыжки, наклоны и доставание оружия заблокированы. Мышь работает в КПК и инвентаре. Ctrl+V — встать и вернуть обычное управление. Попадание прерывает отдых. Бонус применяется к лечению LNCT Campfire Healing.</text>
+  </string>
+  <string id="st_chiki_rest_need_fire">
+    <text>Для отдыха нужен горящий костёр поблизости. Не садитесь в огонь.</text>
+  </string>
+  <string id="st_chiki_rest_cannot_sit">
+    <text>Сейчас сесть нельзя: остановитесь на земле.</text>
+  </string>
+  <string id="st_chiki_rest_started">
+    <text>Отдых у костра. Ctrl+V — встать.</text>
+  </string>
+  <string id="st_chiki_rest_stand_hint">
+    <text>Нажмите Ctrl+V, чтобы встать</text>
+  </string>
+</string_table>

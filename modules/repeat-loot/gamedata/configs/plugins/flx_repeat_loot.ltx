@@ -1,0 +1,64 @@
+[settings]
+enabled = true
+cycle_min_hours = 24
+cycle_max_hours = 24
+check_interval_seconds = 15
+minimum_actor_distance = 150
+point_cooldown_hours = 48
+item_lifetime_hours = 96
+max_active_per_level = 8
+common_items_per_cycle = 2
+rare_chance = 0.05
+advanced_chance = 0.015
+debug = true
+
+[maps]
+l01_escape = south
+l02_garbage = south
+l03_agroprom = industrial
+k00_marsh = south
+k01_darkscape = south
+k02_trucks_cemetery = industrial
+l04_darkvalley = industrial
+l06_rostok = industrial
+l07_military = industrial
+l08_yantar = industrial
+l09_deadcity = industrial
+l10_limansk = industrial
+l10_radar = industrial
+l10_red_forest = industrial
+l11_hospital = industrial
+l11_pripyat = industrial
+pripyat = industrial
+jupiter = industrial
+zaton = industrial
+y04_pole = south
+l12_stancia = industrial
+l12_stancia_2 = industrial
+l13_generators = industrial
+
+[point_types]
+kit = true
+misc = true
+medical = true
+ammo = true
+food = true
+drink = true
+
+; Uses the game's existing recorded kit/misc positions, including DLTX additions.
+; No custom coordinates, additional libraries or new item sections required.
+[common]
+gun_oil = 25
+grease = 25
+duct_tape = 20
+steel_wool = 20
+kerosene = 10
+
+[rare_south]
+itm_basickit = 1
+
+[rare_industrial]
+itm_basickit = 1
+
+[advanced_industrial]
+itm_advancedkit = 1

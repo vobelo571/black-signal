@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<xml>
+<specific_character id="flx_arena_zhila" team_default="1">
+  <name>flx_arena_zhila_name</name>
+  <icon>ui_inGame2_neutral_2_old</icon>
+  <bio>flx_arena_zhila_bio</bio>
+  <class>flx_arena_zhila</class>
+  <community>trader</community><terrain_sect>stalker_terrain</terrain_sect>
+  <snd_config>characters_voice\human\stalker_3\</snd_config>
+  <rank>4800</rank><reputation>400</reputation>
+  <money min="90000000" max="90000000" infinitive="1"/>
+  <visual>actors\stalker_neutral\stalker_neytral_balon_ppm_custom</visual>
+  <supplies>[spawn] \n wpn_bm16 \n ammo_12x70_buck = 2 \n</supplies>
+  <start_dialog>flx_arena_zhila_hello</start_dialog>
+  <actor_dialog>flx_arena_zhila_trade</actor_dialog>
+  <actor_dialog>flx_arena_zhila_jobs</actor_dialog>
+  <actor_dialog>flx_arena_zhila_contract_status</actor_dialog>
+  <actor_dialog>flx_arena_zhila_rare_jobs</actor_dialog>
+  <actor_dialog>flx_arena_zhila_rare_status</actor_dialog>
+  <actor_dialog>flx_arena_zhila_about</actor_dialog>
+  <actor_dialog>flx_arena_zhila_stock</actor_dialog>
+  <actor_dialog>actor_break_dialog</actor_dialog>
+</specific_character>
+</xml>

@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<game_dialogs>
+  <dialog id="flx_yantar_guide_hello">
+    <phrase_list>
+      <phrase id="0">
+        <text>flx_yantar_guide_hello_0</text>
+      </phrase>
+    </phrase_list>
+  </dialog>
+  <dialog id="flx_yantar_guide_about">
+    <phrase_list>
+      <phrase id="0">
+        <text>flx_yantar_guide_about_0</text>
+        <next>1</next>
+      </phrase>
+      <phrase id="1">
+        <text>flx_yantar_guide_about_1</text>
+      </phrase>
+    </phrase_list>
+  </dialog>
+  <dialog id="flx_yantar_guide_rules">
+    <phrase_list>
+      <phrase id="0">
+        <text>flx_yantar_guide_rules_0</text>
+        <next>1</next>
+      </phrase>
+      <phrase id="1">
+        <text>flx_yantar_guide_rules_1</text>
+      </phrase>
+    </phrase_list>
+  </dialog>
+  <dialog id="flx_yantar_guide_travel">
+    <phrase_list>
+      <phrase id="0">
+        <text>flx_yantar_guide_travel_0</text>
+        <next>1</next>
+      </phrase>
+      <phrase id="1">
+        <text>flx_yantar_guide_travel_1</text>
+        <next>2</next>
+        <next>3</next>
+        <next>4</next>
+        <next>5</next>
+        <next>6</next>
+        <next>7</next>
+        <next>8</next>
+        <next>9</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="2">
+        <text>flx_yantar_guide_route_agroprom</text>
+        <next>20</next>
+      </phrase>
+      <phrase id="20">
+        <text>flx_yantar_guide_confirm_agroprom</text>
+        <next>40</next>
+        <next>60</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="40">
+        <text>flx_yantar_guide_pay</text>
+        <precondition>flx_yantar_guide_travel.can_agroprom</precondition>
+        <action>flx_yantar_guide_travel.go_agroprom</action>
+      </phrase>
+      <phrase id="60">
+        <text>flx_yantar_guide_no_money</text>
+        <precondition>flx_yantar_guide_travel.cannot_agroprom</precondition>
+      </phrase>
+      <phrase id="3">
+        <text>flx_yantar_guide_route_garbage</text>
+        <next>21</next>
+      </phrase>
+      <phrase id="21">
+        <text>flx_yantar_guide_confirm_garbage</text>
+        <next>41</next>
+        <next>61</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="41">
+        <text>flx_yantar_guide_pay</text>
+        <precondition>flx_yantar_guide_travel.can_garbage</precondition>
+        <action>flx_yantar_guide_travel.go_garbage</action>
+      </phrase>
+      <phrase id="61">
+        <text>flx_yantar_guide_no_money</text>
+        <precondition>flx_yantar_guide_travel.cannot_garbage</precondition>
+      </phrase>
+      <phrase id="4">
+        <text>flx_yantar_guide_route_bar</text>
+        <next>22</next>
+      </phrase>
+      <phrase id="22">
+        <text>flx_yantar_guide_confirm_bar</text>
+        <next>42</next>
+        <next>62</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="42">
+        <text>flx_yantar_guide_pay</text>
+        <precondition>flx_yantar_guide_travel.can_bar</precondition>
+        <action>flx_yantar_guide_travel.go_bar</action>
+      </phrase>
+      <phrase id="62">
+        <text>flx_yantar_guide_no_money</text>
+        <precondition>flx_yantar_guide_travel.cannot_bar</precondition>
+      </phrase>
+      <phrase id="5">
+        <text>flx_yantar_guide_route_cordon</text>
+        <next>23</next>
+      </phrase>
+      <phrase id="23">
+        <text>flx_yantar_guide_confirm_cordon</text>
+        <next>43</next>
+        <next>63</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="43">
+        <text>flx_yantar_guide_pay</text>
+        <precondition>flx_yantar_guide_travel.can_cordon</precondition>
+        <action>flx_yantar_guide_travel.go_cordon</action>
+      </phrase>
+      <phrase id="63">
+        <text>flx_yantar_guide_no_money</text>
+        <precondition>flx_yantar_guide_travel.cannot_cordon</precondition>
+      </phrase>
+      <phrase id="6">
+        <text>flx_yantar_guide_route_warehouses</text>
+        <next>24</next>
+      </phrase>
+      <phrase id="24">
+        <text>flx_yantar_guide_confirm_warehouses</text>
+        <next>44</next>
+        <next>64</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="44">
+        <text>flx_yantar_guide_pay</text>
+        <precondition>flx_yantar_guide_travel.can_warehouses</precondition>
+        <action>flx_yantar_guide_travel.go_warehouses</action>
+      </phrase>
+      <phrase id="64">
+        <text>flx_yantar_guide_no_money</text>
+        <precondition>flx_yantar_guide_travel.cannot_warehouses</precondition>
+      </phrase>
+      <phrase id="7">
+        <text>flx_yantar_guide_route_cemetery</text>
+        <next>25</next>
+      </phrase>
+      <phrase id="25">
+        <text>flx_yantar_guide_confirm_cemetery</text>
+        <next>45</next>
+        <next>65</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="45">
+        <text>flx_yantar_guide_pay</text>
+        <precondition>flx_yantar_guide_travel.can_cemetery</precondition>
+        <action>flx_yantar_guide_travel.go_cemetery</action>
+      </phrase>
+      <phrase id="65">
+        <text>flx_yantar_guide_no_money</text>
+        <precondition>flx_yantar_guide_travel.cannot_cemetery</precondition>
+      </phrase>
+      <phrase id="8">
+        <text>flx_yantar_guide_route_marsh</text>
+        <next>26</next>
+      </phrase>
+      <phrase id="26">
+        <text>flx_yantar_guide_confirm_marsh</text>
+        <next>46</next>
+        <next>66</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="46">
+        <text>flx_yantar_guide_pay</text>
+        <precondition>flx_yantar_guide_travel.can_marsh</precondition>
+        <action>flx_yantar_guide_travel.go_marsh</action>
+      </phrase>
+      <phrase id="66">
+        <text>flx_yantar_guide_no_money</text>
+        <precondition>flx_yantar_guide_travel.cannot_marsh</precondition>
+      </phrase>
+      <phrase id="9">
+        <text>flx_yantar_guide_route_jupiter</text>
+        <next>27</next>
+      </phrase>
+      <phrase id="27">
+        <text>flx_yantar_guide_confirm_jupiter</text>
+        <next>47</next>
+        <next>67</next>
+        <next>90</next>
+      </phrase>
+      <phrase id="47">
+        <text>flx_yantar_guide_pay</text>
+        <precondition>flx_yantar_guide_travel.can_jupiter</precondition>
+        <action>flx_yantar_guide_travel.go_jupiter</action>
+      </phrase>
+      <phrase id="67">
+        <text>flx_yantar_guide_no_money</text>
+        <precondition>flx_yantar_guide_travel.cannot_jupiter</precondition>
+      </phrase>
+      <phrase id="90">
+        <text>flx_yantar_guide_cancel</text>
+      </phrase>
+    </phrase_list>
+  </dialog>
+</game_dialogs>

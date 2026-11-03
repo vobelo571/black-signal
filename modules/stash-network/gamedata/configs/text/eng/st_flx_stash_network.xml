@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<string_table>
+  <string id="flx_sn_title"><text>Storage network</text></string>
+  <string id="flx_sn_role"><text>Container role</text></string>
+  <string id="flx_sn_off"><text>Disabled</text></string>
+  <string id="flx_sn_intake"><text>Intake</text></string>
+  <string id="flx_sn_receive"><text>Receiver</text></string>
+  <string id="flx_sn_network"><text>Network</text></string>
+  <string id="flx_sn_ammo"><text>Ammunition</text></string>
+  <string id="flx_sn_medical"><text>Medicine</text></string>
+  <string id="flx_sn_mutant"><text>Mutant meat and parts</text></string>
+  <string id="flx_sn_food"><text>Food and drinks</text></string>
+  <string id="flx_sn_artefact"><text>Artefacts</text></string>
+  <string id="flx_sn_weapon"><text>Weapons and grenades</text></string>
+  <string id="flx_sn_outfit"><text>Outfits and helmets</text></string>
+  <string id="flx_sn_repair"><text>Repair and parts</text></string>
+  <string id="flx_sn_device"><text>Devices</text></string>
+  <string id="flx_sn_misc"><text>Other</text></string>
+  <string id="flx_sn_nearby"><text>Other nearby containers</text></string>
+  <string id="flx_sn_meters"><text>m</text></string>
+  <string id="flx_sn_close"><text>Done</text></string>
+  <string id="flx_sn_categories"><text>Receiver categories - select any number</text></string>
+  <string id="flx_sn_help"><text>Intakes immediately send deposited items to receivers on the same network within 50 m.
+Items without a receiver stay in the intake. Your inventory is never scanned.
+Click role or network to change it. Settings are stored in your save.</text></string>
+  <string id="flx_sn_open_box"><text>Open container</text></string>
+  <string id="flx_sn_pickup_box"><text>Pick up container and contents</text></string>
+  <string id="flx_sn_pickup_help"><text>Take the container and all items into your inventory</text></string>
+  <string id="flx_sn_manage_box"><text>Container menu</text></string>
+  <string id="flx_sn_connections_help"><text>Configure network, container role and item categories</text></string>
+  <string id="flx_sn_storage_only"><text>Available for player-owned storage containers</text></string>
+</string_table>

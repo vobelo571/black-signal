@@ -1,0 +1,3076 @@
+-- PDA Taskboard Tab — Lazy Loading + Background Generation
+-- Flow: Refresh → scan NPCs → sort by distance
+--   immediate: nearest N NPCs → generate task IDs → render categories
+--   background: remaining NPCs → batch process → stable merge → final re-render
+--   Click category → lazy-prepare descriptions for that category only
+
+local LAYOUT = {
+    WINDOW_W                     = 1024,
+    WINDOW_H                     = 768,
+    CATEGORY_CARD_W              = 200,
+    CATEGORY_CARD_H              = 76,
+    TASK_CARD_W                  = 564,
+    TASK_CARD_H                  = 112,
+    DETAILS_SCROLL_THRESHOLD     = 76,
+    DESCRIPTION_SCROLL_THRESHOLD = 36,
+}
+
+local TURN_IN_CATEGORY  = "turn_in"
+local CANCEL_CATEGORY   = "cancel"
+local GUIDE_CATEGORY    = "guide_task"
+local GUIDE_TASK_PREFIX = "taskboard_guide_"
+local MAX_COLOR_MATCHES = 2
+
+local REFRESH_COOLDOWN = 3 -- seconds between refreshes
+local MAX_BONUS_STAGES = 5
+local DEFAULT_MAX_BONUS_DAYS = 3
+
+-- Region classification for a modest, capped completion premium.
+-- Regional percentages are peak rates, never multiplied by the time window.
+local TASK_BONUS_BY_LEVEL = {
+    -- South
+    k00_marsh             = 5,
+    marsh                 = 5,
+    l01_escape            = 5,
+    escape                = 5,
+    l02_garbage           = 5,
+    garbage               = 5,
+    l03_agroprom          = 6,
+    l03u_agr_underground  = 6,
+    agroprom              = 6,
+    l04_darkvalley        = 6,
+    l04u_labx18           = 6,
+    k01_darkscape         = 6,
+    darkscape             = 6,
+    darkvalley            = 6,
+
+    -- Center
+    l05_bar               = 8,
+    bar                   = 8,
+    l06_rostok            = 8,
+    rostok                = 8,
+    wild_territory        = 8,
+    yantar                = 9,
+    l07_military          = 10,
+    military              = 10,
+    army_warehouses       = 10,
+    l08_yantar            = 9,
+    l08u_brainlab         = 9,
+    l09_deadcity          = 11,
+    deadcity              = 11,
+    l10_limansk           = 12,
+    limansk               = 12,
+    jupiter               = 12,
+    jupiter_underground   = 12,
+    zaton                 = 12,
+    truck_cemetery        = 12,
+
+    -- North
+    l10_radar             = 14,
+    radar                 = 14,
+    l10_red_forest        = 14,
+    red_forest            = 14,
+    l11_hospital          = 15,
+    hospital              = 15,
+    l11_pripyat           = 16,
+    pripyat               = 16,
+    pripyat_2             = 18,
+    outskirts             = 18,
+    labx8                 = 18,
+    l12_stancia           = 20,
+    l12_stancia_2         = 20,
+    cnpp                  = 20,
+    l12u_sarcofag         = 20,
+    sarcofag              = 20,
+    l12u_control_monolith = 20,
+    monolith_control      = 20,
+    generators            = 20,
+    warlab                = 20,
+}
+
+local DEFAULT_TASK_BONUS_PERCENT = 0
+local RARE_TASK_REPEAT_TIMEOUT = 24 * 60 * 60
+local TASK_BONUS_UI_LABEL = "\193\238\237\243\241: "
+local TASK_BONUS_NEWS_TEXT = "\193\238\237\243\241 \234 \231\224\228\224\237\232\254: "
+local TASK_BONUS_RUB_TEXT = " \240\243\225."
+
+-- BG generation: nearest NPCs processed immediately, rest queued frame-by-frame.
+-- Values exposed as MCM config keys. ~60-100ms per NPC.
+local IMMEDIATE_NPC_THRESHOLD = 30   -- config.immediate_npc_threshold
+local BG_NPCS_PER_FRAME       = 1   -- config.bg_npcs_per_frame
+local BG_FRAME_INTERVAL       = 0.2 -- config.bg_frame_interval (seconds)
+
+local EXCLUDED_TASKS = {
+    ["jup_b19_freedom_yar_task_1"]  = true,
+    ["merc_pri_a18_mech_mlr_task_1"] = true,
+    ["agr_u_bandit_boss_task_1"]     = true,
+}
+
+local EXCLUDED_NPC_SECTIONS = {
+    ["bar_duty_security_squad_leader"] = true,
+}
+
+local SIM_NPC_OVERRIDES = {
+    ["bar_visitors_garik_stalker_guard"]               = true,
+    ["bar_visitors_zhorik_stalker_guard2"]              = true,
+    ["bar_arena_guard"]                                 = true,
+    ["bar_dolg_general_zoneguard_stalker"]              = true,
+    ["mil_smart_terrain_7_7_freedom_bodyguard_stalker"] = true,
+    ["mil_smart_terrain_7_7_freedom_bodyguard2_stalker"] = true,
+}
+
+local CATEGORY_NORMALIZER = {
+    setup_supplies_fetch_task_lostzone_patch = "setup_fetch_task",
+    setup_generic_fetch_task                 = "setup_fetch_task",
+    drx_sl_create_quest_stash               = "setup_bounty_task",
+    setup_dominance_task                    = "setup_assault_task",
+    multifetch_on_job_descr                 = "setup_fetch_task",
+}
+
+local FETCH_CATEGORIES = {
+    ["setup_fetch_task"] = true,
+    ["rest"]             = true,
+}
+
+local FACTION_COLORS = {
+    bandit        = { 255, 200, 200, 200 },
+    freedom       = { 255, 0, 255, 0 },
+    mercenary     = { 255, 0, 130, 255 },
+    clear_sky     = { 255, 0, 180, 255 },
+    ecologist     = { 255, 0, 255, 255 },
+    sin           = { 255, 255, 155, 0 },
+    free_stalkers = { 255, 225, 145, 0 },
+    renegade      = { 255, 255, 200, 0 },
+    duty          = { 255, 255, 0, 0 },
+    monolith      = { 255, 170, 0, 255 },
+    military      = { 255, 120, 190, 0 },
+    unisg         = { 255, 140, 40, 40 },
+    trader        = { 255, 70, 140, 140 },
+}
+
+local STORY_NPC_IDS = { "esc_m_trader", "red_tech_forester" }
+
+local FAULTY_EASTER_EGGS = {
+    "48 61 63 6B 65 64 20 62 79 20 53 65 72 69 6F 75 73",
+    "68 74 74 70 73 3A 2F 2F 77 77 77 2E 79 6F 75 74 75 62 65 2E 63 6F 6D 2F 77 61 74 63 68 3F 76 3D 78 76 46 5A 6A 6F 35 50 67 47 30",
+}
+
+local xml = CScriptXmlInit()
+xml:ParseFile("pda_taskboard.xml")
+
+-- Color System
+
+local Color = {
+    metadata = {},
+    location = {},
+    text     = {},
+    title    = "",
+}
+
+function Color.init()
+    Color.metadata = { utils_xml.get_color("pda_blue"):match("(%d+),(%d+),(%d+),(%d+)") }
+    Color.location = { utils_xml.get_color("pda_green"):match("(%d+),(%d+),(%d+),(%d+)") }
+    Color.text     = { utils_xml.get_color("pda_white"):match("(%d+),(%d+),(%d+),(%d+)") }
+    Color.title    = utils_xml.get_color("pda_yellow")
+end
+
+function Color.wrap(color, text, placeholders)
+    local a, r, g, b = unpack(color)
+    local ta, tr, tg, tb = unpack(Color.text)
+
+    if placeholders then
+        local idx = #placeholders + 1
+        placeholders[idx] = string.format(
+            "%%%%c[%d,%d,%d,%d]%s%%%%c[%d,%d,%d,%d]",
+            a, r, g, b, text, ta, tr, tg, tb
+        )
+        return "{" .. idx .. "}"
+    end
+
+    return string.format(
+        "%%c[%d,%d,%d,%d]%s%%c[%d,%d,%d,%d]",
+        a, r, g, b, text, ta, tr, tg, tb
+    )
+end
+
+-- Configuration
+
+config = {}
+
+local function load_config_defaults()
+    local t = {}
+    local op = pda_taskboard_mcm.op
+    for _, v in ipairs(op.gr) do
+        if v.def ~= nil then t[v.id] = v.def end
+    end
+    return t
+end
+
+local function load_config()
+    config = load_config_defaults()
+    if ui_mcm then
+        for k, _ in pairs(config) do
+            local value = ui_mcm.get("pda_taskboard/" .. k)
+            if value ~= nil then config[k] = value end
+        end
+    end
+    if config.bg_logging == nil then config.bg_logging = false end
+end
+
+-- Locale & Colorizer
+
+local locale = {
+    metadata  = {},
+    factions  = {},
+    locations = {},
+}
+
+local function load_locale()
+    local lang = ui_options.curr_localization()
+    local lang_data = _G["ui_pda_taskboard_colorize_lang_" .. lang]
+        or _G["ui_pda_taskboard_colorize_lang_eng"]
+
+    if not lang_data then
+        config.colorize = false
+        return
+    end
+
+    locale.metadata  = lang_data.METADATA or {}
+    locale.factions  = lang_data.FACTIONS or {}
+    locale.locations = lang_data.LOCATIONS or {}
+end
+
+local function colorize(text, is_wtf)
+    local placeholders = {}
+    local lines = {}
+
+    for line in text:gmatch("[^\r\n]+") do
+        for field, data in pairs(locale.metadata) do
+            for _, pattern in pairs(data) do
+                if not line:match(pattern) then
+                    goto next_pattern
+                end
+
+                if field == "faction" then
+                    local match_count = 0
+                    for faction_key, faction_pattern in pairs(locale.factions) do
+                        if line:match(faction_pattern) then
+                            if is_wtf then
+                                match_count = match_count + 1
+                            end
+                            if match_count > MAX_COLOR_MATCHES then break end
+                            line = line:gsub(faction_pattern, function(m)
+                                return Color.wrap(FACTION_COLORS[faction_key], m)
+                            end)
+                        end
+                    end
+
+                elseif field == "location" then
+                    local match_count = 0
+                    for _, loc_pattern in ipairs(locale.locations) do
+                        if line:match(loc_pattern) then
+                            match_count = match_count + 1
+                            if match_count > MAX_COLOR_MATCHES then break end
+                            line = line:gsub(
+                                "%f[%w\128-\255%(]" .. loc_pattern .. "%f[^%w\128-\255%)]",
+                                function(m)
+                                    return Color.wrap(Color.location, m, placeholders)
+                                end
+                            )
+                        end
+                    end
+                    for i, resolved in ipairs(placeholders) do
+                        line = line:gsub("{" .. i .. "}", resolved)
+                    end
+                    placeholders = {}
+                end
+
+                line = line:gsub(pattern, function(m)
+                    return Color.wrap(Color.metadata, m)
+                end)
+
+                ::next_pattern::
+            end
+        end
+
+        line = line:gsub("%]\\n", "] \\n")
+        table.insert(lines, line)
+    end
+
+    return table.concat(lines, "\\n")
+end
+
+-- Internal State
+
+currently_processed_npc_id = nil
+currently_processed_task_data = nil -- used by add_tasks_details for direct capture
+
+local cancel_tasks        = {}
+local turn_in_tasks       = {}
+local entry_cache         = {}
+local task_bonus_starts   = {}
+local pending_task_premiums = {}
+local capture_next_flag   = false
+local last_refresh_time   = -math.huge
+
+local SCROLL_HITBOX_WIDTH = 20
+local scroll_managed_cards = {}
+local group_managed_cards = {}
+
+-- Detail Capture API (called by z_taskboard_overrides)
+
+function get_tasks_details_capture_next()
+    return capture_next_flag
+end
+
+function set_tasks_details_capture_next(val)
+    capture_next_flag = val
+end
+
+function add_tasks_details(details)
+    capture_next_flag = false
+    if currently_processed_task_data then
+        currently_processed_task_data.captured_details = details
+    end
+end
+
+-- Utility
+
+local function sorted_keys(tab)
+    if type(tab) ~= "table" then return {} end
+    local keys = {}
+    for k in pairs(tab) do table.insert(keys, k) end
+    table.sort(keys)
+    return keys
+end
+
+local function task_offer_key(task_id, npc_id)
+    return tostring(task_id or "") .. "|" .. tostring(npc_id or "")
+end
+
+-- Generated task data is stored by the task scripts in global, per-task-id
+-- slots.  The same template can be offered by several NPCs, so inspecting the
+-- next card overwrites the target selected for the previous one.  Keep a copy
+-- on each concrete offer and restore it when that offer is accepted.
+local function copy_runtime_value(value, seen)
+    if type(value) ~= "table" then return value end
+    seen = seen or {}
+    if seen[value] then return seen[value] end
+
+    local result = {}
+    seen[value] = result
+    for k, v in pairs(value) do
+        result[copy_runtime_value(k, seen)] = copy_runtime_value(v, seen)
+    end
+    return result
+end
+
+local function capture_task_runtime_state(task_data)
+    if not task_data or not task_data.task_id or not db or not db.actor then return end
+
+    local task_id = task_data.task_id
+    local state = {}
+    local stored = load_var(db.actor, task_id)
+    if stored ~= nil then
+        state.actor_var = copy_runtime_value(stored)
+    end
+    if axr_task_manager and axr_task_manager.bounties_by_id then
+        state.bounty_id = axr_task_manager.bounties_by_id[task_id]
+    end
+    if igi_generic_task and igi_generic_task.TASK_SETUP then
+        local setup = igi_generic_task.TASK_SETUP[task_id]
+        if setup ~= nil then
+            state.igi_setup = copy_runtime_value(setup)
+        end
+    end
+    task_data.runtime_state = state
+end
+
+local function restore_task_runtime_state(task_data)
+    if not task_data or not task_data.task_id or not db or not db.actor then return false end
+
+    local state = task_data.runtime_state
+    if type(state) ~= "table" then return false end
+    local task_id = task_data.task_id
+    if state.actor_var ~= nil then
+        save_var(db.actor, task_id, copy_runtime_value(state.actor_var))
+    end
+    if state.bounty_id ~= nil and axr_task_manager and axr_task_manager.bounties_by_id then
+        axr_task_manager.bounties_by_id[task_id] = state.bounty_id
+    end
+    if state.igi_setup ~= nil and igi_generic_task and igi_generic_task.TASK_SETUP then
+        igi_generic_task.TASK_SETUP[task_id] = copy_runtime_value(state.igi_setup)
+    end
+    return true
+end
+
+-- Task Bonus
+
+local function current_game_day()
+    if level and level.get_time_days then
+        local ok, days = pcall(level.get_time_days)
+        if ok and days then
+            return math.floor(days)
+        end
+    end
+
+    local tm = game and game.get_game_time and game.get_game_time()
+    if tm then
+        local names = { "day", "Day", "get_day", "GetDay" }
+        for _, name in ipairs(names) do
+            local has_method, method = pcall(function() return tm[name] end)
+            if has_method and method then
+                local ok, day = pcall(function() return method(tm) end)
+                if ok and day then
+                    return math.floor(day)
+                end
+            end
+        end
+    end
+
+    return 0
+end
+
+local function current_game_hour()
+    local days = current_game_day()
+    local hours = 0
+
+    if level and level.get_time_hours then
+        local ok, value = pcall(level.get_time_hours)
+        if ok and value then
+            hours = math.floor(value)
+        end
+    end
+
+    local minutes = 0
+    if level and type(level.get_time_minutes) == "function" then
+        local ok, value = pcall(level.get_time_minutes)
+        if ok and type(value) == "number" then minutes = value end
+    end
+    return days * 24 + hours + minutes / 60
+end
+
+local function task_level_name(npc_id)
+    local npc = npc_id and level.object_by_id(npc_id)
+    if npc and alife then
+        local se = alife():object(npc:id())
+        if se and se.m_game_vertex_id then
+            local ok, name = pcall(function()
+                return alife():level_name(se.m_game_vertex_id)
+            end)
+            if ok and name then
+                return name
+            end
+        end
+    end
+
+    if level and level.name then
+        local ok, name = pcall(level.name)
+        if ok then return name end
+    end
+
+    return nil
+end
+
+local function task_bonus_base_percent(level_name)
+    if not level_name then return DEFAULT_TASK_BONUS_PERCENT end
+    local key = tostring(level_name):lower()
+    local default_percent = TASK_BONUS_BY_LEVEL[key]
+    if not default_percent then return DEFAULT_TASK_BONUS_PERCENT end
+
+    if default_percent <= 6 then
+        return math.max(0, math.min(20, config.task_bonus_south_rate or 5))
+    elseif default_percent <= 12 then
+        return math.max(0, math.min(20, config.task_bonus_center_rate or 8))
+    else
+        return math.max(0, math.min(20, config.task_bonus_north_rate or 12))
+    end
+end
+
+local function task_bonus_key(task_id, npc_id)
+    return task_offer_key(task_id, npc_id)
+end
+
+local function clear_task_bonus_info(task_id, npc_id)
+    task_bonus_starts[task_bonus_key(task_id, npc_id)] = nil
+end
+
+local function parse_ini_boolean(value)
+    if value == nil then return nil end
+    value = tostring(value):lower():gsub("^%s+", ""):gsub("%s+$", "")
+    if value == "true" or value == "1" or value == "yes" or value == "on" then
+        return true
+    end
+    if value == "false" or value == "0" or value == "no" or value == "off" then
+        return false
+    end
+    return nil
+end
+
+--- Rare-task eligibility. A task section may explicitly opt in/out with
+--- `taskboard_bonus = true/false`. Otherwise long repeat cooldowns, storyline
+--- tasks, and unique New Tasks detail dispatchers are treated as rare offers.
+local function get_task_bonus_eligibility(task_id)
+    if not task_id or not task_manager or not task_manager.task_ini then
+        return false, nil
+    end
+
+    local task_ini = task_manager.task_ini
+    local explicit = parse_ini_boolean(
+        task_ini:r_string_ex(task_id, "taskboard_bonus")
+    )
+    if explicit ~= nil then
+        return explicit, explicit and "override" or nil
+    end
+
+    -- Routine deliveries already reimburse item cost. A long repeat cooldown
+    -- alone must not turn buying/reselling supplies into a premium farm.
+    local completion = task_ini:r_string_ex(task_id, "on_complete") or ""
+    local fetch_func = task_ini:r_string_ex(task_id, "fetch_func") or ""
+    if fetch_func ~= "" or completion:find("fetch_reward_and_remove", 1, true) then
+        return false, "delivery"
+    end
+
+    local repeat_timeout = tonumber(task_ini:r_string_ex(task_id, "repeat_timeout"))
+    if repeat_timeout and repeat_timeout >= RARE_TASK_REPEAT_TIMEOUT then
+        return true, "long_cooldown"
+    end
+
+    if parse_ini_boolean(task_ini:r_string_ex(task_id, "storyline")) == true then
+        return true, "storyline"
+    end
+
+    if task_ini:r_string_ex(task_id, "nta_task_details") then
+        return true, "unique_task"
+    end
+
+    local on_job_descr = task_ini:r_string_ex(task_id, "on_job_descr") or ""
+    if on_job_descr:find("dispatch_nta_", 1, true)
+        or on_job_descr:find("dispatch_intercept_artifact_", 1, true) then
+        return true, "unique_task"
+    end
+
+    return false, nil
+end
+
+local function ensure_task_bonus_info(task_info)
+    if not task_info or not task_info.task_id then return end
+
+    local key = task_bonus_key(task_info.task_id, task_info.npc_id)
+    local state = task_bonus_starts[key]
+    if not state then
+        local eligible, rarity = get_task_bonus_eligibility(task_info.task_id)
+        state = {
+            offered_day       = current_game_day(),
+            offered_game_hour = current_game_hour(),
+            bonus_level       = task_level_name(task_info.npc_id),
+            bonus_eligible    = eligible,
+            bonus_rarity      = rarity,
+        }
+        task_bonus_starts[key] = state
+    elseif state.bonus_eligible == nil then
+        state.bonus_eligible, state.bonus_rarity =
+            get_task_bonus_eligibility(task_info.task_id)
+    end
+    state.bonus_eligible, state.bonus_rarity = get_task_bonus_eligibility(task_info.task_id)
+    state.bonus_base_percent = task_bonus_base_percent(state.bonus_level)
+
+    -- Offer state stores rarity and display data only. Acceptance timestamps
+    -- are deliberately not populated here: the countdown starts in accept_task.
+    task_info.offered_day           = state.offered_day
+    task_info.offered_game_hour     = state.offered_game_hour
+    task_info.bonus_level           = state.bonus_level
+    task_info.bonus_base_percent    = state.bonus_base_percent
+    task_info.bonus_eligible        = state.bonus_eligible
+    task_info.bonus_rarity          = state.bonus_rarity
+end
+
+local function task_bonus_elapsed_days(task_info)
+    if not task_info then return 0 end
+
+    local accepted_hour = task_info.accepted_game_hour
+    local accepted_day = task_info.accepted_day
+    if not accepted_hour and accepted_day then
+        accepted_hour = accepted_day * 24
+    end
+    if not accepted_hour then return 0 end
+
+    return math.max(0, math.floor((current_game_hour() - accepted_hour) / 24))
+end
+
+local function task_bonus_window_hours()
+    return math.max(0, math.min(MAX_BONUS_STAGES,
+        config.task_bonus_window_days or DEFAULT_MAX_BONUS_DAYS)) * 24
+end
+
+local function task_bonus_cash_cap()
+    return math.max(0, math.min(5000, config.task_bonus_cash_cap or 2000))
+end
+
+local function task_bonus_elapsed_hours(info)
+    if not info then return 0 end
+    local started = info.accepted_game_hour or (info.accepted_day and info.accepted_day * 24)
+    return started and math.max(0, current_game_hour() - started) or 0
+end
+
+local function task_bonus_days_remaining(info)
+    return math.max(0, math.ceil((task_bonus_window_hours() - task_bonus_elapsed_hours(info)) / 24))
+end
+
+local function task_bonus_percent(info)
+    if not info or not info.bonus_eligible or info.bonus_paid then return 0 end
+    local window = task_bonus_window_hours()
+    if window <= 0 or task_bonus_cash_cap() <= 0 then return 0 end
+    local base = info.bonus_level and task_bonus_base_percent(info.bonus_level)
+        or math.max(0, math.min(20, info.bonus_base_percent or 0))
+    local elapsed = task_bonus_elapsed_hours(info)
+    -- Give time for travel and returning to the employer. After this grace
+    -- period the optional premium decays smoothly; base payment is untouched.
+    local grace = math.min(24, window / 2)
+    if elapsed <= grace then return base end
+    return base * math.max(0, (window - elapsed) / (window - grace))
+end
+
+local function give_task_bonus(task_info, captured_reward, percent_override)
+    local percent = percent_override or task_bonus_percent(task_info)
+    local bonus = 0
+    if percent > 0 and captured_reward > 0 then
+        bonus = math.min(task_bonus_cash_cap(), math.floor((captured_reward * percent / 100) + 0.5))
+    end
+
+    if bonus > 0 then
+        db.actor:give_money(bonus)
+        db.actor:give_game_news(
+            "PDA",
+            TASK_BONUS_NEWS_TEXT .. bonus .. TASK_BONUS_RUB_TEXT,
+            "ui_inGame2_PDA_icon",
+            0,
+            5000
+        )
+    end
+    log(string.format(
+        "[TB] fast task bonus: task=%s eligible=%s percent=%s reward=%s bonus=%s elapsed=%s remaining=%s",
+        tostring(task_info and task_info.task_id),
+        tostring(task_info and task_info.bonus_eligible), tostring(percent),
+        tostring(captured_reward), tostring(bonus),
+        tostring(task_bonus_elapsed_days(task_info)),
+        tostring(task_bonus_days_remaining(task_info))
+    ))
+    return bonus
+end
+
+-- NPC Scanning
+
+--- Scans nearby friendly NPCs + story NPCs within range, sorted by distance.
+local function scan_nearby_npcs()
+    local radius = config.scanning_range
+    local actor_pos = db.actor:position()
+    local candidates = {}
+
+    level.iterate_nearest(actor_pos, radius, function(obj)
+        local is_friendly_stalker = IsStalker(obj)
+            and obj:alive()
+            and obj:relation(db.actor) ~= game_object.enemy
+
+        if not is_friendly_stalker then return end
+        if EXCLUDED_NPC_SECTIONS[obj:section()] then return end
+
+        local is_companion = obj:has_info("npcx_is_companion")
+        if is_companion and not config.companions_give_tasks then return end
+
+        table.insert(candidates, {
+            npc      = obj,
+            distance = actor_pos:distance_to(obj:position()),
+        })
+    end)
+
+    for _, sid in ipairs(STORY_NPC_IDS) do
+        local story_id = story_objects.object_id_by_story_id[sid]
+        if story_id then
+            local npc = db.storage[story_id] and db.storage[story_id].object
+            if npc and actor_pos:distance_to(npc:position()) <= radius then
+                table.insert(candidates, {
+                    npc      = npc,
+                    distance = actor_pos:distance_to(npc:position()),
+                })
+            end
+        end
+    end
+
+    table.sort(candidates, function(a, b) return a.distance < b.distance end)
+
+    local result = {}
+    for _, entry in ipairs(candidates) do
+        table.insert(result, entry.npc)
+    end
+    return result
+end
+
+-- Task Generation
+
+local function generate_tasks_for_npcs(npc_list)
+    for _, npc in ipairs(npc_list) do
+        local section = npc:section()
+        local is_sim = not not section:find("sim_")
+        local has_override = not not SIM_NPC_OVERRIDES[section]
+
+        currently_processed_npc_id = npc:id()
+        axr_task_manager.generate_available_tasks(npc, is_sim ~= has_override)
+        currently_processed_npc_id = nil
+    end
+end
+
+-- Task Categorization
+
+function get_task_effect(task_id)
+    local task_ini = task_manager.task_ini
+
+    local override = task_ini:r_string_ex(task_id, "task_category_override")
+    if override then return override end
+
+    local raw_effect = task_ini:r_string_ex(task_id, "on_job_descr")
+        or task_ini:r_string_ex(task_id, "fetch_func")
+    local effect = raw_effect and string.gmatch(raw_effect, "=(.*)%(")() or "rest"
+    effect = normalize_task_effect(effect)
+
+    local has_invalid_category = game.translate_string("st_pda_caption_" .. effect):find("_")
+    if has_invalid_category then
+        return "rest", not not raw_effect
+    else
+        return effect, not not raw_effect
+    end
+end
+
+function normalize_task_effect(task_effect)
+    return CATEGORY_NORMALIZER[task_effect] or task_effect
+end
+
+-- Task Data Preparation
+
+local function add_guide_task_offer(result, npc_list)
+    if not tasks_guide or db.actor:has_info("guider_start") then return end
+
+    local guide = tasks_guide.guid
+    if type(guide) ~= "table" or not guide.squad_id or not guide.id_smart then
+        if tasks_guide.l_v then
+            guide = tasks_guide.l_v("guid", {})
+        end
+    end
+    if type(guide) ~= "table" or not guide.squad_id or not guide.id_smart then return end
+
+    -- A guide squad can disappear or be left in an invalid state by the
+    -- simulation. In that case tasks_guide.get_comm_id crashes internally
+    -- while calling squad:commander_id(), so skip the optional guide offer.
+    local npc_id
+    if tasks_guide.get_comm_id then
+        local ok, result = pcall(tasks_guide.get_comm_id, guide.squad_id)
+        if ok then
+            npc_id = result
+        else
+            log("[TB] unable to resolve guide commander: " .. tostring(result))
+        end
+    end
+    if not npc_id then return end
+
+    local npc_found = false
+    for _, npc in ipairs(npc_list) do
+        if npc and npc:id() == npc_id then
+            npc_found = true
+            break
+        end
+    end
+    if not npc_found then return end
+
+    local destination_level = game.translate_string(guide.target_level or "")
+    local destination_point = tostring(guide.description or "")
+    local details = string.format(
+        game.translate_string("st_taskboard_guide_details"),
+        destination_level,
+        destination_point,
+        tonumber(guide.timer) or 0
+    )
+    local task_id = GUIDE_TASK_PREFIX .. tostring(guide.squad_id)
+    local task_data = {
+        npc_id            = npc_id,
+        task_id           = task_id,
+        special_task_type = "guide",
+        money_reward = tonumber(guide.zarplata) or 0,
+        task_description  = details,
+        captured_details  = {
+            task_title   = game.translate_string("st_taskboard_guide_title"),
+            task_details = details,
+            task_icon    = "ui_inGame2_pda_taskboard_custom_category_guide_task",
+        },
+    }
+
+    result[GUIDE_CATEGORY] = result[GUIDE_CATEGORY] or {}
+    table.insert(result[GUIDE_CATEGORY], task_data)
+end
+
+function get_prepared_task_data(npc_list)
+    if type(npc_list) ~= "table" then return {} end
+
+    local result = {}
+    for _, stalker in ipairs(npc_list) do
+        local task_list = (axr_task_manager
+            and axr_task_manager.available_tasks
+            and axr_task_manager.available_tasks[stalker:id()])
+            or {}
+
+        for _, task_id in ipairs(task_list) do
+            if not EXCLUDED_TASKS[task_id] and not blacklist_helper.TaskBlacklist[task_id] then
+                local task_effect, has_details = get_task_effect(task_id)
+                if not result[task_effect] then
+                    result[task_effect] = {}
+                end
+                local task_data = {
+                    npc_id      = stalker:id(),
+                    task_id     = task_id,
+                    has_details = has_details,
+                }
+                ensure_task_bonus_info(task_data)
+                table.insert(result[task_effect], task_data)
+            end
+        end
+    end
+
+    add_guide_task_offer(result, npc_list)
+
+    return result
+end
+
+function clear_duplicate_task_offers(data, sorted_keys_list)
+    local unique_map = {}
+    for _, effect_name in ipairs(sorted_keys_list) do
+        for index, task in ipairs(data[effect_name]) do
+            local offer_key = task_offer_key(task.task_id, task.npc_id)
+            unique_map[offer_key] = {
+                effect_name = effect_name,
+                index       = index,
+            }
+        end
+    end
+
+    -- Do not iterate unique_map with pairs(): Lua does not guarantee table
+    -- iteration order, so every background batch used to reshuffle all cards.
+    -- Walk the source arrays again and keep the same "last duplicate wins"
+    -- semantics while preserving a deterministic category/task order.
+    local deduplicated = {}
+    for _, effect_name in ipairs(sorted_keys_list) do
+        for index, task in ipairs(data[effect_name]) do
+            local offer_key = task_offer_key(task.task_id, task.npc_id)
+            local ref = unique_map[offer_key]
+            if ref and ref.effect_name == effect_name and ref.index == index then
+                if not deduplicated[effect_name] then
+                    deduplicated[effect_name] = {}
+                end
+                table.insert(deduplicated[effect_name], task)
+            end
+        end
+    end
+
+    return deduplicated
+end
+
+-- Task Filtering
+
+local function filter_valid_tasks(data)
+    for key, tasks in pairs(data) do
+        if type(tasks) ~= "table" then
+            data[key] = nil
+        else
+            local i = 1
+            while i <= #tasks do
+                local npc_alive = level.object_by_id(tasks[i].npc_id)
+                if not npc_alive then
+                    table.remove(tasks, i)
+                else
+                    i = i + 1
+                end
+            end
+            if #tasks == 0 then
+                data[key] = nil
+            end
+        end
+    end
+end
+
+-- Task Description Preparation (Heavy — Lazy Loaded)
+
+--- Executes condlist/fetch logic for one task. Triggers give_talk_message2 intercepted by override module.
+local function prepare_task_description(task_data)
+    currently_processed_npc_id = task_data.npc_id
+
+    local task_id = task_data.task_id
+    local task_ini = task_manager.task_ini
+
+    local on_job_descr = task_id and task_ini:r_string_ex(task_id, "on_job_descr")
+    if on_job_descr then
+        local cond = xr_logic.parse_condlist(db.actor, "task_manager", "condlist", on_job_descr)
+        if cond then
+            xr_logic.pick_section_from_condlist(db.actor, db.actor, cond)
+        end
+    end
+
+    local fetch_descr = task_id and task_ini:r_string_ex(task_id, "fetch_descr")
+    if fetch_descr then
+        axr_task_manager.trigger_fetch_func(task_id)
+    end
+
+    task_data.task_description = get_long_task_description(task_data)
+
+    -- Snapshot immediately, while this card's NPC/target is still the active
+    -- one.  Later cards are allowed to reuse and overwrite the same task_id.
+    capture_task_runtime_state(task_data)
+
+    currently_processed_npc_id = nil
+end
+
+function get_long_task_description(task_data)
+    local is_mechanic = task_data.task_id and task_data.task_id:find("mechanic_task")
+    local base_desc = game.translate_string(
+        (not is_mechanic and axr_task_manager.get_fetch_task_description(task_data.task_id))
+        or axr_task_manager.get_task_job_description(task_data.task_id)
+    )
+    return strformat(base_desc, dialogs._FETCH_TEXT or "")
+end
+
+--- Lazy-loads descriptions for all tasks in a category (first click only).
+--- Sets currently_processed_task_data + capture_next_flag so both direct and
+--- deferred give_talk_message2 calls store details directly into task_data.captured_details.
+function prepare_category_descriptions(tasks)
+    z_taskboard_overrides.StartOverride()
+    for idx, task_data in ipairs(tasks) do
+        if not task_data.task_description then
+            currently_processed_task_data = task_data
+            capture_next_flag = true
+
+            prepare_task_description(task_data)
+
+            capture_next_flag = false
+            currently_processed_task_data = nil
+        end
+    end
+    z_taskboard_overrides.StopOverride()
+
+    -- Execute deferred CTE(0) calls synchronously so captured_details
+    -- is available before DrawTaskList runs.
+    z_taskboard_overrides.ExecuteDeferredCalls()
+
+    -- Remove tasks blacklisted by their on_job_descr effects
+    local i = 1
+    while i <= #tasks do
+        if blacklist_helper.TaskBlacklist[tasks[i].task_id] then
+            table.remove(tasks, i)
+        else
+            i = i + 1
+        end
+    end
+end
+
+-- Task Detail Resolution
+
+local function resolve_igi_details(task_data)
+    if not igi_generic_task then return nil end
+
+    local task_id = task_data.task_id
+    local cache = task_id and igi_generic_task.TASK_SETUP[task_id]
+    if not cache then return nil end
+
+    local fetch_section, fetch_amount
+
+    -- New IGI API
+    if igi_description and igi_description.get_task_text_values then
+        if cache.requirements and cache.entities then
+            for _, entity in ipairs(cache.entities) do
+                if entity.section_name then
+                    fetch_section = entity.section_name
+                    fetch_amount  = entity.amount or 1
+                    break
+                end
+            end
+        end
+
+        local title, text, icon = igi_description.get_task_text_values(cache)
+        local details_text = text or ""
+
+        if fetch_section then
+            task_data.fetch_section = fetch_section
+            task_data.fetch_amount = tonumber(fetch_amount) or 1
+        end
+        if a_ui_pda_inventory_cache and fetch_section then
+            a_ui_pda_inventory_cache.register_fetch_task_params(task_id, fetch_section, fetch_amount)
+            local count_text = a_ui_pda_inventory_cache.get_cached_fetch_count_text(fetch_section, fetch_amount)
+            if count_text ~= "" then
+                details_text = details_text .. "\n" .. count_text
+            end
+        end
+
+        return {
+            task_title   = title,
+            task_details = details_text,
+            task_icon    = icon,
+            faulty       = (text:gsub("\\n", "") == ""),
+            wtf          = true,
+        }
+    end
+
+    -- Old IGI API
+    if igi_description and igi_description.get_postpone_intel then
+        if cache.setup then
+            for _, entry in pairs(cache.setup) do
+                if type(entry) == "table"
+                    and entry.entity_type == "item"
+                    and entry.section_name
+                then
+                    fetch_section = entry.section_name
+                    fetch_amount  = entry.amount or entry.how_much or 1
+                    break
+                end
+            end
+        end
+
+        local igi_details = igi_description.get_postpone_intel(cache)
+        local details_text = igi_details.text or ""
+
+        if fetch_section then
+            task_data.fetch_section = fetch_section
+            task_data.fetch_amount = tonumber(fetch_amount) or 1
+        end
+        if a_ui_pda_inventory_cache and fetch_section then
+            a_ui_pda_inventory_cache.register_fetch_task_params(task_id, fetch_section, fetch_amount)
+            local count_text = a_ui_pda_inventory_cache.get_cached_fetch_count_text(fetch_section, fetch_amount)
+            if count_text ~= "" then
+                details_text = details_text .. "\n" .. count_text
+            end
+        end
+
+        return {
+            task_title   = igi_details.caption,
+            task_details = details_text,
+            task_icon    = igi_details.icon,
+            faulty       = (details_text:gsub("\\n", "") == ""),
+            wtf          = true,
+        }
+    end
+
+    return nil
+end
+
+function get_task_details_for_ui(task_data)
+    local overrides = z_taskboard_overrides
+    local task_id = task_data.task_id
+
+    -- 1. Direct capture via add_tasks_details
+    if task_data.captured_details then
+        return task_data.captured_details
+    end
+
+    -- 2. IGI system
+    local igi_details = resolve_igi_details(task_data)
+    if igi_details then
+        return igi_details
+    end
+
+    -- 3. Fallback: tasks_info indexed by task_id
+    if task_data.has_details then
+        local by_task_id = overrides.tasks_info[task_id]
+        if by_task_id then
+            return by_task_id
+        end
+
+        -- Faulty: has_details=true but no data found
+        local task_ini = task_manager.task_ini
+        log(string.format(
+            "[FAULTY] task_id=%s has_details=true but no data | "..
+            "on_job_descr=%s fetch_descr=%s captured=%s tasks_info=%s "..
+            "— add task script to OVERRIDABLE_SCRIPTS",
+            tostring(task_id),
+            tostring(not not (task_id and task_ini:r_string_ex(task_id, "on_job_descr"))),
+            tostring(not not (task_id and task_ini:r_string_ex(task_id, "fetch_descr"))),
+            tostring(task_data.captured_details ~= nil),
+            tostring(overrides.tasks_info[task_id] ~= nil)
+        ))
+        return { faulty = true }
+    end
+
+    return false
+end
+
+-- Active Task Management
+
+local function get_active_game_tasks()
+    local tm = task_manager.get_task_manager()
+    if not tm then return {} end
+
+    local tasks = {}
+    for task_id, task in pairs(tm.task_info) do
+        if task and task.t then
+            tasks[task_id] = task
+        end
+    end
+    return tasks
+end
+
+local function purge_stale_cancel_entries()
+    local active = get_active_game_tasks()
+    local i = 1
+    while i <= #cancel_tasks do
+        if not active[cancel_tasks[i].task_info.task_id] then
+            clear_task_bonus_info(cancel_tasks[i].task_info.task_id, cancel_tasks[i].task_info.npc_id)
+            table.remove(cancel_tasks, i)
+        else
+            i = i + 1
+        end
+    end
+end
+
+--- Fetch generators keep a per-NPC choice in tasks_fetch, but also write the
+--- currently inspected choice to global actor pstor variables. Preparing many
+--- offers therefore leaves the last inspected NPC's item in the task runtime.
+--- Restore the concrete card's requirement before accepting/completing it.
+local function restore_fetch_task_runtime_state(task_info)
+    if not task_info or not task_info.task_id or not task_info.fetch_section
+        or not db or not db.actor then
+        return false
+    end
+
+    local task_ini = task_manager and task_manager.task_ini
+    local fetch_func = task_ini
+        and task_ini:r_string_ex(task_info.task_id, "fetch_func")
+    local fetch_var = fetch_func
+        and fetch_func:match("%(([^:%)]+)")
+
+    -- Standard fetch tasks use <task_id>_fetch. Keep this fallback for older
+    -- task packs whose INI effect could not be parsed but whose concrete item
+    -- was captured by a_ui_pda_inventory_cache.
+    if not fetch_var or fetch_var == "" then
+        fetch_var = task_info.task_id .. "_fetch"
+    end
+
+    local amount = tonumber(task_info.fetch_amount) or 1
+    save_var(db.actor, fetch_var, task_info.fetch_section)
+    save_var(db.actor, fetch_var .. "_count", amount)
+
+    log(string.format(
+        "[TB] restored fetch state: task=%s npc=%s var=%s section=%s amount=%s",
+        tostring(task_info.task_id), tostring(task_info.npc_id),
+        tostring(fetch_var), tostring(task_info.fetch_section), tostring(amount)
+    ))
+    return true
+end
+
+function accept_task(task_id, npc_id)
+    local cached = entry_cache[task_offer_key(task_id, npc_id)]
+    if cached and cached.task_data then
+        -- Do not run the random setup effect again here: doing so can select a
+        -- different target than the one printed on the card. Restore the exact
+        -- runtime snapshot captured when the card description was generated.
+        if not restore_task_runtime_state(cached.task_data) then
+            -- Compatibility for a board that was already open when this script
+            -- version was loaded and therefore has no per-card snapshot yet.
+            z_taskboard_overrides.StartOverride()
+            currently_processed_task_data = cached.task_data
+            capture_next_flag = true
+            prepare_task_description(cached.task_data)
+            capture_next_flag = false
+            currently_processed_task_data = nil
+            z_taskboard_overrides.StopOverride()
+            z_taskboard_overrides.ExecuteDeferredCalls()
+        end
+
+        -- Fetch state is also persisted on the concrete card, so make it the
+        -- final authority even if the task pack lost its per-NPC dialog cache.
+        restore_fetch_task_runtime_state(cached.task_data)
+    end
+
+    currently_processed_npc_id = npc_id
+    task_manager.get_task_manager():give_task(task_id, npc_id)
+    currently_processed_npc_id = nil
+
+    if not cached then return end
+
+    local bonus_level = task_level_name(npc_id)
+    local accepted_day = current_game_day()
+    local accepted_game_hour = current_game_hour()
+    local saved_info = {
+        task_id            = task_id,
+        npc_id             = npc_id,
+        task_description   = cached.task_data.task_description,
+        offered_day        = cached.task_data.offered_day,
+        offered_game_hour  = cached.task_data.offered_game_hour,
+        accepted_day       = accepted_day,
+        accepted_game_hour = accepted_game_hour,
+        bonus_level        = cached.task_data.bonus_level or bonus_level,
+        bonus_base_percent = cached.task_data.bonus_base_percent
+            or task_bonus_base_percent(bonus_level),
+        bonus_eligible     = not not cached.task_data.bonus_eligible,
+        bonus_rarity       = cached.task_data.bonus_rarity,
+        bonus_mode         = "premium_v3",
+        bonus_paid         = false,
+        fetch_section      = cached.task_data.fetch_section,
+        fetch_amount       = cached.task_data.fetch_amount,
+    }
+
+    clear_task_bonus_info(task_id, npc_id)
+
+    local npc = level.object_by_id(npc_id)
+    if npc then
+        saved_info.npc_name      = npc:character_name()
+        saved_info.npc_community = npc:character_community()
+        saved_info.npc_icon      = npc:character_icon()
+    end
+
+    pending_task_premiums[task_id] = saved_info
+    table.insert(cancel_tasks, {
+        task_id      = task_id,
+        task_info    = saved_info,
+        task_details = cached.task_details,
+    })
+end
+
+function get_cancel_task_npc_name(task_id, npc_id)
+    for _, entry in ipairs(cancel_tasks) do
+        if entry.task_info.task_id == task_id
+            and (npc_id == nil or entry.task_info.npc_id == npc_id) then
+            if entry.task_info.npc_name and entry.task_info.npc_name ~= "" then
+                return entry.task_info.npc_name
+            end
+            local npc = entry.task_info.npc_id and level.object_by_id(entry.task_info.npc_id)
+            if npc then
+                return npc:character_name()
+            end
+            return task_id
+        end
+    end
+    return task_id
+end
+
+-- Turn-In Task Management
+
+local function npc_uses_sim_tasks(npc)
+    local section = npc:section()
+    local is_sim = not not section:find("sim_")
+    local has_override = not not SIM_NPC_OVERRIDES[section]
+    return is_sim ~= has_override
+end
+
+local function get_turn_in_task_details(task_id, task_info)
+    for _, entry in ipairs(cancel_tasks) do
+        if entry.task_info.task_id == task_id
+            and entry.task_info.npc_id == task_info.npc_id then
+            task_info.task_description = entry.task_info.task_description
+            task_info.npc_name         = entry.task_info.npc_name
+            task_info.npc_community    = entry.task_info.npc_community
+            task_info.npc_icon         = entry.task_info.npc_icon
+            task_info.accepted_day     = entry.task_info.accepted_day
+            task_info.accepted_game_hour = entry.task_info.accepted_game_hour
+            task_info.offered_day      = entry.task_info.offered_day or entry.task_info.accepted_day
+            task_info.offered_game_hour = entry.task_info.offered_game_hour or entry.task_info.accepted_game_hour
+            task_info.bonus_level      = entry.task_info.bonus_level
+            task_info.bonus_base_percent = entry.task_info.bonus_base_percent
+            task_info.bonus_eligible   = entry.task_info.bonus_eligible
+            task_info.bonus_rarity     = entry.task_info.bonus_rarity
+            task_info.bonus_mode       = entry.task_info.bonus_mode
+            return entry.task_details
+        end
+    end
+
+    local cached = z_taskboard_overrides.tasks_info[task_id]
+    if cached then
+        return cached
+    end
+
+    local task_ini = task_manager.task_ini
+    local npc = task_info.npc_id and level.object_by_id(task_info.npc_id)
+    if npc then
+        task_info.npc_name      = npc:character_name()
+        task_info.npc_community = npc:character_community()
+        task_info.npc_icon      = npc:character_icon()
+    end
+    task_info.bonus_level        = task_level_name(task_info.npc_id)
+    task_info.bonus_base_percent = task_bonus_base_percent(task_info.bonus_level)
+
+    return {
+        task_title   = game.translate_string(task_ini:r_string_ex(task_id, "title")),
+        task_details = game.translate_string(
+            task_ini:r_string_ex(task_id, "task_complete_descr")
+            or task_ini:r_string_ex(task_id, "descr")
+            or ""
+        ),
+        task_icon = task_ini:r_string_ex(task_id, "icon"),
+    }
+end
+
+function build_turn_in_tasks(npc_list, allow_stash_transfer)
+    turn_in_tasks = {}
+    if not config.remote_turn_in then return end
+    if not axr_task_manager or not axr_task_manager.generate_finished_tasks then
+        return
+    end
+    if type(npc_list) ~= "table" then
+        return
+    end
+
+    local seen = {}
+    for _, npc in ipairs(npc_list) do
+        local npc_id = npc:id()
+        local sim_flag = npc_uses_sim_tasks(npc)
+        local sim_arg  = sim_flag and true or nil
+
+        -- Repair/lock the runtime requirement of accepted fetch tasks before
+        -- their status functor is evaluated. This also fixes saves made by
+        -- older taskboard versions after another offer overwrote actor pstor.
+        for _, accepted in ipairs(cancel_tasks) do
+            local info = accepted.task_info
+            if info and info.npc_id == npc_id then
+                restore_fetch_task_runtime_state(info)
+            end
+        end
+
+        -- A fetch task is not reported by generate_finished_tasks until its
+        -- items are in the actor inventory. Stage the missing amount from a
+        -- nearby stash first, using the requirement saved when it was accepted.
+        if allow_stash_transfer and a_ui_pda_inventory_cache then
+            for _, accepted in ipairs(cancel_tasks) do
+                local info = accepted.task_info
+                if info and info.npc_id == npc_id and info.fetch_section then
+                    a_ui_pda_inventory_cache.stage_fetch_items_from_stashes(
+                        info.task_id, info.fetch_section, info.fetch_amount
+                    )
+                elseif info and info.npc_id == npc_id then
+                    local text = accepted.task_details
+                        and accepted.task_details.task_details
+                        or info.task_description
+                    a_ui_pda_inventory_cache.stage_fetch_items_from_text(
+                        info.task_id, text
+                    )
+                end
+            end
+        end
+
+        currently_processed_npc_id = npc_id
+        axr_task_manager.generate_finished_tasks(npc, sim_arg)
+        currently_processed_npc_id = nil
+
+        local finished = axr_task_manager.finished_tasks
+            and axr_task_manager.finished_tasks[npc_id]
+        if type(finished) == "table" then
+            for _, task_id in ipairs(finished) do
+                local offer_key = task_offer_key(task_id, npc_id)
+                if task_id and not seen[offer_key]
+                    and not EXCLUDED_TASKS[task_id]
+                    and not (blacklist_helper and blacklist_helper.TaskBlacklist[task_id]) then
+                    seen[offer_key] = true
+                    local task_info = {
+                        task_id = task_id,
+                        npc_id  = npc_id,
+                    }
+                    local task_details = get_turn_in_task_details(task_id, task_info)
+                    table.insert(turn_in_tasks, {
+                        task_id      = task_id,
+                        task_info    = task_info,
+                        task_details = task_details,
+                    })
+                end
+            end
+        end
+    end
+end
+
+local function accept_guide_task(npc_id)
+    if not tasks_guide or db.actor:has_info("guider_start") then return false end
+
+    local npc = npc_id and level.object_by_id(npc_id)
+    if not npc or not tasks_guide.prec_1 or not tasks_guide.prec_1(db.actor, npc) then
+        return false
+    end
+
+    local ok, err = pcall(function()
+        tasks_guide.activate(db.actor, npc)
+        dialogs_axr_companion.become_actor_companion(db.actor, npc)
+        db.actor:give_info_portion("guider_start")
+    end)
+    if not ok then
+        log("[TB] guide task activation error: " .. tostring(err))
+        return false
+    end
+    return true
+end
+
+local function find_turn_in_task_info(task_id, npc_id)
+    for _, entry in ipairs(turn_in_tasks) do
+        if entry.task_info and entry.task_info.task_id == task_id
+            and entry.task_info.npc_id == npc_id then
+            return entry.task_info
+        end
+    end
+    return nil
+end
+
+function complete_turn_in_task(task_id, npc_id)
+    if not config.remote_turn_in then return false end
+    local npc = level.object_by_id(npc_id)
+    if not npc then
+        return false
+    end
+    if not axr_task_manager or not axr_task_manager.set_finished_task_complete then
+        return false
+    end
+
+    local sim_flag = npc_uses_sim_tasks(npc)
+    local sim_arg  = sim_flag and true or nil
+
+    currently_processed_npc_id = npc_id
+    axr_task_manager.generate_finished_tasks(npc, sim_arg)
+
+    local finished = axr_task_manager.finished_tasks
+        and axr_task_manager.finished_tasks[npc_id]
+    if type(finished) ~= "table" then
+        currently_processed_npc_id = nil
+        return false
+    end
+
+    local found = false
+    for i, tid in ipairs(finished) do
+        if tid == task_id then
+            if i ~= 1 then
+                table.remove(finished, i)
+                table.insert(finished, 1, task_id)
+            end
+            found = true
+            break
+        end
+    end
+
+    if not found or finished[1] ~= task_id then
+        currently_processed_npc_id = nil
+        return false
+    end
+
+    local ok, err
+    if sim_flag then
+        ok, err = pcall(function()
+            axr_task_manager.set_finished_task_complete(npc, true)
+        end)
+    else
+        ok, err = pcall(function()
+            axr_task_manager.set_finished_task_complete(npc)
+        end)
+    end
+
+    currently_processed_npc_id = nil
+
+    if not ok then
+        log("[TB] task bonus completion error: " .. tostring(err))
+        return false
+    end
+
+    clear_task_bonus_info(task_id, npc_id)
+    return true
+end
+
+local function remove_turn_in_task_entry(task_id, npc_id)
+    for i = #turn_in_tasks, 1, -1 do
+        if turn_in_tasks[i].task_info.task_id == task_id
+            and (npc_id == nil or turn_in_tasks[i].task_info.npc_id == npc_id) then
+            clear_task_bonus_info(task_id, turn_in_tasks[i].task_info.npc_id)
+            table.remove(turn_in_tasks, i)
+        end
+    end
+end
+
+local function remove_cancel_task_entry(task_id, npc_id)
+    for i = #cancel_tasks, 1, -1 do
+        if cancel_tasks[i].task_info.task_id == task_id
+            and (npc_id == nil or cancel_tasks[i].task_info.npc_id == npc_id) then
+            clear_task_bonus_info(task_id, cancel_tasks[i].task_info.npc_id)
+            table.remove(cancel_tasks, i)
+        end
+    end
+end
+
+function get_turn_in_task_npc_name(task_id, npc_id)
+    for _, entry in ipairs(turn_in_tasks) do
+        if entry.task_info.task_id == task_id then
+            if entry.task_info.npc_name and entry.task_info.npc_name ~= "" then
+                return entry.task_info.npc_name
+            end
+        end
+    end
+    local npc = npc_id and level.object_by_id(npc_id)
+    if npc then
+        return npc:character_name()
+    end
+    return get_cancel_task_npc_name(task_id, npc_id)
+end
+
+function clear_cached_data()
+    z_taskboard_overrides.clear_tasks_info()
+    entry_cache         = {}
+    capture_next_flag   = false
+
+    if a_ui_pda_inventory_cache then
+        a_ui_pda_inventory_cache.clear_fetch_task_params()
+    end
+end
+
+-- UI — Category List Element
+
+class "category_list_element" (CUIListBoxItem)
+
+function category_list_element:__init(category, is_active)
+    super()
+    self:SetWndRect(Frect():set(0, 0, LAYOUT.CATEGORY_CARD_W, LAYOUT.CATEGORY_CARD_H))
+    self.category_name = category
+
+    self.frame = xml:InitFrame("category_card", self)
+    self.bg    = xml:InitFrame("category_card_bg", self.frame)
+    self.icon  = xml:InitStatic("category_card_icon", self.frame)
+    self.icon:InitTexture("ui_inGame2_pda_taskboard_custom_category_" .. category)
+    self.label = xml:InitTextWnd("category_card_name", self.frame)
+
+    local label_text = game.translate_string("st_pda_caption_" .. category)
+    if is_active then
+        label_text = " " .. label_text .. " >>"
+        self.label:SetTextColor(utils_xml.get_color("white", true))
+    end
+    self.label:SetText(label_text)
+end
+
+-- UI — Task List Element
+
+local function shuffle_string(str)
+    local chars = {}
+    for i = 1, #str do chars[i] = str:sub(i, i) end
+    for i = #chars, 2, -1 do
+        local j = math.random(1, i)
+        chars[i], chars[j] = chars[j], chars[i]
+    end
+    return table.concat(chars)
+end
+
+local function render_faulty_card(self, task_info)
+    local red   = utils_xml.get_color("red")
+    local white = utils_xml.get_color("white")
+    local egg   = FAULTY_EASTER_EGGS[math.random(1, #FAULTY_EASTER_EGGS)]
+
+    self.npc_icon = xml:InitStatic("task_card_npc_icon", self.frame)
+    self.npc_icon:InitTexture("ui\\ui_noise")
+
+    local npc = task_info.npc_id and level.object_by_id(task_info.npc_id)
+    local npc_name      = npc and npc:character_name()      or task_info.npc_name      or ""
+    local npc_community = npc and npc:character_community()  or task_info.npc_community or ""
+
+    self.npc_info = xml:InitTextWnd("task_card_npc_info", self.frame)
+    self.npc_info:SetText(shuffle_string(
+        npc_name .. "\\n"
+        .. game.translate_string("ui_st_community") .. ": "
+        .. game.translate_string(npc_community)
+    ))
+
+    self.icon = xml:InitStatic("task_card_icon", self.frame)
+    self.icon:InitTexture("ui\\ui_noise")
+
+    self.text_details = xml:InitTextWnd("task_details", self.frame)
+    self.text_details:SetText(red .. "ERROR" .. white)
+
+    self.text_description = xml:InitTextWnd("task_description", nil)
+    self.text_description:SetText(
+        red .. "[PDAOpSys] - Critical Error\\n\\n" .. white
+        .. "GL finding me: " .. egg
+    )
+    self.text_description:AdjustHeightToText()
+    self.desc_scroll = xml:InitScrollView("task_error_scroll", self.frame)
+    self.desc_scroll:AddWindow(self.text_description, true)
+    self.text_description:SetWndPos(vector2():set(0, 0))
+end
+
+local function create_scroll_hitbox(frame)
+    local sp = frame:GetWndPos()
+    local sw = frame:GetWidth() or 0
+    local sx = sp and sp.x - 10 or 0
+    local sy = sp and sp.y or 0
+
+    local hitbox = CUIStatic()
+    hitbox:SetAutoDelete(true)
+    hitbox:SetWndRect(Frect():set(
+        sx + sw - SCROLL_HITBOX_WIDTH, sy,
+        sx + sw, sy + (frame:GetHeight() or 0)
+    ))
+    hitbox:InitTexture("ui\\ui_noise")
+    hitbox:SetStretchTexture(true)
+    hitbox:SetTextureColor(GetARGB(0, 255, 255, 255))
+    frame:AttachChild(hitbox)
+    return hitbox
+end
+
+local function attach_with_scroll(text_wnd, frame, scroll_template, threshold)
+    if text_wnd:GetHeight() > threshold then
+        local scroll = xml:InitScrollView(scroll_template, frame)
+        scroll:AddWindow(text_wnd, true)
+        text_wnd:SetWndPos(vector2():set(0, 0))
+        scroll:Enable(false)
+        return scroll
+    end
+    frame:AttachChild(text_wnd)
+    return nil
+end
+
+class "task_list_element" (CUIListBoxItem)
+
+function task_list_element:__init(task_info, task_details, is_blocked)
+    super()
+    self:SetWndRect(Frect():set(0, 0, LAYOUT.TASK_CARD_W, LAYOUT.TASK_CARD_H))
+    self.task_id    = task_info.task_id
+    self.npc_id     = task_info.npc_id
+    self.special_task_type = task_info.special_task_type
+    self.is_blocked = is_blocked
+    self.is_faulty  = task_details and task_details.faulty or false
+
+    self.frame = xml:InitFrame("task_card", self)
+    local bg_template = is_blocked and "task_card_bg_blocked" or "task_card_bg"
+    self.bg = xml:InitFrame(bg_template, self.frame)
+    self.currency = xml:InitStatic("task_card_currency", self.frame)
+    self.reward = xml:InitTextWnd("task_card_reward", self.frame)
+    self.reward:SetText(taskboard_reward_preview.get(task_info, task_bonus_percent(task_info), task_bonus_cash_cap()))
+
+    if self.is_faulty then
+        render_faulty_card(self, task_info)
+        return
+    end
+
+    local npc             = task_info.npc_id and level.object_by_id(task_info.npc_id)
+    local saved_name      = not npc and task_info.npc_name
+    local saved_community = not npc and task_info.npc_community
+    local saved_icon      = not npc and task_info.npc_icon
+
+    self.npc_info         = xml:InitTextWnd("task_card_npc_info", self.frame)
+    self.text_details     = xml:InitTextWnd("task_details", nil)
+
+    local npc_name      = npc and npc:character_name()      or saved_name
+    local npc_community = npc and npc:character_community()  or saved_community
+    local raw_npc_info  = npc_name
+        and (npc_name .. "\\n"
+             .. game.translate_string("ui_st_community") .. ": "
+             .. game.translate_string(npc_community))
+        or ""
+
+    local task_id   = task_info.task_id
+    local raw_title = task_details.task_title
+        or game.translate_string(task_manager.task_ini:r_string_ex(task_id, "title"))
+        or ""
+
+    local ini_descr   = task_manager.task_ini:r_string_ex(task_id, "descr")
+    local raw_details = task_details.task_details
+        or game.translate_string(ini_descr)
+        or ""
+    raw_details = raw_details:gsub("\\n ", "\\n")
+
+    if ini_descr and raw_details == game.translate_string(ini_descr) then
+        raw_details = ""
+    end
+
+    if config.colorize then
+        self.npc_info:SetTextColor(utils_xml.get_color("pda_white", true))
+        raw_npc_info = colorize(raw_npc_info)
+
+        if raw_title ~= "" then
+            raw_title = Color.title .. raw_title .. utils_xml.get_color("pda_white")
+        end
+        if raw_details ~= "" then
+            raw_details = colorize(raw_details, task_details.wtf)
+        end
+        self.text_details:SetTextColor(utils_xml.get_color("pda_white", true))
+    end
+
+    local npc_icon_name = npc and npc:character_icon() or saved_icon or "ui\\ui_noise"
+    self.npc_icon = xml:InitStatic("task_card_npc_icon", self.frame)
+    self.npc_icon:InitTexture(npc_icon_name)
+
+    self.npc_info:SetText(raw_npc_info)
+
+    self.icon = xml:InitStatic("task_card_icon", self.frame)
+    self.icon:InitTexture(
+        task_details.task_icon
+        or task_manager.task_ini:r_string_ex(task_id, "icon")
+        or "ui\\ui_noise"
+    )
+
+    local bonus_percent = task_bonus_percent(task_info)
+    local bonus_line = ""
+    if bonus_percent > 0 then
+        bonus_line = " \\n" .. TASK_BONUS_UI_LABEL .. bonus_percent .. "%"
+    end
+
+    local details_content = raw_title .. bonus_line .. " \\n" .. raw_details
+    self.text_details:SetText(details_content)
+    self.text_details:AdjustHeightToText()
+
+    local details_pos = self.text_details:GetWndPos()
+    self.text_details:SetWndPos(vector2():set(
+        details_pos.x,
+        details_pos.y + math.max(0, self.icon:GetHeight() - self.text_details:GetHeight())
+    ))
+
+    self.details_scroll = attach_with_scroll(
+        self.text_details, self.frame,
+        "task_details_scrollbar", LAYOUT.DETAILS_SCROLL_THRESHOLD
+    )
+
+    local scroll = self.details_scroll
+    if scroll then
+        self.scroll_hitbox = create_scroll_hitbox(self.frame)
+        table.insert(scroll_managed_cards, self)
+    end
+end
+
+class "npc_task_group_element" (CUIListBoxItem)
+
+local GROUP_TASK_ROWS = 2
+
+local function clean_group_task_line(text)
+    if not text then return "" end
+    text = tostring(text)
+    text = text:gsub("\\n", "\n")
+    text = text:gsub("%s+", " ")
+    text = text:gsub("^%s+", ""):gsub("%s+$", "")
+    return text
+end
+
+local function get_group_task_summary(entry)
+    local task_info = entry.task_data or entry.task_info or {}
+    local task_details = entry.task_details or {}
+    local source = task_details.task_details or task_info.task_description or ""
+    source = tostring(source):gsub("\\n", "\n")
+
+    local group_line = ""
+    local location_line = ""
+    for line in source:gmatch("([^\n]+)") do
+        line = clean_group_task_line(line)
+        if line ~= "" then
+            local lower = line:lower()
+            if group_line == "" and (line:find("\195\240\243\239")
+                or line:find("\227\240\243\239")
+                or lower:find("faction") or lower:find("group")) then
+                group_line = line
+            elseif location_line == "" and (line:find("\204\229\241\242\238\237\224\245")
+                or line:find("\236\229\241\242\238\237\224\245")
+                or lower:find("location")) then
+                location_line = line
+            end
+        end
+    end
+    if group_line ~= "" then
+        if location_line ~= "" then
+            return group_line .. " / " .. location_line
+        end
+        return group_line
+    end
+
+    local fallback = ""
+    local secondary = ""
+    for line in source:gmatch("([^\n]+)") do
+        line = clean_group_task_line(line)
+        if line ~= "" then
+            local lower = line:lower()
+            if line:find("\236\229\241\242\238\237\224\245")
+                or line:find("\204\229\241\242\238\237\224\245") then
+                return line
+            end
+            if secondary == "" and (line:find("\242\240\229\225")
+                or line:find("\210\240\229\225")
+                or line:find("\232\236\255:")
+                or line:find("\200\236\255:")) then
+                secondary = line
+            end
+            if lower:find("местонах") or lower:find("location")
+                or lower:find("target") then
+                return line
+            end
+            if secondary == "" and (lower:find("треб")
+                or lower:find("name:") or lower:find("имя:")) then
+                secondary = line
+            end
+            if fallback == "" and not lower:find("x0 ") then
+                fallback = line
+            end
+        end
+    end
+
+    return secondary ~= "" and secondary or fallback
+end
+
+-- View state is independent of the generated task entries and survives redraws.
+local group_view_state = {}
+local function group_entry_key(entry)
+    local info = entry.task_data or entry.task_info or {}
+    return tostring(info.task_id or "") .. ":" .. tostring(info.npc_id or "")
+end
+
+local function plain_group_text(value)
+    return clean_group_task_line(value):gsub("%%c%[[^%]]*%]", "")
+end
+
+-- Measure using the active game font. Ellipsis is ASCII, like the game text API.
+local function fit_group_text(wnd, value, max_height)
+    local text = plain_group_text(value)
+    wnd:SetText(text)
+    wnd:AdjustHeightToText()
+    while wnd:GetHeight() > max_height and #text > 0 do
+        local shorter = text:gsub("%s+%S+$", "")
+        if shorter == text then shorter = text:sub(1, math.max(0, #text - 4)) end
+        text = shorter
+        wnd:SetText(text .. "...")
+        wnd:AdjustHeightToText()
+    end
+    wnd:SetWndSize(vector2():set(wnd:GetWidth(), max_height))
+end
+
+-- Captured captions can be blank (or contain only color tags). Lua treats
+-- an empty string as true, so an `or` chain is not sufficient here.
+local function group_task_full_title(info, details)
+    local function caption(value)
+        if type(value) ~= "string" then return nil end
+        local result = plain_group_text(game.translate_string(value) or value)
+        if result:find("%S") then return result end
+    end
+    local captured = caption(details.task_title)
+    if captured then return captured end
+    local id = info.task_id
+    local key = id and task_manager.task_ini:r_string_ex(id, "title")
+    local configured = key and caption(game.translate_string(key))
+    if configured then return configured end
+    return caption(id) or game.translate_string("st_tb_task")
+end
+
+-- Several task packs put the same description in both fields. Merge their
+-- lines without repeating text already shown in the header/summary. Match
+-- rendered text, so color tags and either newline format cannot hide duplicates.
+local function group_task_body_text(info, details, title, summary)
+    local seen, output = {}, {}
+    for _, value in ipairs({title or "", summary or ""}) do
+        local key = plain_group_text(value)
+        if key ~= "" then seen[key] = true end
+    end
+    local function append(value)
+        if type(value) ~= "string" then return end
+        local source_keys = {}
+        value = value:gsub("\r\n", "\n"):gsub("\\n", "\n")
+        for line in value:gmatch("[^\n]+") do
+            local key = plain_group_text(line)
+            if key ~= "" and not seen[key] then
+                output[#output + 1] = line
+                source_keys[key] = true
+            end
+        end
+        for key in pairs(source_keys) do seen[key] = true end
+    end
+    append(details.task_details)
+    append(info.task_description)
+    return table.concat(output, "\\n")
+end
+
+local function group_place(wnd, x, y, w, h)
+    wnd:SetWndPos(vector2():set(x, y))
+    wnd:SetWndSize(vector2():set(w, h))
+    return wnd
+end
+
+function npc_task_group_element:__init(group, is_blocked)
+    super()
+    self.group_entries = group.entries
+    self.group_key = group.key
+    self.group_rows = {}
+    local state = group_view_state[group.key]
+    if not state then
+        state = { expanded = false }
+        group_view_state[group.key] = state
+    end
+    self.view_state = state
+    self.frame = xml:InitFrame("tb_npc_block", self)
+    self.bg = xml:InitFrame("tb_npc_background", self.frame)
+    local first = group.entries[1].task_data or group.entries[1].task_info
+    local npc = first.npc_id and level.object_by_id(first.npc_id)
+    local name = npc and npc:character_name() or first.npc_name or ""
+    local community = npc and npc:character_community() or first.npc_community or ""
+    self.npc_icon = xml:InitStatic("tb_npc_portrait", self.frame)
+    self.npc_icon:InitTexture(npc and npc:character_icon() or first.npc_icon or "ui\\ui_noise")
+    local heading = xml:InitTextWnd("tb_npc_name", self.frame)
+    fit_group_text(heading, name, 18)
+    local sub = xml:InitTextWnd("tb_npc_subtitle", self.frame)
+    fit_group_text(sub, game.translate_string(community) .. " / "
+        .. strformat(game.translate_string("st_tb_task_count"), #group.entries), 18)
+
+    local count = state.expanded and #group.entries or math.min(#group.entries, GROUP_TASK_ROWS)
+    local y = 64
+    for i = 1, count do
+        local entry = group.entries[i]
+        local info = entry.task_data or entry.task_info
+        local details = entry.task_details or {}
+        local selected = state.detail_key == group_entry_key(entry)
+        local title = group_task_full_title(info, details)
+        local row = { entry = entry }
+        row.bg = xml:InitFrame("tb_task_background", self.frame)
+        row.hover = xml:InitFrame("tb_task_hover", self.frame)
+        row.hover:Show(false)
+        local icon = xml:InitStatic("tb_task_icon", self.frame)
+        group_place(icon, 22, y + 10, 42, 32)
+        icon:InitTexture(details.task_icon
+            or task_manager.task_ini:r_string_ex(info.task_id, "icon") or "ui\\ui_noise")
+        local title_wnd = xml:InitTextWnd("tb_task_title", self.frame)
+        group_place(title_wnd, 76, y + 6, 450, 32)
+        title_wnd:SetText(title)
+        title_wnd:AdjustHeightToText()
+        local title_height = math.max(18, title_wnd:GetHeight())
+        title_wnd:SetWndSize(vector2():set(450, title_height))
+        local summary_y = y + 6 + title_height + 4
+        local summary = xml:InitTextWnd("tb_task_summary", self.frame)
+        group_place(summary, 76, summary_y, 450, 18)
+        fit_group_text(summary, get_group_task_summary(entry), 18)
+        local footer = summary_y + 24
+        local fetch_offer = info.fetch_section or group.mode == "setup_fetch_task"
+            or task_manager.task_ini:r_string_ex(info.task_id, "fetch_func")
+            or task_manager.task_ini:r_string_ex(info.task_id, "fetch_descr")
+        if fetch_offer and a_ui_pda_inventory_cache and a_ui_pda_inventory_cache.get_offer_inventory_progress then
+            local source = details.task_details or info.task_description or ""
+            local current, required = a_ui_pda_inventory_cache.get_offer_inventory_progress(info, source)
+            if current ~= nil and required then
+                row.progress = xml:InitTextWnd("tb_task_inventory", self.frame)
+                group_place(row.progress, 76, summary_y + 22, 450, 20)
+                row.stash_progress = xml:InitTextWnd("tb_task_stashes", self.frame)
+                group_place(row.stash_progress, 76, summary_y + 44, 450, 20)
+                row.progress_info, row.progress_source = info, source
+                footer = footer + 44
+            end
+        end
+        local body_y = footer + 4
+        if selected then
+            local body_text = group_task_body_text(info, details, title, summary:GetText())
+            local h = 0
+            if body_text ~= "" then
+                local body = xml:InitTextWnd("tb_task_body", nil)
+                body:SetText(body_text)
+                body:AdjustHeightToText()
+                h = math.max(18, math.min(144, body:GetHeight()))
+                local scroll = xml:InitScrollView("tb_task_body_scroll", self.frame)
+                group_place(scroll, 24, body_y, 508, h)
+                scroll:AddWindow(body, true)
+                body:SetWndPos(vector2():set(0, 0))
+                scroll:Enable(false)
+                row.details_scroll = scroll
+            end
+            local action_y = body_y + h + 6
+            row.action = xml:InitFrame("tb_action_background", self.frame)
+            group_place(row.action, 24, action_y, 508, 24)
+            local action_text = xml:InitTextWnd("tb_action_text", self.frame)
+            group_place(action_text, 30, action_y + 2, 496, 20)
+            local label = "st_tb_accept"
+            if group.mode == CANCEL_CATEGORY then label = "st_tb_cancel"
+            elseif group.mode == TURN_IN_CATEGORY then label = "st_tb_turn_in" end
+            if entry.reached_limit then label = "st_tb_unavailable" end
+            if details.faulty then label = "st_tb_faulty" end
+            action_text:SetText(game.translate_string(label))
+            footer = action_y + 30
+        end
+        local reward = xml:InitTextWnd("task_group_reward", self.frame)
+        group_place(reward, 76, footer, 434, 20)
+        reward:SetText(taskboard_reward_preview.get(info, task_bonus_percent(info), task_bonus_cash_cap()))
+        local currency = xml:InitStatic("task_group_currency", self.frame)
+        group_place(currency, 516, footer + 4, 12, 12)
+        local height = footer + 24 - y
+        group_place(row.bg, 12, y, 530, height)
+        group_place(row.hover, 12, y, 530, height)
+        table.insert(self.group_rows, row)
+        y = y + height + 4
+    end
+    if #group.entries > GROUP_TASK_ROWS then
+        self.more_hitbox = xml:InitFrame("tb_action_background", self.frame)
+        group_place(self.more_hitbox, 12, y, 530, 28)
+        local label = xml:InitTextWnd("tb_action_text", self.frame)
+        group_place(label, 20, y + 4, 514, 20)
+        label:SetText(state.expanded and game.translate_string("st_tb_collapse")
+            or strformat(game.translate_string("st_tb_show_more"), #group.entries - GROUP_TASK_ROWS))
+        y = y + 32
+    end
+    self:UpdateInventoryProgress()
+    self.block_height = y + 8
+    self:SetWndRect(Frect():set(0, 0, LAYOUT.TASK_CARD_W, self.block_height))
+    self.frame:SetWndSize(vector2():set(LAYOUT.TASK_CARD_W, self.block_height))
+    self.bg:SetWndSize(vector2():set(544, self.block_height - 12))
+    table.insert(group_managed_cards, self)
+end
+
+function npc_task_group_element:UpdateInventoryProgress()
+    local now = time_global()
+    if self._inventory_update and now >= self._inventory_update
+        and now - self._inventory_update < 1000 then return end
+    self._inventory_update = now
+    if not a_ui_pda_inventory_cache or not a_ui_pda_inventory_cache.get_offer_inventory_progress then return end
+    for _, row in ipairs(self.group_rows) do
+        if row.progress then
+            local current, required, stashed = a_ui_pda_inventory_cache.get_offer_inventory_progress(
+                row.progress_info, row.progress_source)
+            if current ~= nil and required and
+                (current ~= row.progress_current or required ~= row.progress_required) then
+                row.progress_current, row.progress_required = current, required
+                row.progress:SetText(strformat(game.translate_string("st_tb_inventory_progress"), current, required))
+                local color = current >= required and "pda_green" or (current > 0 and "pda_yellow" or "d_red")
+                row.progress:SetTextColor(utils_xml.get_color(color, true))
+            end
+            stashed = stashed or 0
+            if row.stash_progress and required and
+                (stashed ~= row.stash_current or required ~= row.stash_required) then
+                row.stash_current, row.stash_required = stashed, required
+                row.stash_progress:SetText(strformat(game.translate_string("st_tb_stash_progress"), stashed, required))
+                local color = stashed >= required and "pda_green" or (stashed > 0 and "pda_yellow" or "d_red")
+                row.stash_progress:SetTextColor(utils_xml.get_color(color, true))
+            end
+        end
+    end
+end
+
+-- Hover only paints feedback; it never selects or accepts a task.
+function npc_task_group_element:UpdateHover()
+    for _, row in ipairs(self.group_rows) do
+        row.hover:Show(row.bg:IsCursorOverWindow())
+        if row.details_scroll then
+            row.details_scroll:Enable(row.details_scroll:IsCursorOverWindow())
+        end
+    end
+end
+
+function npc_task_group_element:UpdatePulse()
+end
+
+function npc_task_group_element:HandleClick()
+    if self.more_hitbox and self.more_hitbox:IsCursorOverWindow() then
+        self.view_state.expanded = not self.view_state.expanded
+        return "redraw"
+    end
+    for _, row in ipairs(self.group_rows) do
+        if row.bg:IsCursorOverWindow() then
+            local entry = row.entry
+            if row.action and row.action:IsCursorOverWindow() then
+                local info = entry.task_data or entry.task_info
+                self.active_entry = entry
+                self.task_id, self.npc_id = info.task_id, info.npc_id
+                self.special_task_type = info.special_task_type
+                self.is_blocked = not not entry.reached_limit
+                self.is_faulty = entry.task_details and entry.task_details.faulty or false
+                return "accept"
+            end
+            -- Scroll gestures inside the full description must not collapse it.
+            if row.details_scroll and row.details_scroll:IsCursorOverWindow() then return end
+            local key = group_entry_key(entry)
+            self.view_state.detail_key = self.view_state.detail_key ~= key and key or nil
+            return "redraw"
+        end
+    end
+end
+
+-- Main Controller — PDA Taskboard Tab
+
+local instance = nil
+
+class "pda_taskboard_tab" (CUIScriptWnd)
+
+function pda_taskboard_tab:__init()
+    super()
+    self.selected_category = nil
+    self:InitControls()
+end
+
+function pda_taskboard_tab:InitControls()
+    self:SetWndRect(Frect():set(0, 0, LAYOUT.WINDOW_W, LAYOUT.WINDOW_H))
+
+    self.frame = xml:InitFrame("frame_main", self)
+    xml:InitFrame("frame_button_refresh", self.frame)
+    xml:InitFrame("frame_category_list", self.frame)
+
+    self.btn_refresh = xml:Init3tButton("btn_refresh", self.frame)
+    self:Register(self.btn_refresh, "btn_refresh")
+    self:AddCallback("btn_refresh", ui_events.BUTTON_CLICKED, self.OnBtnRefreshClicked, self)
+
+    self.category_list = xml:InitListBox("category_list", self.frame)
+    self:Register(self.category_list, "category_list")
+    self:AddCallback("category_list", ui_events.LIST_ITEM_CLICKED, self.OnCategoryClicked, self)
+
+    self.task_list = xml:InitListBox("task_list", self.frame)
+    self:Register(self.task_list, "task_list")
+    self:AddCallback("task_list", ui_events.LIST_ITEM_CLICKED, self.OnTaskClicked, self)
+
+    self.status_text = xml:InitTextWnd("status_text", self.frame)
+    self.status_text:Show(false)
+
+    self.cancel_category_shown  = false
+    self.turn_in_category_shown = false
+
+    self.confirm_dialog_bg   = xml:InitFrame("confirm_dialog_bg", self)
+    self.confirm_dialog_text = xml:InitTextWnd("confirm_dialog_text", self)
+    self.btn_confirm_yes     = xml:Init3tButton("btn_confirm_yes", self)
+    self.btn_confirm_no      = xml:Init3tButton("btn_confirm_no", self)
+
+    self:Register(self.btn_confirm_yes, "btn_confirm_yes")
+    self:AddCallback("btn_confirm_yes", ui_events.BUTTON_CLICKED, self.OnBtnConfirmYes, self)
+    self:Register(self.btn_confirm_no, "btn_confirm_no")
+    self:AddCallback("btn_confirm_no", ui_events.BUTTON_CLICKED, self.OnBtnConfirmNo, self)
+
+    self:HideConfirmDialog()
+end
+
+function pda_taskboard_tab:ShowConfirmDialog(task_item, mode)
+    mode = mode or "cancel"
+    local npc_name
+    local template_id
+    if mode == "turn_in" then
+        npc_name    = get_turn_in_task_npc_name(task_item.task_id, task_item.npc_id)
+        template_id = "st_pda_confirm_turn_in_task"
+    else
+        npc_name    = get_cancel_task_npc_name(task_item.task_id, task_item.npc_id)
+        template_id = "st_pda_confirm_cancel_task"
+    end
+    self.confirm_dialog_text:SetText(
+        strformat(game.translate_string(template_id), npc_name)
+    )
+
+    self.confirm_dialog_bg:Show(true)
+    self.confirm_dialog_text:Show(true)
+    self.btn_confirm_yes:Show(true)
+    self.btn_confirm_no:Show(true)
+
+    self.confirm_dialog_visible = true
+    self.confirm_mode           = mode
+    self.pending_task_item      = task_item
+end
+
+function pda_taskboard_tab:HideConfirmDialog()
+    self.confirm_dialog_bg:Show(false)
+    self.confirm_dialog_text:Show(false)
+    self.btn_confirm_yes:Show(false)
+    self.btn_confirm_no:Show(false)
+
+    self.confirm_dialog_visible = false
+    self.confirm_mode           = nil
+    self.pending_task_item      = nil
+end
+
+function pda_taskboard_tab:Update()
+    CUIScriptWnd.Update(self)
+
+    for i = #group_managed_cards, 1, -1 do
+        local card = group_managed_cards[i]
+        if not card or not card.group_rows then
+            table.remove(group_managed_cards, i)
+        else
+            card:UpdateHover()
+            card:UpdateInventoryProgress()
+            card:UpdatePulse()
+        end
+    end
+
+    for i = #scroll_managed_cards, 1, -1 do
+        local card = scroll_managed_cards[i]
+        local hitbox = card.scroll_hitbox
+        if not hitbox then
+            table.remove(scroll_managed_cards, i)
+        else
+            local cursor_over = hitbox:IsCursorOverWindow()
+
+            -- Only toggle Enable when state changes to avoid per-frame C++ calls
+            if card._scroll_active ~= cursor_over then
+                card._scroll_active = cursor_over
+                if card.details_scroll then
+                    card.details_scroll:Enable(cursor_over)
+                end
+                if card.desc_scroll then
+                    card.desc_scroll:Enable(cursor_over)
+                end
+            end
+        end
+    end
+end
+
+function pda_taskboard_tab:OnBtnRefreshClicked()
+    if self.confirm_dialog_visible then return end
+    reset_taskboard(self)
+end
+
+function pda_taskboard_tab:OnBtnConfirmYes()
+    local task_item = self.pending_task_item
+    if not task_item then
+        self:HideConfirmDialog()
+        return
+    end
+
+    if self.confirm_mode == "turn_in" then
+        if complete_turn_in_task(task_item.task_id, task_item.npc_id) then
+            remove_turn_in_task_entry(task_item.task_id, task_item.npc_id)
+            remove_cancel_task_entry(task_item.task_id, task_item.npc_id)
+        end
+        self:HideConfirmDialog()
+
+        if self.selected_category == TURN_IN_CATEGORY then
+            if #turn_in_tasks == 0 then
+                self:DrawCategoryList()
+            else
+                self:DrawTurnInTaskList()
+            end
+        end
+        return
+    end
+
+    if not taskboard_cancel.request(task_item.task_id) then
+        self:HideConfirmDialog()
+        return
+    end
+    pending_task_premiums[task_item.task_id] = nil
+    remove_cancel_task_entry(task_item.task_id, task_item.npc_id)
+    remove_turn_in_task_entry(task_item.task_id, task_item.npc_id)
+
+    self:HideConfirmDialog()
+
+    if #cancel_tasks == 0 then
+        self:DrawCategoryList()
+    else
+        self:DrawCancelTaskList()
+    end
+end
+
+function pda_taskboard_tab:OnBtnConfirmNo()
+    self:HideConfirmDialog()
+end
+
+-- Category List
+
+local visible_categories = {} -- category names currently in UI, reset on full rebuild
+local category_items = {}     -- category_list_element refs for in-place highlight update
+
+local function append_special_categories(pda_tab)
+    if #turn_in_tasks > 0 then
+        local is_active = (TURN_IN_CATEGORY == pda_tab.selected_category)
+        local item = category_list_element(TURN_IN_CATEGORY, is_active)
+        pda_tab.category_list:AddExistingItem(item)
+        category_items[TURN_IN_CATEGORY] = item
+        visible_categories[TURN_IN_CATEGORY] = true
+        pda_tab.turn_in_category_shown = true
+    else
+        pda_tab.turn_in_category_shown = false
+    end
+
+    if #cancel_tasks > 0 then
+        local is_active = (CANCEL_CATEGORY == pda_tab.selected_category)
+        local item = category_list_element(CANCEL_CATEGORY, is_active)
+        pda_tab.category_list:AddExistingItem(item)
+        category_items[CANCEL_CATEGORY] = item
+        visible_categories[CANCEL_CATEGORY] = true
+        pda_tab.cancel_category_shown = true
+    else
+        pda_tab.cancel_category_shown = false
+    end
+end
+
+-- Matches XML: r="200" g="200" b="200"
+local CATEGORY_INACTIVE_COLOR = GetARGB(255, 200, 200, 200)
+
+--- Updates category highlight in-place (preserves scrollbar position).
+--- Uses custom text color + ">>" marker instead of engine selection highlight.
+function pda_taskboard_tab:UpdateCategoryHighlight()
+    self.category_list:SetSelectedIndex(-1)
+
+    for key, item in pairs(category_items) do
+        if item and item.label then
+            local is_active = (key == self.selected_category)
+            local label_text = game.translate_string("st_pda_caption_" .. key)
+            if is_active then
+                label_text = " " .. label_text .. " >>"
+                item.label:SetTextColor(utils_xml.get_color("white", true))
+            else
+                item.label:SetTextColor(CATEGORY_INACTIVE_COLOR)
+            end
+            item.label:SetText(label_text)
+        end
+    end
+end
+
+function pda_taskboard_tab:DrawCategoryList()
+    scroll_managed_cards = {}
+    group_managed_cards = {}
+    category_items = {}
+
+    self.category_list:RemoveAll()
+    self.task_list:RemoveAll()
+    visible_categories = {}
+
+    local data = self.board_data
+    if type(data) ~= "table" then return end
+
+    for _, key in ipairs(sorted_keys(data)) do
+        local is_active = (key == self.selected_category)
+        local item = category_list_element(key, is_active)
+        self.category_list:AddExistingItem(item)
+        category_items[key] = item
+        visible_categories[key] = true
+    end
+
+    append_special_categories(self)
+end
+
+--- Rebuilds category list in sorted order when new categories arrive from BG processing.
+--- Preserves current selection and task list. Returns true if new categories were added.
+function pda_taskboard_tab:DrawCategoryListIncremental()
+    local data = self.board_data
+    if type(data) ~= "table" then return false end
+
+    local new_keys = {}
+    for _, key in ipairs(sorted_keys(data)) do
+        if not visible_categories[key] then
+            table.insert(new_keys, key)
+        end
+    end
+
+    local need_turn_in = #turn_in_tasks > 0 and not visible_categories[TURN_IN_CATEGORY]
+    local need_cancel  = #cancel_tasks > 0 and not visible_categories[CANCEL_CATEGORY]
+
+    if #new_keys == 0 and not need_turn_in and not need_cancel then
+        return false
+    end
+
+    category_items = {}
+    self.category_list:RemoveAll()
+    visible_categories = {}
+
+    for _, key in ipairs(sorted_keys(data)) do
+        local is_active = (key == self.selected_category)
+        local item = category_list_element(key, is_active)
+        self.category_list:AddExistingItem(item)
+        category_items[key] = item
+        visible_categories[key] = true
+    end
+
+    append_special_categories(self)
+
+    -- Intentionally do NOT clear self.task_list — preserve current task view
+
+    return true
+end
+
+-- Task List
+
+local function get_task_npc_group_info(task_info)
+    task_info = task_info or {}
+    return tostring(task_info.npc_id or task_info.npc_name or "")
+end
+
+local function add_grouped_task_entries(task_list, entries, mode)
+    local groups, ordered = {}, {}
+    for _, entry in ipairs(entries) do
+        local info = entry.task_data or entry.task_info
+        local key = tostring(mode or "") .. ":" .. get_task_npc_group_info(info)
+        if not groups[key] then
+            groups[key] = { key = key, entries = {}, mode = mode }
+            table.insert(ordered, groups[key])
+        end
+        table.insert(groups[key].entries, entry)
+    end
+    for _, group in ipairs(ordered) do
+        local item = npc_task_group_element(group, false)
+        -- AddExistingItem overwrites height with m_def_item_height in the engine.
+        -- Set the default immediately before each insertion to preserve its size.
+        task_list:SetItemHeight(item.block_height)
+        task_list:AddExistingItem(item)
+    end
+    task_list:SetItemHeight(LAYOUT.TASK_CARD_H)
+end
+
+function pda_taskboard_tab:RedrawTaskGroups()
+    local scroll = self.task_list:GetCurrentScrollPos()
+    if self.selected_category == CANCEL_CATEGORY then self:DrawCancelTaskList()
+    elseif self.selected_category == TURN_IN_CATEGORY then self:DrawTurnInTaskList()
+    else self:DrawTaskList(self.selected_category) end
+    self.task_list:SetScrollPos(scroll)
+end
+
+function pda_taskboard_tab:DrawTurnInTaskList()
+    local saved_scroll = self._task_view_category == self.selected_category
+        and self.task_list:GetCurrentScrollPos() or 0
+    self._task_view_category = self.selected_category
+    scroll_managed_cards = {}
+    group_managed_cards = {}
+    self.task_list:RemoveAll()
+
+    local entries = {}
+    local i = 1
+    while i <= #turn_in_tasks do
+        local entry = turn_in_tasks[i]
+        local npc_id = entry.task_info.npc_id
+        local npc = npc_id and level.object_by_id(npc_id)
+        if not npc then
+            table.remove(turn_in_tasks, i)
+        else
+            table.insert(entries, {
+                task_info     = entry.task_info,
+                task_details  = entry.task_details,
+                reached_limit = false,
+            })
+            i = i + 1
+        end
+    end
+
+    add_grouped_task_entries(self.task_list, entries, self.selected_category)
+    self.task_list:SetScrollPos(saved_scroll)
+end
+
+function pda_taskboard_tab:DrawCancelTaskList()
+    local saved_scroll = self._task_view_category == self.selected_category
+        and self.task_list:GetCurrentScrollPos() or 0
+    self._task_view_category = self.selected_category
+    scroll_managed_cards = {}
+    group_managed_cards = {}
+    self.task_list:RemoveAll()
+
+    local entries = {}
+    for i = #cancel_tasks, 1, -1 do
+        local entry = cancel_tasks[i]
+        table.insert(entries, {
+            task_info     = entry.task_info,
+            task_details  = entry.task_details,
+            reached_limit = false,
+        })
+    end
+
+    add_grouped_task_entries(self.task_list, entries, self.selected_category)
+    self.task_list:SetScrollPos(saved_scroll)
+end
+
+--- Renders task list for a category. Lazy-prepares descriptions on first access.
+function pda_taskboard_tab:DrawTaskList(category_name)
+    local saved_scroll = self._task_view_category == self.selected_category
+        and self.task_list:GetCurrentScrollPos() or 0
+    self._task_view_category = self.selected_category
+    scroll_managed_cards = {}
+    group_managed_cards = {}
+    self.task_list:RemoveAll()
+
+    local data = self.board_data
+    if type(data) ~= "table" then return false end
+
+    local tasks = data[category_name]
+    if type(tasks) ~= "table" then return false end
+
+    -- Lazy: prepare descriptions only if not yet done
+    local needs_preparation = false
+    for _, task_data in ipairs(tasks) do
+        if not task_data.task_description then
+            needs_preparation = true
+            break
+        end
+    end
+
+    if needs_preparation then
+        prepare_category_descriptions(tasks)
+    end
+
+    local is_fetch_category = FETCH_CATEGORIES[category_name]
+
+    local entries = {}
+    for _, task_data in ipairs(tasks) do
+        local npc = level.object_by_id(task_data.npc_id)
+        if npc then
+            local reached_limit = dialogs.has_tasks_by_npc(npc)
+            local details        = get_task_details_for_ui(task_data) or {}
+            local priority       = 0
+
+            if is_fetch_category and a_ui_pda_inventory_cache then
+                if task_data.fetch_sort_priority ~= nil then
+                    priority = task_data.fetch_sort_priority
+                else
+                    priority = a_ui_pda_inventory_cache.get_fetch_task_sort_priority(
+                        task_data.task_id
+                    )
+                    if not priority or priority == 4 then
+                        local visible_text = details.task_details
+                            or task_data.task_description
+                        priority = a_ui_pda_inventory_cache.get_fetch_text_sort_priority(
+                            visible_text
+                        )
+                    end
+                end
+            end
+
+            table.insert(entries, {
+                task_data     = task_data,
+                task_details  = details,
+                reached_limit = reached_limit,
+                priority      = priority,
+            })
+        end
+    end
+
+    if #entries == 0 then return false end
+
+    if is_fetch_category then
+        for i, entry in ipairs(entries) do
+            entry.original_index = i
+        end
+        table.sort(entries, function(a, b)
+            if a.priority ~= b.priority then
+                return a.priority < b.priority
+            end
+            return a.original_index < b.original_index
+        end)
+    end
+
+    for _, entry in ipairs(entries) do
+        entry_cache[task_offer_key(
+            entry.task_data.task_id,
+            entry.task_data.npc_id
+        )] = entry
+    end
+
+    add_grouped_task_entries(self.task_list, entries, self.selected_category)
+    self.task_list:SetScrollPos(saved_scroll)
+
+    return true
+end
+
+-- List Click Handlers
+
+function pda_taskboard_tab:OnCategoryClicked()
+    if self.confirm_dialog_visible then return end
+
+    local item = self.category_list:GetSelectedItem()
+    if not item then return end
+
+    self.selected_category = item.category_name
+
+    if item.category_name == TURN_IN_CATEGORY then
+        self:UpdateCategoryHighlight()
+        self:DrawTurnInTaskList()
+        if #turn_in_tasks == 0 then
+            self:DrawCategoryList()
+        end
+    elseif item.category_name == CANCEL_CATEGORY then
+        self:UpdateCategoryHighlight()
+        self:DrawCancelTaskList()
+    else
+        self:UpdateCategoryHighlight()
+        local has_tasks = self:DrawTaskList(item.category_name)
+        if not has_tasks then
+            self.board_data[item.category_name] = nil
+            self:DrawCategoryList()
+        end
+    end
+end
+
+function pda_taskboard_tab:OnTaskClicked()
+    if self.confirm_dialog_visible then return end
+
+    local category_name = self.selected_category
+    local task_item     = self.task_list:GetSelectedItem()
+    if not (category_name and task_item) then return end
+
+    if task_item.group_rows then
+        local action = task_item:HandleClick()
+        if action == "redraw" then self:RedrawTaskGroups(); return end
+        if action ~= "accept" then return end
+    end
+
+    if task_item.is_blocked or task_item.is_faulty then return end
+
+    if category_name == TURN_IN_CATEGORY then
+        self:ShowConfirmDialog(task_item, "turn_in")
+        return
+    end
+
+    if category_name == CANCEL_CATEGORY then
+        self:ShowConfirmDialog(task_item, "cancel")
+        return
+    end
+
+    if task_item.special_task_type == "guide" then
+        if not accept_guide_task(task_item.npc_id) then return end
+    else
+        accept_task(task_item.task_id, task_item.npc_id)
+    end
+
+    -- A task template can be offered by several NPCs. All offers are visible
+    -- until the player chooses one; once accepted, the engine activates that
+    -- task_id globally, so remove every alternative for the same template.
+    local cat_removed = false
+    local cat_tasks = self.board_data[category_name]
+    if type(cat_tasks) == "table" then
+        for i = #cat_tasks, 1, -1 do
+            local t = cat_tasks[i]
+            if t.task_id == task_item.task_id then
+                table.remove(cat_tasks, i)
+            end
+        end
+        if #cat_tasks == 0 then
+            self.board_data[category_name] = nil
+            cat_removed = true
+        end
+    end
+
+    if cat_removed then
+        -- Category empty — full rebuild (also clears task list)
+        self:DrawCategoryList()
+    else
+        -- Category still has tasks — incremental category update + task list refresh
+        self:DrawCategoryListIncremental()
+        self:DrawTaskList(category_name)
+    end
+end
+
+-- Background Generation
+
+--- Conditional logger, active only when config.bg_logging is enabled.
+local function bg_log(fmt, ...)
+    if config.bg_logging then
+        printf("[TB] " .. fmt, ...)
+    end
+end
+
+--- BG state: new refresh cancels any running process by incrementing generation.
+local bg_state = {
+    generation      = 0,
+    batch_counter   = 0,
+    queue           = {},
+    pda_tab         = nil,
+    total_bg_npcs   = 0,
+    processed_npcs  = 0,
+}
+
+local function update_bg_status(pda_tab)
+    local state = bg_state
+    if not pda_tab or not pda_tab.status_text then return end
+
+    local processed = state.processed_npcs
+    local total     = state.total_bg_npcs
+
+    if total > 0 and processed < total then
+        pda_tab.status_text:SetText(processed .. "/" .. total)
+        pda_tab.status_text:Show(true)
+    else
+        pda_tab.status_text:Show(false)
+
+    end
+end
+
+--- Processes one background batch. Wrapped in pcall to avoid killing the CTE chain on error.
+local function do_background_batch()
+    local state = bg_state
+    local current_gen = state.generation
+    local queue = state.queue
+    local pda_tab = state.pda_tab
+
+    if current_gen ~= bg_state.generation then
+        bg_log("stale callback gen=%d current=%d — skipped", current_gen, bg_state.generation)
+        return
+    end
+    if not pda_tab or not queue or #queue == 0 then
+        bg_log("no pda_tab or empty queue gen=%d — done", current_gen)
+        if pda_tab then update_bg_status(pda_tab) end
+        return
+    end
+
+    local threshold = config.bg_npcs_per_frame or BG_NPCS_PER_FRAME
+    local remaining = #queue
+    local batch = {}
+    for i = 1, math.min(threshold, remaining) do
+        table.insert(batch, table.remove(queue, 1))
+    end
+    state.processed_npcs = state.processed_npcs + #batch
+
+    local t0 = os.clock()
+    generate_tasks_for_npcs(batch)
+    local t_gen = os.clock()
+
+    -- Merge new tasks into existing board_data
+    local new_data = get_prepared_task_data(batch)
+    local existing = pda_tab.board_data
+    if type(existing) ~= "table" then existing = {} end
+
+    local new_task_count = 0
+    for effect_name, tasks in pairs(new_data) do
+        if not existing[effect_name] then
+            existing[effect_name] = {}
+        end
+        for _, task in ipairs(tasks) do
+            table.insert(existing[effect_name], task)
+            new_task_count = new_task_count + 1
+        end
+    end
+
+    existing = clear_duplicate_task_offers(existing, sorted_keys(existing))
+    filter_valid_tasks(existing)
+    local t_merge = os.clock()
+
+    local total_tasks = 0
+    local total_categories = 0
+    for effect_name, tasks in pairs(existing) do
+        total_categories = total_categories + 1
+        total_tasks = total_tasks + #tasks
+    end
+
+    pda_tab.board_data = existing
+
+    -- Add newly discovered categories immediately, but keep the opened task
+    -- list frozen until the background scan finishes. Rebuilding it for every
+    -- batch resets the scrollbar and makes cards jump under the cursor.
+    local t_draw = os.clock()
+    if new_task_count > 0 then
+        pda_tab:DrawCategoryListIncremental()
+
+        t_draw = os.clock()
+    end
+
+    bg_log("gen=%d batch=%d/%d | gen=%.1fms merge=%.1fms draw=%.1fms total=%.1fms | +tasks=%d total=%d/%d%s",
+        current_gen, #batch, threshold,
+        (t_gen - t0) * 1000, (t_merge - t_gen) * 1000,
+        (t_draw - t_merge) * 1000, (t_draw - t0) * 1000,
+        new_task_count, total_tasks, total_categories,
+        new_task_count == 0 and " (skip redraw)" or "")
+
+    update_bg_status(pda_tab)
+
+    if #queue > 0 then
+        bg_state.batch_counter = bg_state.batch_counter + 1
+        local interval = config.bg_frame_interval or BG_FRAME_INTERVAL
+        z_taskboard_overrides.original_CreateTimeEvent(
+            "z_taskboard_bg", "b" .. current_gen .. "_" .. bg_state.batch_counter,
+            interval, process_background_batch
+        )
+    else
+        bg_log("gen=%d complete — all background NPCs processed", current_gen)
+        pda_tab.status_text:Show(false)
+
+        -- Publish the complete active category once. This keeps choices stable
+        -- while loading and gives fetch offers one final inventory-aware sort.
+        local active_cat = pda_tab.selected_category
+        if active_cat and active_cat ~= CANCEL_CATEGORY
+            and active_cat ~= TURN_IN_CATEGORY then
+            local cat_tasks = pda_tab.board_data
+                and pda_tab.board_data[active_cat]
+            if type(cat_tasks) == "table" then
+                pda_tab:DrawTaskList(active_cat)
+            end
+        end
+    end
+end
+
+--- CTE callback: wraps batch in pcall to keep chain alive on error.
+function process_background_batch()
+    local ok, err = pcall(do_background_batch)
+    if not ok then
+        bg_log("ERROR: %s", tostring(err))
+        local queue = bg_state.queue
+        if queue and #queue > 0 then
+            bg_state.batch_counter = bg_state.batch_counter + 1
+            local interval = config.bg_frame_interval or BG_FRAME_INTERVAL
+            bg_log("recovering: scheduling next batch after error, remaining=%d", #queue)
+            z_taskboard_overrides.original_CreateTimeEvent(
+                "z_taskboard_bg", "b" .. bg_state.generation .. "_" .. bg_state.batch_counter,
+                interval, process_background_batch
+            )
+        else
+            bg_log("no more NPCs after error — stopping")
+        end
+    end
+    return true
+end
+
+--- Cancels running BG generation by bumping generation; stale callbacks exit on mismatch.
+local function cancel_background_generation()
+    bg_state.generation = bg_state.generation + 1
+    bg_state.queue = {}
+    bg_state.pda_tab = nil
+end
+
+-- Reset Pipeline
+
+--- Board refresh: nearest NPCs immediate, rest in BG. Descriptions loaded lazily on click.
+function reset_taskboard(pda_tab)
+    pda_tab:HideConfirmDialog()
+
+    local current_time = time_global()
+    if current_time - last_refresh_time < REFRESH_COOLDOWN * 1000 then
+        return
+    end
+    last_refresh_time = current_time
+
+    cancel_background_generation()
+
+    clear_cached_data()
+
+    bg_log("=== new refresh ===")
+
+    local t_start = os.clock()
+    local npc_list = scan_nearby_npcs()
+    local t_scan = os.clock()
+
+    -- reset_taskboard is invoked by the explicit Refresh button. This is the
+    -- only point where accepted fetch-task supplies may leave a nearby stash.
+    build_turn_in_tasks(npc_list, true)
+    purge_stale_cancel_entries()
+
+    -- Split into immediate and background groups
+    local threshold = config.immediate_npc_threshold or IMMEDIATE_NPC_THRESHOLD
+    local immediate_npcs = {}
+    local background_npcs = {}
+    for i, npc in ipairs(npc_list) do
+        if i <= threshold then
+            table.insert(immediate_npcs, npc)
+        else
+            table.insert(background_npcs, npc)
+        end
+    end
+
+    -- Phase 1: generate tasks for nearest NPCs
+    generate_tasks_for_npcs(immediate_npcs)
+    local t_gen = os.clock()
+
+    -- Phase 2: build category structure from immediate NPCs
+    pda_tab.board_data = get_prepared_task_data(immediate_npcs)
+    pda_tab.board_data = clear_duplicate_task_offers(
+        pda_tab.board_data,
+        sorted_keys(pda_tab.board_data)
+    )
+    filter_valid_tasks(pda_tab.board_data)
+    local t_prep = os.clock()
+
+    local imm_tasks = 0
+    local imm_cats = 0
+    for effect_name, tasks in pairs(pda_tab.board_data) do
+        imm_cats = imm_cats + 1
+        imm_tasks = imm_tasks + #tasks
+    end
+
+    -- Phase 3: render categories
+    pda_tab:DrawCategoryList()
+    local t_draw = os.clock()
+
+    bg_log("IMMEDIATE | scan=%.1fms gen=%.1fms prep=%.1fms draw=%.1fms FREEZE=%.1fms | npcs=%d/%d tasks=%d/%d",
+        (t_scan - t_start) * 1000, (t_gen - t_scan) * 1000,
+        (t_prep - t_gen) * 1000, (t_draw - t_prep) * 1000,
+        (t_draw - t_start) * 1000,
+        #immediate_npcs, #background_npcs, imm_tasks, imm_cats)
+
+    -- Phase 4: queue remaining NPCs for BG processing
+    if #background_npcs > 0 then
+        bg_state.generation = bg_state.generation + 1
+        bg_state.batch_counter = 0
+        bg_state.queue = background_npcs
+        bg_state.pda_tab = pda_tab
+        bg_state.total_bg_npcs = #background_npcs
+        bg_state.processed_npcs = 0
+
+        update_bg_status(pda_tab)
+
+        local interval = config.bg_frame_interval or BG_FRAME_INTERVAL
+        bg_log("BACKGROUND | gen=%d npcs=%d per_frame=%d interval=%.2fs",
+            bg_state.generation, #background_npcs,
+            config.bg_npcs_per_frame or BG_NPCS_PER_FRAME, interval)
+        bg_state.batch_counter = 1
+        z_taskboard_overrides.original_CreateTimeEvent(
+            "z_taskboard_bg", "b" .. bg_state.generation .. "_1", interval,
+            process_background_batch
+        )
+    else
+        pda_tab.status_text:Show(false)
+    end
+end
+
+-- Singleton Access
+
+function get_ui()
+    if not instance then
+        instance = pda_taskboard_tab()
+    end
+    return instance
+end
+
+-- Hotkey
+
+function on_key_release(key)
+    if key ~= config.taskboard_key then return end
+
+    local pda_menu = ActorMenu.get_pda_menu()
+    local use_3d   = get_console_cmd(1, "g_3d_pda")
+
+    if not pda_menu:IsShown() and db.actor:item_in_slot(8) then
+        if use_3d then db.actor:activate_slot(8)
+        else pda_menu:ShowDialog(true) end
+        pda_menu:SetActiveSubdialog("eptTaskboard")
+    elseif pda_menu:IsShown() then
+        if use_3d then db.actor:activate_slot(0)
+        else pda_menu:HideDialog() end
+    end
+end
+
+-- Save / Load
+
+local function on_save_state(m)
+    local saved = {}
+    for _, entry in ipairs(cancel_tasks) do
+        local ti = entry.task_info
+        local td = entry.task_details
+        if ti and td then
+            table.insert(saved, {
+                task_id = ti.task_id,
+                task_info = {
+                    task_id          = ti.task_id,
+                    npc_id           = ti.npc_id,
+                    task_description = ti.task_description,
+                    npc_name         = ti.npc_name,
+                    npc_community    = ti.npc_community,
+                    npc_icon         = ti.npc_icon,
+                    offered_day      = ti.offered_day or ti.accepted_day,
+                    offered_game_hour = ti.offered_game_hour or ti.accepted_game_hour,
+                    accepted_day     = ti.accepted_day,
+                    accepted_game_hour = ti.accepted_game_hour,
+                    bonus_level      = ti.bonus_level,
+                    bonus_base_percent = ti.bonus_base_percent,
+                    bonus_eligible   = ti.bonus_eligible,
+                    bonus_rarity     = ti.bonus_rarity,
+                    bonus_mode       = ti.bonus_mode,
+                    bonus_paid       = ti.bonus_paid,
+                    fetch_section    = ti.fetch_section,
+                    fetch_amount     = ti.fetch_amount,
+                },
+                task_details = {
+                    task_title   = td.task_title,
+                    task_details = td.task_details,
+                    task_icon    = td.task_icon,
+                    faulty       = td.faulty,
+                    wtf          = td.wtf,
+                },
+            })
+        end
+    end
+    m.tb_cancel_tasks = saved
+    m.tb_task_bonus_starts = task_bonus_starts
+    m.tb_pending_task_premiums = pending_task_premiums
+    m.tb_neutral_cancellations = taskboard_cancel.save_state()
+end
+
+local function on_load_state(m)
+    taskboard_cancel.load_state(m.tb_neutral_cancellations)
+    pending_task_premiums = type(m.tb_pending_task_premiums) == "table"
+        and m.tb_pending_task_premiums or {}
+    local saved = m.tb_cancel_tasks
+    if type(m.tb_task_bonus_starts) == "table" then
+        task_bonus_starts = m.tb_task_bonus_starts
+        for _, state in pairs(task_bonus_starts) do
+            if type(state) == "table" and state.accepted_day and not state.offered_day then
+                state.offered_day = current_game_day()
+                state.offered_game_hour = current_game_hour()
+                state.accepted_day = nil
+                state.accepted_game_hour = nil
+            end
+        end
+    end
+
+    if type(saved) ~= "table" then return end
+
+    for _, entry in ipairs(saved) do
+        if entry.task_info and entry.task_details then
+            if entry.task_info.accepted_day and not entry.task_info.offered_day then
+                entry.task_info.offered_day = entry.task_info.accepted_day
+            end
+            if entry.task_info.accepted_game_hour and not entry.task_info.offered_game_hour then
+                entry.task_info.offered_game_hour = entry.task_info.accepted_game_hour
+            end
+            if entry.task_info.offered_day and not entry.task_info.offered_game_hour then
+                entry.task_info.offered_game_hour = entry.task_info.offered_day * 24
+            end
+            if entry.task_info.accepted_day and not entry.task_info.accepted_game_hour then
+                entry.task_info.accepted_game_hour = entry.task_info.accepted_day * 24
+            end
+            if entry.task_info.bonus_mode ~= "premium_v3" then
+                entry.task_info.bonus_eligible, entry.task_info.bonus_rarity =
+                    get_task_bonus_eligibility(entry.task_info.task_id)
+                entry.task_info.bonus_mode = "premium_v3"
+            end
+            local restored_entry = {
+                task_id      = entry.task_id,
+                task_info    = entry.task_info,
+                task_details = entry.task_details,
+            }
+            table.insert(cancel_tasks, restored_entry)
+            if not restored_entry.task_info.bonus_paid then
+                pending_task_premiums[restored_entry.task_id] = restored_entry.task_info
+            end
+            restore_fetch_task_runtime_state(restored_entry.task_info)
+        end
+    end
+end
+
+-- Run after the real task callback, so both face-to-face and optional PDA
+-- completion use actual quest income. Never infer rewards from later unrelated
+-- changes to the wallet. Only tasks accepted through this board are eligible.
+local bonus_completion_installed = false
+local function install_bonus_completion()
+    if bonus_completion_installed or not task_manager
+        or type(task_manager.task_callback) ~= "function" then return end
+    local original = task_manager.task_callback
+    task_manager.task_callback = function(tsk, state, ...)
+        local id = tsk:get_id()
+        if state ~= task.completed then
+            if state == task.fail then
+                pending_task_premiums[id] = nil
+                taskboard_cancel.prepare(id)
+                local result = original(tsk, state, ...)
+                taskboard_cancel.finish(id)
+                return result
+            end
+            return original(tsk, state, ...)
+        end
+        local manager = task_manager.get_task_manager()
+        local runtime = manager and manager.task_info and manager.task_info[id]
+        local info = runtime and pending_task_premiums[id]
+        if info and runtime.task_giver_id and info.npc_id ~= runtime.task_giver_id then info = nil end
+        if runtime and not info then
+            for _, entry in ipairs(cancel_tasks) do
+                local candidate = entry.task_info
+                if candidate.task_id == id and
+                    (not runtime.task_giver_id or candidate.npc_id == runtime.task_giver_id) then
+                    info = candidate
+                    break
+                end
+            end
+        end
+        if not info or info.bonus_paid then return original(tsk, state, ...) end
+        local percent = task_bonus_percent(info)
+        local before = db.actor and db.actor:money() or 0
+        local result = original(tsk, state, ...)
+        local income = db.actor and math.max(0, db.actor:money() - before) or 0
+        info.bonus_paid = true
+        pending_task_premiums[id] = nil
+        if income > 0 and percent > 0 then
+            local ok, err = pcall(give_task_bonus, info, income, percent)
+            if not ok then log("[TB] premium payout skipped: " .. tostring(err)) end
+        end
+        return result
+    end
+    bonus_completion_installed = true
+end
+
+-- Entry Point
+
+local function on_settings_loaded()
+    install_bonus_completion()
+    taskboard_cancel.resume()
+    load_config()
+    Color.init()
+    load_locale()
+end
+
+function on_game_start()
+    install_bonus_completion()
+    RegisterScriptCallback("save_state", on_save_state)
+    RegisterScriptCallback("load_state", on_load_state)
+    RegisterScriptCallback("on_game_load", on_settings_loaded)
+    RegisterScriptCallback("on_option_change", on_settings_loaded)
+    RegisterScriptCallback("on_key_release", on_key_release)
+end

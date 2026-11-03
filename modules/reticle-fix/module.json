@@ -1,0 +1,16 @@
+{
+  "id": "reticle-fix",
+  "title": "Ракурс и 1П76: исправление сеток",
+  "group": "Исправления",
+  "version": "1.0.0",
+  "description": "Ракурс и 1П76: исправление сеток. Совместимые файлы из исправленной локальной установки.",
+  "requires": [
+    "gamma",
+    "3dss",
+    "mark-switch"
+  ],
+  "notes": "DX11/r3. Проверять с той же версией базовых шейдеров. Диагностические скрипты и кэш не включены.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "410- 3DSS for GAMMA - Redotix99 & Andtheherois & party50"
+}

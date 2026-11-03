@@ -1,0 +1,18 @@
+{
+  "id": "yantar-hunter",
+  "title": "Калибр: снабженец Янтаря",
+  "group": "Персонажи и снаряжение",
+  "version": "1.0.0",
+  "description": "Торговец противомутантными боеприпасами с пятью ступенями репутации.",
+  "requires": [
+    "gamma",
+    "dltx",
+    "hf",
+    "hf-expansion",
+    "hf-more"
+  ],
+  "notes": "Ассортимент рассчитан на текущую баллистику GAMMA; для чистой Anomaly не заявлен.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1012- FLX Yantar Hunter Trader"
+}

@@ -1,0 +1,334 @@
+-- FLX Stash Network. Only explicitly deposited items are routed.
+-- No actor inventory scans, item recreation or offline ALife transfers.
+local RANGE = 50
+local KEY = "flx_stash_network_v1"
+local categories = {"ammo", "medical", "mutant", "food", "artefact", "weapon", "outfit", "repair", "device", "misc"}
+local roles = {"off", "intake", "receive"}
+local started = false
+local pending = {}
+RadialGUI = nil
+local function tr(key) return game.translate_string("flx_sn_" .. key) end
+
+local function registry()
+    local state = alife_storage_manager.get_state()
+    state[KEY] = state[KEY] or {}
+    return state[KEY]
+end
+
+local function owned(box)
+    if not box or box:clsid() ~= clsid.inventory_box_s then return false end
+    local stashes = alife_storage_manager.get_state().player_created_stashes
+    if not (stashes and stashes[box:id()]) then return false end
+    if weapon_showcase and weapon_showcase.valid_stash and weapon_showcase.valid_stash[box:section()] then return false end
+    return true
+end
+
+local function config(box)
+    if not owned(box) then return nil end
+    return se_load_var(box:id(), nil, KEY)
+end
+
+local function settings(box)
+    return config(box) or {role = "off", network = 1, categories = {}}
+end
+
+local function store(box, value)
+    if not owned(box) then return end
+    se_save_var(box:id(), nil, KEY, value)
+    registry()[box:id()] = box:name()
+end
+
+function classify(item)
+    local sec = item:section()
+    local kind = ini_sys:r_string_ex(sec, "kind") or ""
+    if kind == "w_ammo" or IsItem("ammo", sec) then return "ammo" end
+    if kind == "i_medical" then return "medical" end
+    if kind:find("^i_mutant") then return "mutant" end
+    if kind == "i_food" or kind == "i_drink" then return "food" end
+    if kind:find("^i_arty") or IsItem("artefact", sec) then return "artefact" end
+    if kind:find("^w_") then return "weapon" end
+    if kind:find("^o_") then return "outfit" end
+    if kind == "i_tool" or kind == "i_kit" or kind == "i_repair" or kind == "i_upgrade" or kind == "i_part" then return "repair" end
+    if kind == "i_device" then return "device" end
+    return "misc"
+end
+
+local function refresh_inventory()
+    local gui = ui_inventory.GUI
+    if gui and gui:IsShown() then gui:On_Item_Update() end
+end
+
+local function route(source_id, item_id)
+    local source = level.object_by_id(source_id)
+    local item = level.object_by_id(item_id)
+    local cfg = config(source)
+    local parent = item and item:parent()
+    if not (cfg and cfg.role == "intake" and parent and parent:id() == source_id) then return end
+    -- Quest items must stay where the player puts them.
+    if IsItem("quest", item:section()) or ini_sys:r_bool_ex(item:section(), "quest_item", false) then return end
+    local cat = classify(item)
+    local targets = {}
+    for id, name in pairs(registry()) do
+        if id ~= source_id then
+            local box = level.object_by_id(id)
+            local dest = config(box)
+            if box and box:name() == name and dest and dest.role == "receive"
+                and dest.network == cfg.network and dest.categories[cat]
+                and source:position():distance_to(box:position()) <= RANGE then
+                targets[#targets + 1] = {box = box, distance = source:position():distance_to(box:position())}
+            end
+        end
+    end
+    table.sort(targets, function(a, b)
+        if a.distance == b.distance then return a.box:id() < b.box:id() end
+        return a.distance < b.distance
+    end)
+    if targets[1] then
+        -- Existing object is transferred, preserving ammo counts, condition and custom data.
+        source:transfer_item(item, targets[1].box)
+        refresh_inventory()
+    end
+end
+
+function after_move(stash_id, item, mode, bag_from)
+    if mode ~= "loot" or not item or not stash_id then return end
+    if bag_from ~= EDDListType.iActorBag and bag_from ~= EDDListType.iActorSlot then return end
+    local source = level.object_by_id(stash_id)
+    local cfg = config(source)
+    if not (cfg and cfg.role == "intake") then return end
+    local item_id = item:id()
+    if pending[item_id] then return end
+    pending[item_id] = true
+    -- Next engine tick: do not mutate a container while Move All is iterating it.
+    CreateTimeEvent(KEY, tostring(item_id), 0, function()
+        pending[item_id] = nil
+        local ok, err = pcall(route, stash_id, item_id)
+        if not ok then printf("[FLX Stash Network] %s", tostring(err)) end
+        return true
+    end)
+end
+
+local function current_box(gui)
+    if gui.mode ~= "loot" then return nil end
+    local box = gui:GetPartner()
+    if owned(box) then return box end
+end
+
+local function render(gui)
+    local box = current_box(gui)
+    if not box then gui.flx_sn_panel:Show(false); return end
+    local cfg = settings(box)
+    gui.flx_sn_role:TextControl():SetText(tr("role") .. ": " .. tr(cfg.role))
+    gui.flx_sn_network:TextControl():SetText(tr("network") .. ": " .. tostring(cfg.network))
+    for _, cat in ipairs(categories) do
+        gui.flx_sn_categories[cat]:TextControl():SetText((cfg.categories[cat] and "[X]  " or "[  ]  ") .. tr(cat))
+        gui.flx_sn_categories[cat]:Enable(cfg.role == "receive")
+    end
+    local count = 0
+    for id, name in pairs(registry()) do
+        local other = level.object_by_id(id)
+        local dest = config(other)
+        if id ~= box:id() and other and other:name() == name and dest and dest.network == cfg.network
+            and dest.role ~= "off" and box:position():distance_to(other:position()) <= RANGE then count = count + 1 end
+    end
+    gui.flx_sn_status:SetText(tr("nearby") .. ": " .. count .. "  |  " .. RANGE .. " " .. tr("meters"))
+end
+
+local function bind_button(gui, xml, path, parent, name, callback)
+    local button = xml:Init3tButton(path, parent)
+    gui:Register(button, name)
+    gui:AddCallback(name, ui_events.BUTTON_CLICKED, callback, gui)
+    return button
+end
+
+local function add_controls(gui)
+    if gui.flx_sn_button then return end
+    local xml = CScriptXmlInit()
+    xml:ParseFile("flx_stash_network.xml")
+    gui.flx_sn_button = bind_button(gui, xml, "open", gui, "flx_sn_open", function(self)
+        local box = current_box(self)
+        if not box then return end
+        local id = box:id()
+        CreateTimeEvent(KEY, "settings", 0.05, function() ui_flx_stash_network.show(id); return true end)
+    end)
+    gui.flx_sn_panel = xml:InitStatic("panel", gui)
+    xml:InitTextWnd("panel:title", gui.flx_sn_panel)
+    xml:InitTextWnd("panel:help", gui.flx_sn_panel)
+    xml:InitTextWnd("panel:categories", gui.flx_sn_panel)
+    gui.flx_sn_status = xml:InitTextWnd("panel:status", gui.flx_sn_panel)
+    gui.flx_sn_role = bind_button(gui, xml, "panel:role", gui.flx_sn_panel, "flx_sn_role", function(self)
+        local box = current_box(self)
+        if not box then return end
+        local cfg = settings(box)
+        for i, role in ipairs(roles) do if role == cfg.role then cfg.role = roles[i % #roles + 1]; break end end
+        store(box, cfg)
+        render(self)
+    end)
+    gui.flx_sn_network = bind_button(gui, xml, "panel:network", gui.flx_sn_panel, "flx_sn_network", function(self)
+        local box = current_box(self)
+        if not box then return end
+        local cfg = settings(box)
+        cfg.network = cfg.network % 8 + 1
+        store(box, cfg)
+        render(self)
+    end)
+    gui.flx_sn_categories = {}
+    for _, category in ipairs(categories) do
+        local cat = category
+        gui.flx_sn_categories[cat] = bind_button(gui, xml, "panel:" .. cat, gui.flx_sn_panel, "flx_sn_" .. cat, function(self)
+            local box = current_box(self)
+            if not box then return end
+            local cfg = settings(box)
+            cfg.categories[cat] = not cfg.categories[cat]
+            store(box, cfg)
+            render(self)
+        end)
+    end
+    bind_button(gui, xml, "panel:close", gui.flx_sn_panel, "flx_sn_close", function(self)
+        if self.flx_sn_standalone then self:Close() else self.flx_sn_panel:Show(false) end
+    end)
+    gui.flx_sn_button:Show(false)
+    gui.flx_sn_panel:Show(false)
+end
+
+function init_settings_window(gui)
+    add_controls(gui)
+    gui.flx_sn_button:Show(false)
+    gui.flx_sn_panel:Show(true)
+    render(gui)
+end
+
+local function open_inventory(id, show_settings)
+    -- Radial closes after its callback. Defer opening the next dialog until
+    -- that close has completed, otherwise input/UI registration can collide.
+    CreateTimeEvent(KEY, "open_inventory", 0.05, function()
+        local box = level.object_by_id(id)
+        if not owned(box) or not db.actor or db.actor:position():distance_to(box:position()) > 5 then return true end
+        if show_settings then ui_flx_stash_network.show(id)
+        else ui_inventory.start("loot", box) end
+        return true
+    end)
+end
+
+function open_stash_radial(id)
+    local box = level.object_by_id(id)
+    if not owned(box) or Check_UI() or placeable_furniture.in_placing_state() then return end
+    if not db.actor or db.actor:position():distance_to(box:position()) > 5 then return end
+    hide_hud_inventory()
+    -- Reuse the actual furniture wheel, including its layout and base options.
+    RadialGUI = placeable_furniture.create_interact_gui()
+    local function option(key, texture, title, description, action)
+        local data = RadialGUI:GetOption(key)
+        data:SetText({title = title, description = description or ""})
+        data:SetState(arm.States.ENABLED)
+        -- Default callbacks target furniture binders; storage boxes use the
+        -- existing container handlers instead.
+        RadialGUI.callbacks[key] = {}
+        RadialGUI:RegisterCallback(key, action)
+    end
+    option("opt_use", "ui_hf_radial_icon_use", tr("open_box"), "", function() open_inventory(id, false) end)
+    option("opt_pickup", "ui_hf_radial_icon_pickup", tr("pickup_box"), tr("pickup_help"), function()
+        local current = level.object_by_id(id)
+        if owned(current) and db.actor:position():distance_to(current:position()) <= 5 then
+            ui_hud_dotmarks.pick_up_backpack(id)
+        end
+    end)
+    option("opt_connections", "ui_hf_radial_icon_connections", game.translate_string("st_open_connections"),
+        tr("connections_help"), function() open_inventory(id, true) end)
+    local wrapper = bind_hf_base.get_wrapper(id)
+    RadialGUI:GetOption("opt_freeze"):SetState(wrapper and arm.States.ENABLED or arm.States.DISABLED)
+    RadialGUI:DrawOptions()
+    RadialGUI:ShowDialog(true)
+    _GUIs_keyfree["UIRadialMenu"] = true
+    Register_UI("UIRadialMenu", "zzzzzz_flx_stash_network", "RadialGUI")
+end
+
+function setup_stash_prompt(args, mark)
+    if not (mark and owned(level.object_by_id(mark.id))) then return end
+    args.text = tr("manage_box")
+    args.func = function(id) open_stash_radial(id or mark.id) end
+    mark.checked_for_sec = true
+end
+
+local function install_radial_hooks()
+    RegisterScriptCallback("dotmarks_on_setup_sec_interact", setup_stash_prompt)
+    -- Also cover prompts that existed before this script was initialized.
+    RegisterScriptCallback("dotmarks_on_before_secondary_action", function(id, mark, prompt, functor, flags)
+        if prompt and prompt.args and prompt.args.event == "sec_interact" and owned(level.object_by_id(id)) then
+            flags.ret_value = false
+            open_stash_radial(id)
+        end
+    end)
+    local base_create = placeable_furniture.create_interact_gui
+    function placeable_furniture.create_interact_gui()
+        local radial = base_create()
+        radial:RegisterCallback("opt_connections", function()
+            if radial.flx_stash_id then open_inventory(radial.flx_stash_id, true) end
+        end)
+        return radial
+    end
+    local base_update = placeable_furniture.update_radial_gui
+    function placeable_furniture.update_radial_gui(wrapper)
+        base_update(wrapper)
+        local radial = placeable_furniture.RadialGUI
+        if not radial then return end
+        local box = wrapper and wrapper.object
+        radial.flx_stash_id = owned(box) and box:id() or nil
+        local opt = radial:GetOption("opt_connections")
+        if opt then
+            opt:SetState(radial.flx_stash_id and arm.States.ENABLED or arm.States.DISABLED)
+            opt:SetText({title = game.translate_string("st_open_connections"),
+                description = radial.flx_stash_id and tr("connections_help") or tr("storage_only")})
+        end
+    end
+    -- An already constructed furniture wheel needs the callback as well.
+    if placeable_furniture.RadialGUI then
+        local radial = placeable_furniture.RadialGUI
+        radial:RegisterCallback("opt_connections", function()
+            if radial.flx_stash_id then open_inventory(radial.flx_stash_id, true) end
+        end)
+    end
+end
+
+function on_game_start()
+    if started then return end
+    started = true
+    install_radial_hooks()
+    RegisterScriptCallback("ActorMenu_on_item_after_move", after_move)
+    RegisterScriptCallback("hf_on_before_furniture_release", function(id)
+        registry()[id] = nil
+        se_save_var(id, nil, KEY, nil)
+    end)
+    -- Put All / selected-item transfers call On_Item_Exchange directly and skip
+    -- ActorMenu_on_item_after_move. Cover those paths too; pending deduplicates.
+    local base_exchange = ui_inventory.UIInventory.On_Item_Exchange
+    function ui_inventory.UIInventory:On_Item_Exchange(from, to, item)
+        base_exchange(self, from, to, item)
+        if db.actor and from:id() == db.actor:id() and self.mode == "loot" and owned(to) then
+            -- Deposits do not trigger actor_on_item_take, which normally plays
+            -- the item-specific inventory sound. Play once here, never again
+            -- for the intake -> receiver hop. The stock manager keeps its
+            -- volume, item mapping and bulk-transfer sound throttling.
+            if itms_manager and itms_manager.play_item_sound then
+                itms_manager.play_item_sound(item)
+            end
+            after_move(to:id(), item, self.mode, EDDListType.iActorBag)
+        end
+    end
+    local base_init = ui_inventory.UIInventory.InitControls
+    function ui_inventory.UIInventory:InitControls()
+        base_init(self)
+        add_controls(self)
+    end
+    local base_reset = ui_inventory.UIInventory.Reset
+    function ui_inventory.UIInventory:Reset(obj)
+        base_reset(self, obj)
+        add_controls(self)
+        self.flx_sn_panel:Show(false)
+        self.flx_sn_button:Show(false)
+    end
+    if ui_inventory.GUI then
+        add_controls(ui_inventory.GUI)
+        ui_inventory.GUI.flx_sn_button:Show(false)
+    end
+end

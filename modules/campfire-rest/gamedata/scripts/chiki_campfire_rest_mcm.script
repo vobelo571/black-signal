@@ -1,0 +1,17 @@
+local defaults = {enable = true, distance = 4, multiplier = 2}
+
+function get_config(key)
+    local value = ui_mcm and ui_mcm.get("chiki_campfire_rest/" .. key)
+    if value == nil then return defaults[key] end
+    return value
+end
+
+function on_mcm_load()
+    return {id = "chiki_campfire_rest", sh = true, gr = {
+        {id = "title", type = "slide", link = "ui_options_slider_player", text = "ui_mcm_chiki_campfire_rest_title", size = {512, 50}, spacing = 20},
+        {id = "enable", type = "check", val = 1, def = true},
+        {id = "distance", type = "track", val = 2, min = 1, max = 6, step = 0.5, def = 4},
+        {id = "multiplier", type = "track", val = 2, min = 1, max = 4, step = 0.25, def = 2},
+        {type = "desc", text = "ui_mcm_chiki_campfire_rest_desc"}
+    }}
+end

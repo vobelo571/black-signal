@@ -1,0 +1,81 @@
+#include "common.h"
+
+#define NEAR_DIST        3.0
+#define FAR_DIST        100.0
+#define FAR_BRIGHT_RATIO 0.06
+#define BRIGHT_NEAR      1.5
+#define DOT_SHARPNESS    2.0
+#define DOT_MIN_SCALE    0.15
+
+struct v2p
+{
+	float2 tc0: TEXCOORD0;
+	float3 wn:  TEXCOORD1;
+	float3 wpos: TEXCOORD2;
+	float4 c0:  COLOR0;
+	float4 hpos: SV_Position;
+};
+
+float4 shader_param_6;
+
+float3 hue2rgb(float h)
+{
+	float r = abs(h * 6.0 - 3.0) - 1.0;
+	float g = 2.0 - abs(h * 6.0 - 2.0);
+	float b = 2.0 - abs(h * 6.0 - 4.0);
+	return saturate(float3(r, g, b));
+}
+
+float4 main( v2p I ) : SV_Target
+{
+	float raw_x = shader_param_6.x;
+	float dot_brightness = abs(raw_x);
+	bool dist_bright_on = (raw_x > 0.0);
+	float hue_val = shader_param_6.z;
+
+	float hit_dist = s_position[I.hpos.xy].z;
+	if (hit_dist < 0.01)
+		hit_dist = FAR_DIST;
+
+	float t = saturate((hit_dist - NEAR_DIST) / (FAR_DIST - NEAR_DIST));
+
+	float bright;
+	if (dist_bright_on)
+	{
+		float bright_near = dot_brightness * BRIGHT_NEAR;
+		float bright_far = BRIGHT_NEAR * FAR_BRIGHT_RATIO;
+		bright = lerp(bright_near, bright_far, t);
+	}
+	else
+	{
+		bright = dot_brightness * BRIGHT_NEAR;
+	}
+
+	bool dist_size_on = (shader_param_6.y > 0.0);
+
+	float2 sample_tc = I.tc0;
+	float sample_mask = 1.0;
+	if (dist_size_on)
+	{
+		float size_scale = max(sqrt(NEAR_DIST / max(hit_dist, NEAR_DIST)), DOT_MIN_SCALE);
+		float2 centered = I.tc0 - 0.5;
+		centered /= size_scale;
+		sample_tc = centered + 0.5;
+		sample_mask = step(0.0, sample_tc.x) * step(sample_tc.x, 1.0) * step(0.0, sample_tc.y) * step(sample_tc.y, 1.0);
+	}
+
+	float4 t_base = s_base.Sample(smp_base, sample_tc) * sample_mask;
+	t_base.a = pow(t_base.a, DOT_SHARPNESS);
+
+	if (hue_val > 0.5)
+	{
+		float h = (hue_val - 1.0) * (1.0 / 99.0);
+		float3 color_tint = hue2rgb(frac(h));
+		float intensity = dot(t_base.rgb, float3(0.299, 0.587, 0.114));
+		t_base.rgb = color_tint * intensity;
+	}
+
+	t_base *= bright;
+
+	return float4(t_base.rgb, t_base.a * I.c0.w);
+}

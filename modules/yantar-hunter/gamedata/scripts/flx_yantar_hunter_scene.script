@@ -1,0 +1,17 @@
+-- Fixed, non-pickup display objects. Local coordinates relative to the NPC.
+objects = {
+    {section="flx_yantar_prop_desk", x=1.35, y=-0.000492, z=0.0, yaw=90, bones="link,link1,link2,link3,link4,link5"},
+    {section="flx_yantar_prop_reserve_1", x=-1.0, y=-0.000017, z=-0.3, yaw=0, bones="link"},
+    {section="flx_yantar_prop_reserve_2", x=-1.0, y=-0.000017, z=0.22, yaw=0, bones="link"},
+    {section="flx_yantar_prop_reserve_3", x=-1.0, y=0.227283, z=-0.3, yaw=0, bones="link"},
+    {section="flx_yantar_prop_buckshot", x=0.97, y=0.645551, z=0.2, yaw=0, bones="link"},
+    {section="flx_yantar_prop_expanding", x=1.22, y=0.644587, z=0.22, yaw=0, bones="link"},
+    {section="flx_yantar_prop_hydro", x=1.02, y=0.646211, z=-0.08, yaw=0, bones="link"},
+    {section="flx_yantar_prop_journal", x=1.55, y=0.648941, z=0.16, yaw=90, bones="link"},
+    {section="flx_yantar_prop_lamp", x=1.78, y=0.645209, z=-0.2, yaw=180, bones="link,link.001,link.002,link.003,link.004,bone_light", light=true},
+    {section="flx_yantar_prop_tray", x=1.4, y=0.645936, z=-0.21, yaw=0, bones="link"},
+    {section="flx_yantar_prop_sample", x=1.4, y=0.683551, z=-0.21, yaw=0, bones="link"},
+}
+
+function bind_static(obj)
+end

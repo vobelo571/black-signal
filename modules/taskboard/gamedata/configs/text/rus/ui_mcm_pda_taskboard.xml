@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="windows-1251"?>
+
+<string_table>	
+	<string id="ui_mcm_menu_pda_taskboard">
+		<text>PDA Taskboard</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_banner">
+		<text>PDA Taskboard</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_scanning_range">
+		<text>Радиус сканирования</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_taskboard_key">
+		<text>Открыть "Объявления" в КПК</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_companions_give_tasks">
+		<text>Разрешить компаньонам выдавать задания</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_colorize">
+		<text>Раскрасить текст на панели задач</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_task_bonus_south_rate">
+		<text>Премия на юге, максимум (%)</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_task_bonus_center_rate">
+		<text>Премия в центре, максимум (%)</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_task_bonus_north_rate">
+		<text>Премия на севере, максимум (%)</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_task_bonus_window_days">
+		<text>Окно премии после принятия (дней)</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_immediate_npc_threshold">
+		<text>Порог мгновенной обработки NPC</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_bg_npcs_per_frame">
+		<text>Фоновых NPC за кадр</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_bg_frame_interval">
+		<text>Интервал фоновых кадров (сек)</text>
+	</string>
+	<string id="ui_mcm_pda_taskboard_bg_logging">
+		<text>Включить фоновое логирование</text>
+	</string>
+    <string id="ui_mcm_pda_taskboard_remote_turn_in"><text>Удалённая сдача заданий</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_cash_cap"><text>Максимальная премия за задание (руб.)</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_south_rate_desc"><text>Редкие задания с доски. Премия не умножается на дни. При окне 3 дня: полная первые сутки, затем плавно до нуля. Базовая награда не уменьшается. Ноль отключает премию.</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_center_rate_desc"><text>Редкие задания с доски. Премия не умножается на дни. При окне 3 дня: полная первые сутки, затем плавно до нуля. Базовая награда не уменьшается. Ноль отключает премию.</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_north_rate_desc"><text>Редкие задания с доски. Премия не умножается на дни. При окне 3 дня: полная первые сутки, затем плавно до нуля. Базовая награда не уменьшается. Ноль отключает премию.</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_window_days_desc"><text>Редкие задания с доски. Премия не умножается на дни. При окне 3 дня: полная первые сутки, затем плавно до нуля. Базовая награда не уменьшается. Ноль отключает премию.</text></string>
+    <string id="ui_mcm_pda_taskboard_task_bonus_cash_cap_desc"><text>Редкие задания с доски. Премия не умножается на дни. При окне 3 дня: полная первые сутки, затем плавно до нуля. Базовая награда не уменьшается. Ноль отключает премию.</text></string>
+</string_table>

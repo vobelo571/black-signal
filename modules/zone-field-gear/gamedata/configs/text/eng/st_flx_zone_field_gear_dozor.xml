@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_zfg_dozor_stalker_outfit_name">
+    <text>Dozor Loner Suit</text>
+  </string>
+  <string id="st_zfg_dozor_stalker_outfit_descr">
+    <text>A light patrol suit with slim straps, map and radio pockets and small joint guards. Easier movement at the expense of bullet and anomaly protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_dozor_freedom_outfit_name">
+    <text>Dozor Freedom Suit</text>
+  </string>
+  <string id="st_zfg_dozor_freedom_outfit_descr">
+    <text>A light patrol suit with slim straps, map and radio pockets and small joint guards. Easier movement at the expense of bullet and anomaly protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_dozor_killer_outfit_name">
+    <text>Dozor Mercenary Suit</text>
+  </string>
+  <string id="st_zfg_dozor_killer_outfit_descr">
+    <text>A light patrol suit with slim straps, map and radio pockets and small joint guards. Easier movement at the expense of bullet and anomaly protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_dozor_csky_outfit_name">
+    <text>Dozor Clear Sky Suit</text>
+  </string>
+  <string id="st_zfg_dozor_csky_outfit_descr">
+    <text>A light patrol suit with slim straps, map and radio pockets and small joint guards. Easier movement at the expense of bullet and anomaly protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+</string_table>

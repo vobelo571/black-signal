@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+<string id="flx_arena_zhila_name"><text>Zhila</text></string>
+<string id="flx_arena_zhila_trade_0"><text>Show me your trophies.</text></string>
+<string id="flx_arena_zhila_trade_1"><text>Take a look. Be careful with the samples.</text></string>
+<string id="flx_arena_zhila_bio"><text>A former hunter settled in a workshop in Rostok. Butchers mutants and sells trophies. They say he can squeeze the last sinew out of a tushkano.</text></string>
+<string id="flx_arena_zhila_hello_0"><text>Looking for trophies? Step up. Keep your hands out of the crates and tell me what you need.</text></string>
+<string id="flx_arena_zhila_about_0"><text>Are you in charge here?</text></string>
+<string id="flx_arena_zhila_about_1"><text>Someone else runs the Arena. I deal with what the beasts leave behind. Fangs, tails, glands. Hunters bring them in, I sort them. Samples for scientists, trophies for stalkers.</text></string>
+<string id="flx_arena_zhila_about_2"><text>Why Zhila?</text></string>
+<string id="flx_arena_zhila_about_3"><text>My partner said I could pull the last sinew out of any carcass. He is long gone, but the name stuck. Sinews hold everything together here, brother. Beasts and men alike.</text></string>
+<string id="flx_arena_zhila_stock_0"><text>What do you sell? What about prices?</text></string>
+<string id="flx_arena_zhila_stock_1"><text>I sell trophy parts: tails, paws, fangs, eyes and glands. Every delivery covers the full list, but rare parts come one at a time. I restock with the other traders. I also buy meat and hides at Butcher's Garbage rates, but I do not sell them.</text></string>
+</string_table>

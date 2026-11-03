@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_zfg_jaeger_stalker_outfit_name">
+    <text>Jaeger Free Stalkers Hunting Suit</text>
+  </string>
+  <string id="st_zfg_jaeger_stalker_outfit_descr">
+    <text>A hunting conversion of the Bear suit. Dense fabric inserts, bracers and a raised collar help against claws. Limited rifle protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_jaeger_dolg_outfit_name">
+    <text>Jaeger Duty Hunting Suit</text>
+  </string>
+  <string id="st_zfg_jaeger_dolg_outfit_descr">
+    <text>A hunting conversion of the Bear suit. Dense fabric inserts, bracers and a raised collar help against claws. Limited rifle protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_jaeger_freedom_outfit_name">
+    <text>Jaeger Freedom Hunting Suit</text>
+  </string>
+  <string id="st_zfg_jaeger_freedom_outfit_descr">
+    <text>A hunting conversion of the Bear suit. Dense fabric inserts, bracers and a raised collar help against claws. Limited rifle protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_jaeger_csky_outfit_name">
+    <text>Jaeger Clear Sky Hunting Suit</text>
+  </string>
+  <string id="st_zfg_jaeger_csky_outfit_descr">
+    <text>A hunting conversion of the Bear suit. Dense fabric inserts, bracers and a raised collar help against claws. Limited rifle protection. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+</string_table>

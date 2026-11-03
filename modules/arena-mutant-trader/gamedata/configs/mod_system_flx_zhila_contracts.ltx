@@ -1,0 +1,100 @@
+![dialogs]
+>files = dialogs_flx_zhila_contracts
+
+[flx_zhila_field_receiver]:tch_quest
+visual = equipments\item_decoder.ogf
+inv_name = flx_zhila_receiver_name
+inv_name_short = flx_zhila_receiver_name
+description = flx_zhila_receiver_desc
+inv_weight = 1.2
+inv_grid_width = 1
+inv_grid_height = 1
+inv_grid_x = 19
+inv_grid_y = 6
+cost = 0
+quest_item = true
+can_trade = false
+use1_functor = zz_flx_zhila_contracts.receiver_menu
+use1_action_functor = zz_flx_zhila_contracts.receiver_use
+
+[flx_zhila_sealed_sample]:tch_quest
+visual = dynamics\equipments\quest\scanner_artefact.ogf
+inv_name = flx_zhila_sample_name
+inv_name_short = flx_zhila_sample_name
+description = flx_zhila_sample_desc
+inv_weight = 1.8
+inv_grid_width = 1
+inv_grid_height = 2
+inv_grid_x = 1
+inv_grid_y = 11
+cost = 0
+quest_item = true
+can_trade = false
+
+[flx_zhila_hunters_case]:tch_quest
+visual = equipments\item_merger.ogf
+inv_name = flx_zhila_cargo_name
+inv_name_short = flx_zhila_cargo_name
+description = flx_zhila_cargo_desc
+inv_weight = 5.5
+inv_grid_width = 2
+inv_grid_height = 1
+inv_grid_x = 2
+inv_grid_y = 16
+cost = 0
+quest_item = true
+can_trade = false
+
+[flx_zhila_sick_boars]:online_offline_group
+faction = monster_vegetarian
+npc = boar_strong, boar_strong, boar_strong, boar_strong
+common = false
+
+[flx_zhila_tagged_chimera]:online_offline_group
+faction = monster_special
+npc = chimera_strong2
+common = false
+
+[flx_zhila_forest_hunters]:online_offline_group
+faction = monster_special
+npc = boar_strong, snork_strong, snork_strong
+common = false
+
+[flx_zhila_rare_hunters]:online_offline_group
+faction = monster_special
+npc = gigant_normal, snork_strong, snork_strong, snork_strong
+common = false
+
+[flx_zhila_lost_hunter]:sim_default_stalker_3
+
+[flx_zhila_mutant_tag]:tch_quest
+visual = equipments\item_decoder.ogf
+inv_name = flx_zhila_tag_name
+inv_name_short = flx_zhila_tag_name
+description = flx_zhila_tag_desc
+inv_weight = 0.4
+inv_grid_x = 19
+inv_grid_y = 6
+cost = 0
+quest_item = true
+can_trade = false
+
+[flx_zhila_hunter_pda]:tch_quest
+visual = dynamics\devices\dev_pda\dev_pda.ogf
+inv_name = flx_zhila_pda_name
+inv_name_short = flx_zhila_pda_name
+description = flx_zhila_pda_desc
+inv_weight = 0.2
+inv_grid_x = 7
+inv_grid_y = 3
+cost = 0
+quest_item = true
+can_trade = false
+use1_functor = zz_flx_zhila_contracts.hunter_pda_menu
+use1_action_functor = zz_flx_zhila_contracts.hunter_pda_use
+
+[flx_zhila_rare_case]:flx_zhila_hunters_case
+inv_name = flx_zhila_rare_cargo_name
+inv_name_short = flx_zhila_rare_cargo_name
+description = flx_zhila_rare_cargo_desc
+inv_weight = 7.5

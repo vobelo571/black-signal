@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="flx_ui_mm_delete_all_saves">
+        <text>Delete all saves</text>
+    </string>
+    <string id="flx_ui_mm_delete_all_saves_confirm">
+        <text>Delete all saves (%d)?\n\nSaves for all characters, including quicksaves and autosaves, will be deleted.\nThis action cannot be undone.</text>
+    </string>
+</string_table>

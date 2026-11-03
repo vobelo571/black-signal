@@ -1,0 +1,15 @@
+{
+  "id": "taskboard",
+  "title": "Taskboard: редакция FLX",
+  "group": "Интерфейс и удобство",
+  "version": "2026.10.25",
+  "description": "Группировка заданий, накопительные бонусы, метки и настраиваемая сдача.",
+  "requires": [
+    "gamma",
+    "mcm"
+  ],
+  "notes": "Основа — iTheon PDA Taskboard. Установить после оригинального Taskboard и его патчей.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "Taskbord edt by flx"
+}

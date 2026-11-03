@@ -1,0 +1,32 @@
+-- Standalone-trader compatibility for optional Lootboxes and Skills Expansion.
+-- Keep this filename so upgrades also replace the original Lootboxes-only fix.
+local installed={}
+local furniture={esc_m_trader=true,red_m_lesnik=true}
+local blacklisted={trader=true,monster=true}
+
+local function guard(name,module)
+    if not module or type(module.get_real_community)~="function" then return end
+    if installed[name]==module.get_real_community then return end
+    local original=module.get_real_community
+    module.get_real_community=function(npc,...)
+        if not npc then return "stalker" end
+        if furniture[npc:name()] then return "stalker" end
+        local community=character_community(npc)
+        if blacklisted[community] and not get_object_squad(npc) then
+            return "stalker"
+        end
+        return original(npc,...)
+    end
+    installed[name]=module.get_real_community
+end
+
+local function install()
+    guard("lootbox_drops",lootbox_drops)
+    guard("utjan_skills",utjan_skills)
+end
+
+function on_game_start()
+    install()
+    RegisterScriptCallback("on_game_load",install)
+    RegisterScriptCallback("actor_on_first_update",install)
+end

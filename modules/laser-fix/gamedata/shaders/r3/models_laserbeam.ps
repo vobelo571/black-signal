@@ -1,0 +1,44 @@
+#include "common.h"
+
+#define BRIGHT_NEAR      1.5
+
+struct v2p
+{
+	float2 tc0: TEXCOORD0;
+	float3 wn:  TEXCOORD1;
+	float3 wpos: TEXCOORD2;
+	float4 c0:  COLOR0;
+	float4 hpos: SV_Position;
+};
+
+float4 shader_param_6;
+
+float3 hue2rgb(float h)
+{
+	float r = abs(h * 6.0 - 3.0) - 1.0;
+	float g = 2.0 - abs(h * 6.0 - 2.0);
+	float b = 2.0 - abs(h * 6.0 - 4.0);
+	return saturate(float3(r, g, b));
+}
+
+float4 main( v2p I ) : SV_Target
+{
+	float beam_brightness = abs(shader_param_6.y);
+	float hue_val = shader_param_6.z;
+
+	float bright = beam_brightness * BRIGHT_NEAR;
+
+	float4 t_base = s_base.Sample(smp_base, I.tc0);
+
+	if (hue_val > 0.5)
+	{
+		float h = (hue_val - 1.0) * (1.0 / 99.0);
+		float3 color_tint = hue2rgb(frac(h));
+		float intensity = dot(t_base.rgb, float3(0.299, 0.587, 0.114));
+		t_base.rgb = color_tint * intensity;
+	}
+
+	t_base *= bright;
+
+	return float4(t_base.rgb, t_base.a * I.c0.w);
+}

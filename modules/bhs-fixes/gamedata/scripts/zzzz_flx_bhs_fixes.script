@@ -1,0 +1,195 @@
+-- BHS Fixes by flx. Runtime extension; no upstream scripts are replaced.
+local LIMBS = {"head", "torso", "rightarm", "leftarm", "rightleg", "leftleg"}
+local SAVE_KEY = "flx_bhs_fixes_v1"
+local storage_ready, hydrated = false, false
+local pending_state
+local persisted_health, persisted_temp = {}, {}
+local installed = false
+local original_update
+
+local function finite(value)
+    return type(value) == "number" and value == value and math.abs(value) < math.huge
+end
+
+local function valid_snapshot(state)
+    if type(state) ~= "table" or type(state.health) ~= "table"
+        or type(state.timedhp) ~= "table" then return false end
+    for _, limb in ipairs(LIMBS) do
+        if not finite(state.health[limb]) or not finite(state.timedhp[limb]) then return false end
+    end
+    return true
+end
+
+local function persist(force)
+    if not hydrated or not storage_ready or not db.actor or not db.actor:alive() then return end
+    local bhs = zzz_player_injuries
+    for _, limb in ipairs(LIMBS) do
+        local hp, temp = bhs.health[limb], bhs.timedhp[limb] or 0
+        if force or hp ~= persisted_health[limb] or temp ~= persisted_temp[limb] then
+            utils_obj.save_var(db.actor, "health." .. limb, hp)
+            utils_obj.save_var(db.actor, "timedhp." .. limb, temp)
+            persisted_health[limb], persisted_temp[limb] = hp, temp
+        end
+    end
+end
+
+local function ensure_loaded()
+    if not storage_ready or not db.actor or not db.actor:alive() then return false end
+    if hydrated then return true end
+    local bhs = zzz_player_injuries
+    if not bhs or not bhs.health or not bhs.timedhp or not bhs.maxhp then return false end
+    local snapshot = valid_snapshot(pending_state) and pending_state or nil
+    for _, limb in ipairs(LIMBS) do
+        local hp = snapshot and snapshot.health[limb]
+            or utils_obj.load_var(db.actor, "health." .. limb)
+        local temp = snapshot and snapshot.timedhp[limb]
+            or utils_obj.load_var(db.actor, "timedhp." .. limb)
+        -- Legacy saves use their original actor variables. Missing values in a
+        -- new game retain BHS defaults; existing injuries are never fabricated.
+        if finite(hp) then bhs.health[limb] = math.max(0, math.min(bhs.maxhp[limb], hp)) end
+        bhs.timedhp[limb] = finite(temp) and math.max(0, math.min(bhs.health[limb], temp)) or 0
+    end
+    if bhs.medkits then
+        if snapshot and finite(snapshot.interval) and snapshot.interval > 0 then
+            bhs.medkits.timedhealth = snapshot.interval
+        end
+        local interval = bhs.medkits.timedhealth or 60000
+        local remaining = snapshot and snapshot.remaining
+        remaining = finite(remaining) and math.max(0, math.min(interval, remaining)) or interval
+        bhs.medkits.lastregen = time_global() - (interval - remaining)
+    end
+    hydrated = true
+    pending_state = nil
+    -- Native BHS can save before its private first-update LoadHealthStatus.
+    -- Seed both live tables and actor storage before that callback may run.
+    persist(true)
+    return true
+end
+
+local function body_needs_healing()
+    if not ensure_loaded() then return false end
+    local bhs = zzz_player_injuries
+    for _, limb in ipairs(LIMBS) do
+        if bhs.health[limb] - (bhs.timedhp[limb] or 0) < bhs.maxhp[limb] then return true end
+    end
+    return false
+end
+
+local function heal_body()
+    local bhs = zzz_player_injuries
+    for _, limb in ipairs(LIMBS) do
+        bhs.health[limb], bhs.timedhp[limb] = bhs.maxhp[limb], 0
+    end
+    persist(true)
+end
+
+local function install()
+    local bhs = zzz_player_injuries
+    if not bhs or type(bhs.actor_on_update) ~= "function" then return end
+    if not installed then
+        original_update = bhs.actor_on_update
+        bhs.actor_on_update = function(...)
+            if not ensure_loaded() then return end
+            original_update(...)
+            persist(false)
+        end
+
+        local campfire = zzz_campfire_healing
+        if campfire and type(campfire.apply_benefits) == "function" then
+            local original_benefits = campfire.apply_benefits
+            campfire.apply_benefits = function(...)
+                if not ensure_loaded() then return end
+                local before_hp, before_temp = {}, {}
+                for _, limb in ipairs(LIMBS) do
+                    before_hp[limb], before_temp[limb] = bhs.health[limb], bhs.timedhp[limb] or 0
+                end
+                original_benefits(...)
+                for _, limb in ipairs(LIMBS) do
+                    local gain = bhs.health[limb] - before_hp[limb]
+                    local temp_gain = (bhs.timedhp[limb] or 0) - before_temp[limb]
+                    -- The last fractional heal must not add more temporary HP
+                    -- than the amount that actually fit below the limb cap.
+                    if gain > 0 and temp_gain > gain then
+                        bhs.timedhp[limb] = before_temp[limb] + gain
+                    end
+                end
+                persist(false)
+            end
+        end
+
+        local old_not_healthy = dialogs.is_actor_not_healthy
+        dialogs.is_actor_not_healthy = function(...)
+            return body_needs_healing() or old_not_healthy(...)
+        end
+        local old_injured = dialogs.is_actor_injured
+        dialogs.is_actor_injured = function(...)
+            if body_needs_healing() and db.actor:money() >= 1850 then return true end
+            return old_injured(...)
+        end
+        local old_combined = dialogs.is_actor_injured_irradiated
+        dialogs.is_actor_injured_irradiated = function(...)
+            if body_needs_healing() and db.actor.radiation > 0 and db.actor:money() >= 3350 then return true end
+            return old_combined(...)
+        end
+        for _, name in ipairs({"heal_actor_injury", "heal_actor_injury_radiation"}) do
+            local original = dialogs[name]
+            dialogs[name] = function(...)
+                local loaded = ensure_loaded()
+                local result = original(...)
+                if loaded and result ~= false then heal_body() end
+                return result
+            end
+        end
+        installed = true
+    end
+    -- Handles either startup order: the original callback may already have
+    -- registered, or BHS may register our replacement later in on_game_start.
+    UnregisterScriptCallback("actor_on_update", original_update)
+    RegisterScriptCallback("actor_on_update", bhs.actor_on_update)
+end
+
+local function on_load_state(data)
+    storage_ready, hydrated = false, false
+    pending_state = data[SAVE_KEY]
+    persisted_health, persisted_temp = {}, {}
+end
+
+local function on_game_load()
+    storage_ready, hydrated = true, false
+    persisted_health, persisted_temp = {}, {}
+    install()
+    -- Do not read/write actor storage until all net-spawn load handlers finish.
+    -- The first wrapped BHS/campfire/doctor call performs hydration lazily.
+end
+
+local function on_save_state(data)
+    if not ensure_loaded() then return end
+    persist(true)
+    local bhs = zzz_player_injuries
+    local state = {health = {}, timedhp = {}}
+    for _, limb in ipairs(LIMBS) do
+        state.health[limb], state.timedhp[limb] = bhs.health[limb], bhs.timedhp[limb] or 0
+    end
+    if bhs.medkits then
+        state.interval = bhs.medkits.timedhealth or 60000
+        state.remaining = math.max(0, math.min(state.interval,
+            state.interval - (time_global() - bhs.medkits.lastregen)))
+    end
+    data[SAVE_KEY] = state
+end
+
+local function on_destroy()
+    storage_ready, hydrated = false, false
+    pending_state = nil
+    persisted_health, persisted_temp = {}, {}
+    -- Teardown/death defaults must never overwrite the state of a loaded save.
+end
+
+function on_game_start()
+    on_destroy()
+    install()
+    RegisterScriptCallback("load_state", on_load_state)
+    RegisterScriptCallback("on_game_load", on_game_load)
+    RegisterScriptCallback("save_state", on_save_state)
+    RegisterScriptCallback("actor_on_net_destroy", on_destroy)
+end

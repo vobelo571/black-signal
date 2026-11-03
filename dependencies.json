@@ -1,0 +1,156 @@
+{
+  "checked_on": "2026-11-04",
+  "policy": "External dependencies are linked, not bundled. Keep the versions supplied by your GAMMA installation unless a module explicitly requires otherwise.",
+  "dependencies": {
+    "gamma": {
+      "name": "G.A.M.M.A. / Anomaly 1.5.3",
+      "author": "Grokitach and the Anomaly team",
+      "url": "https://github.com/Grokitach/Stalker_GAMMA",
+      "note": "Целевая среда всех модулей — установленная GAMMA 0.9.5 из авторского профиля; отдельный ZIP означает независимую установку модуля, а не совместимость с чистой Anomaly."
+    },
+    "dltx": {
+      "name": "Modded Exes / DLTX",
+      "author": "themrdemonized and contributors",
+      "url": "https://github.com/themrdemonized/xray-monolith/releases",
+      "note": "Используйте совместимый движок из своей GAMMA. Не заменяйте EXE только ради этого пака."
+    },
+    "mcm": {
+      "name": "Mod Configuration Menu (MCM)",
+      "author": "RavenAscendant and contributors",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/anomaly-mod-configuration-menu",
+      "reference_version": "1.7.2fix",
+      "probe": "gamedata/scripts/ui_mcm.script",
+      "note": "В GAMMA уже установлен. Конфигурационное меню также требуется ряду базовых модов."
+    },
+    "bhs": {
+      "name": "Grok’s Body Health System Redux",
+      "author": "Grokitach",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/100-groks-body-health-system-redux-for-151",
+      "reference_version": "2.0.2",
+      "probe": "gamedata/scripts/actor_status_bhs.script",
+      "note": "Использовать с GAMMA Medications Balance своего профиля."
+    },
+    "skills": {
+      "name": "Anomaly Skill System",
+      "author": "HarukaSai",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/anomaly-skill-system",
+      "reference_version": "1.5.0",
+      "note": "Нужны Skill System и баланс навыков GAMMA. Skills Expansion необязателен."
+    },
+    "qaw": {
+      "name": "Quick Action Wheel",
+      "author": "HarukaSai",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/quick-action-wheel",
+      "reference_version": "2.0.5",
+      "probe": "gamedata/scripts/haru_quick_action_wheel_mcm.script",
+      "note": "Также требует свои исходные зависимости; отключить GAMMA Quick Action Wheel Balance при использовании FLX QAW."
+    },
+    "hf": {
+      "name": "Hideout Furniture",
+      "author": "Aoldri",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/hideout-furniture-hf",
+      "reference_version": "2.3.2",
+      "note": "Базовая система мебели для зависимых дополнений."
+    },
+    "hf-expansion": {
+      "name": "Hideout Furniture Expansion",
+      "author": "maidresidence, HarukaSai, Frogs, Raven",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/hideout-furniture-expansion",
+      "reference_version": "1.0.2",
+      "note": "Модели и секции декора, используемые сценами новых NPC."
+    },
+    "hf-more": {
+      "name": "Even More Hideout Furniture",
+      "author": "facelessez",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/even-more-hideout-furniture",
+      "reference_version": "2.2",
+      "note": "Дополнительный декор сцен Янтаря; установить также базовую мебель."
+    },
+    "dux": {
+      "name": "Dux’s Innumerable Character Kit",
+      "author": "DuxFortis",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/dick",
+      "reference_version": "9",
+      "note": "Нужен для используемых моделей персонажей Арены."
+    },
+    "sss": {
+      "name": "Screen Space Shaders",
+      "author": "Ascii1457",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/screen-space-shaders",
+      "note": "Референс — ScreenSpaceShaders_Update из текущей GAMMA. Графические правки рассчитаны на DX11/r3; произвольная версия с ModDB не считается проверенной."
+    },
+    "3dss": {
+      "name": "3D Shader Scopes for GAMMA",
+      "author": "Redotix99, Andtheherois, party50 and contributors",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/3d-shader-scopes-for-gamma",
+      "reference_version": "5.02",
+      "note": "Базовые прицелы для патча сеток."
+    },
+    "mark-switch": {
+      "name": "Mark Switch (GAMMA version)",
+      "author": "party50, meowie, Andtheherois",
+      "url": "https://github.com/andtheherois/Mark-Switch-10-GAMMA-version",
+      "note": "Компонент текущей GAMMA; правка числа сеток относится к Ракурсу и 1П76."
+    },
+    "laser-settings": {
+      "name": "Laser Settings",
+      "author": "Borksy",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/laser-settings-v2-7",
+      "reference_version": "2.7",
+      "note": "База управления яркостью лазеров."
+    },
+    "lnct": {
+      "name": "LNCT Campfire Healing (Vanilla & BHS)",
+      "author": "lnct",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/lnct-campfire-healing",
+      "reference_version": "0.7.1.0",
+      "probe": "gamedata/scripts/zzz_campfire_healing_mcm.script",
+      "note": "Отдых у костра включает исправленный скрипт лечения, но требует настройки и прочие файлы LNCT."
+    },
+    "gamma-recoil": {
+      "name": "G.A.M.M.A. Enhanced Recoil",
+      "author": "Grokitach and contributors",
+      "url": "https://github.com/Grokitach/Stalker_GAMMA",
+      "probe": "gamedata/scripts/grok_bo_enhanced_recoil.script",
+      "note": "Внутренний компонент GAMMA; отдельная библиотека для скачивания не нужна."
+    },
+    "gamma-footsteps": {
+      "name": "G.A.M.M.A. Footsteps",
+      "author": "GAMMA contributors; see installed addon credits",
+      "url": "https://github.com/Grokitach/Stalker_GAMMA",
+      "note": "Штатные default-сэмплы, используемые Audible NPC Footsteps Plus."
+    },
+    "pda-radio": {
+      "name": "PDA Radio Extended",
+      "author": "Starcry_; original player by Tronex",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/pda-radio-extended",
+      "reference_version": "1.3",
+      "probe": "gamedata/scripts/ui_pda_radio_tab.script",
+      "note": "Не требуется для BLACK SIGNAL Personal Radio; справочная ссылка на исходный музыкальный аддон. Автор запрещает включение аддона в модпаки, его файлы и музыка не включены."
+    },
+    "xlibs": {
+      "name": "xlibs",
+      "author": "damiansirbu-stalker and contributors",
+      "url": "https://www.moddb.com/mods/stalker-anomaly/addons/xlibs-1001",
+      "note": "Справочная ссылка для сторонних модов. Прямой обязательной зависимости доступных модулей BLACK SIGNAL от xlibs не выявлено; автоматически не устанавливается."
+    },
+    "python": {
+      "name": "Python 3.10+ for Windows (with Tk)",
+      "author": "Python Software Foundation and contributors",
+      "url": "https://www.python.org/downloads/windows/",
+      "note": "Только для исходного FLX Radio Importer.py и инструментов сборки, не для игровых скриптов."
+    },
+    "ffmpeg": {
+      "name": "FFmpeg",
+      "author": "FFmpeg developers",
+      "url": "https://ffmpeg.org/download.html",
+      "note": "Только для конвертации своей музыки импортёром. Положить ffmpeg.exe рядом с импортёром или добавить в PATH. В пак не включён."
+    },
+    "dotnet-sdk": {
+      "name": ".NET 8 SDK",
+      "author": "Microsoft and contributors",
+      "url": "https://dotnet.microsoft.com/download/dotnet/8.0",
+      "note": "Только для сборки SaveReset из исходников. Готовый self-contained SaveReset.exe отдельного .NET Runtime не требует."
+    }
+  }
+}

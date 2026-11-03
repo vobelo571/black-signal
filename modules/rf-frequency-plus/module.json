@@ -1,0 +1,14 @@
+{
+  "id": "rf-frequency-plus",
+  "title": "RF-Частота+",
+  "group": "Интерфейс и удобство",
+  "version": "1.0.2",
+  "description": "Активные частоты заданий и районы поиска в подсказке ресивера.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "RF-задания берутся из установленной GAMMA; собственных заданий не создаёт.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "RF-Частота+"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "nasoska-photo",
+  "title": "Ycatan_: фотография",
+  "group": "Персонажи и снаряжение",
+  "version": "1.0",
+  "description": "Отдельная замена фотографии и её иконки.",
+  "requires": [
+    "gamma",
+    "dltx"
+  ],
+  "notes": "Персональный мод для Ycatan_; материал пользователя. Необязательный компонент.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "Ycatan_ - Nasoska Photo"
+}

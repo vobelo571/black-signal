@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<game_dialogs>
+<dialog id="flx_yantar_hunter_hello"><phrase_list><phrase id="0"><text>flx_yantar_hunter_hello_0</text></phrase></phrase_list></dialog>
+<dialog id="flx_yantar_hunter_trade"><phrase_list><phrase id="0"><text>flx_yantar_hunter_trade_0</text><next>1</next></phrase><phrase id="1"><text>flx_yantar_hunter_trade_1</text><action>dialogs.npc_is_trader</action></phrase></phrase_list></dialog>
+<dialog id="flx_yantar_hunter_about"><phrase_list><phrase id="0"><text>flx_yantar_hunter_about_0</text><next>1</next></phrase><phrase id="1"><text>flx_yantar_hunter_about_1</text></phrase></phrase_list></dialog>
+<dialog id="flx_yantar_hunter_stock"><phrase_list><phrase id="0"><text>flx_yantar_hunter_stock_0</text><next>1</next></phrase><phrase id="1"><text>flx_yantar_hunter_stock_1</text></phrase></phrase_list></dialog>
+<dialog id="flx_yantar_hunter_trust"><phrase_list><phrase id="0"><text>flx_yantar_hunter_trust_0</text><next>1</next></phrase><phrase id="1"><text>flx_yantar_hunter_trust_1</text></phrase></phrase_list></dialog>
+</game_dialogs>

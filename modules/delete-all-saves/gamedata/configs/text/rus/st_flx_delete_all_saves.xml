@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="flx_ui_mm_delete_all_saves">
+        <text>Удалить все сохранения</text>
+    </string>
+    <string id="flx_ui_mm_delete_all_saves_confirm">
+        <text>Удалить все сохранения (%d)?\n\nБудут удалены сохранения всех персонажей, включая быстрые и автосохранения.\nЭто действие нельзя отменить.</text>
+    </string>
+</string_table>

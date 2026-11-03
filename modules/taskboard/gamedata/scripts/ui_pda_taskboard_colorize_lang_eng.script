@@ -1,0 +1,24 @@
+METADATA = {
+    name = {"NAME:","Rewards:"}, faction = {"Faction:","Target:"}, location = {"Location:"}, species = {"Species:"}
+}
+
+FACTIONS = {
+    bandit = "Bandit", freedom = "Freedom", mercenary = "Mercenary",
+    clear_sky = "Clear Sky", ecologist = "Ecologist", sin = "Sin",
+    free_stalkers = "Free Stalkers", renegade = "Renegade", duty = "Duty",
+    monolith = "Monolith", military = "Military", unisg = "UNISG",
+    trader = "Trader"
+}
+
+LOCATIONS = {
+    "Agroprom Underground", "tunnels under Agroprom", "Agroprom", "Chernobyl NPP %(North%)",
+    "Chernobyl NPP %(South%)", "Cordon", "Darkscape", "Dead City", "Deserted Hospital",
+    "Hospital", "Fake Start", "Garbage", "Generators", "Great Swamps", "Great Swamp",
+    "Jupiter Underground", "Jupiter", "Laboratory X16 %(Yantar%)", "Yantar",
+    "Laboratory X18 %(Dark Valley%)", "Dark Valley", "Laboratory X19 %(Radar%)", "Radar",
+    "Laboratory X8 %(Outskirts%)", "Outskirts", "Limansk", "Monolith Control Center",
+    "Monolith Control Centre", "Monolith War Lab", "Monolith", "Red Forest", "Rostok",
+    "Sarcophagus", "Truck Cemetery", "Wild Territory", "Zaton", "Meadow",
+    "Pripyat Underground", "outskirts of Pripyat", "Pripyat", "Lab X%-18", "Lab X%-19",
+    "X%-8", "near the Army Warehouses", "Army Warehouses"
+}

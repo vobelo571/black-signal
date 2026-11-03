@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="st_inv_cache_inventory">
+        <text>В инвентаре</text>
+    </string>
+    <string id="st_inv_cache_stashes">
+        <text>В тайниках</text>
+    </string>
+	<string id="st_pda_caption_turn_in">
+        <text>Сдача заданий</text>
+    </string>
+	<string id="st_pda_caption_cancel">
+        <text>Отменить задание</text>
+    </string>
+    <string id="st_pda_caption_guide_task">
+        <text>Сопровождение</text>
+    </string>
+    <string id="st_taskboard_guide_title">
+        <text>Сопровождение НИП</text>
+    </string>
+    <string id="st_taskboard_guide_details">
+        <text>Куда: %s, %s\nСрок: %s ч.</text>
+    </string>
+    <string id="st_pda_confirm_turn_in_task">
+        <text>Вы уверены, что хотите сдать задание у %s?</text>
+    </string>
+    <string id="st_pda_confirm_cancel_task">
+        <text>Вы уверены, что хотите отменить задание от %s?</text>
+    </string>
+    <string id="st_tb_task_count"><text>Заданий: %s</text></string>
+    <string id="st_tb_show_more"><text>Показать ещё %s</text></string>
+    <string id="st_tb_collapse"><text>Свернуть список</text></string>
+    <string id="st_tb_accept"><text>Взять задание</text></string>
+    <string id="st_tb_cancel"><text>Отменить задание</text></string>
+    <string id="st_tb_turn_in"><text>Сдать задание</text></string>
+    <string id="st_tb_unavailable"><text>Сначала завершите текущее задание NPC</text></string>
+    <string id="st_tb_faulty"><text>Данные задания недоступны</text></string>
+    <string id="st_tb_task"><text>Задание</text></string>
+    <string id="st_tb_inventory_progress"><text>В наличии: %s / %s</text></string>
+    <string id="st_tb_stash_progress"><text>В тайниках: %s / %s</text></string>
+</string_table>

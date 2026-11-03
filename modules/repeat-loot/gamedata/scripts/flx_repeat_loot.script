@@ -1,0 +1,329 @@
+-- FLX Repeat Loot 0.2.0. Independent Anomaly callback addon.
+-- Uses existing world-item coordinates without replacing game_setup.script.
+local state = {version = 2, maps = {}, seed = nil}
+local config, world_config
+local settings = {}
+local points, pools = {}, {}
+local initialized = false
+local next_check = 0
+local warned = false
+local status_at = {}
+
+local function debug_log(message)
+    if settings.debug and printf then printf('[FLX Repeat Loot] %s', tostring(message)) end
+end
+
+local function log(message)
+    if printf then printf('[FLX Repeat Loot] %s', tostring(message)) end
+end
+
+local function number(key, fallback)
+    if config:line_exist('settings', key) then
+        return tonumber(config:r_string('settings', key)) or fallback
+    end
+    return fallback
+end
+
+local function boolean(key, fallback)
+    if config:line_exist('settings', key) then
+        return config:r_bool('settings', key)
+    end
+    return fallback
+end
+
+local function rows(ini, section)
+    local out = {}
+    if not ini:section_exist(section) then return out end
+    for i = 0, ini:line_count(section) - 1 do
+        local _, key, value = ini:r_line_ex(section, i, '', '')
+        out[#out + 1] = {key = key, value = value}
+    end
+    return out
+end
+
+local function split(value)
+    local out = {}
+    for token in string.gmatch(value or '', '[^,]+') do
+        out[#out + 1] = string.match(token, '^%s*(.-)%s*$')
+    end
+    return out
+end
+
+local function now_hours()
+    local y, m, d, h, minute, second = game.get_game_time():get()
+    local previous = y - 1
+    local days = 365 * previous + math.floor(previous / 4)
+        - math.floor(previous / 100) + math.floor(previous / 400)
+    local months = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+    if y % 4 == 0 and (y % 100 ~= 0 or y % 400 == 0) then months[2] = 29 end
+    for i = 1, m - 1 do days = days + months[i] end
+    return (days + d - 1) * 24 + h + minute / 60 + second / 3600
+end
+
+-- Private generator: no global math.randomseed interference with other addons.
+local function random()
+    state.seed = ((state.seed or 12345) * 16807) % 2147483647
+    return (state.seed - 1) / 2147483646
+end
+
+local function choose(pool)
+    if not pool or #pool == 0 then return nil end
+    local total = 0
+    for _, entry in ipairs(pool) do total = total + entry.weight end
+    local roll = random() * total
+    for _, entry in ipairs(pool) do
+        roll = roll - entry.weight
+        if roll < 0 then return entry.section end
+    end
+    return pool[#pool].section
+end
+
+local function distance_squared(a, b)
+    local x, y, z = a.x - b.x, a.y - b.y, a.z - b.z
+    return x * x + y * y + z * z
+end
+
+local function initialize()
+    if initialized then return end
+    config = ini_file('plugins\\flx_repeat_loot.ltx')
+    world_config = ini_file('items\\settings\\dynamic_item_spawn.ltx')
+    settings.enabled = boolean('enabled', true)
+    settings.debug = boolean('debug', false)
+    settings.min_hours = math.max(1, number('cycle_min_hours', 24))
+    settings.max_hours = math.max(settings.min_hours, number('cycle_max_hours', 24))
+    settings.interval = math.max(1, number('check_interval_seconds', 15)) * 1000
+    settings.distance = math.max(100, number('minimum_actor_distance', 150))
+    settings.cooldown = math.max(1, number('point_cooldown_hours', 48))
+    settings.lifetime = math.max(1, number('item_lifetime_hours', 96))
+    settings.cap = math.max(1, math.floor(number('max_active_per_level', 8)))
+    settings.common = math.max(0, math.floor(number('common_items_per_cycle', 2)))
+    settings.rare = math.max(0, math.min(1, number('rare_chance', 0.05)))
+    settings.advanced = math.max(0, math.min(1, number('advanced_chance', 0.015)))
+    for _, row in ipairs(rows(config, 'maps')) do
+        local map = {kind = row.value, list = {}, by_name = {}}
+        for _, location in ipairs(rows(world_config, row.key)) do
+            local t = split(location.value)
+            local allowed = config:section_exist('point_types') and config:line_exist('point_types', t[1] or '')
+                and config:r_bool('point_types', t[1])
+            if #t == 6 and allowed then
+                local point = {name = location.key, typ = t[1], x = tonumber(t[2]),
+                    y = tonumber(t[3]), z = tonumber(t[4]), lv = tonumber(t[5]), gv = tonumber(t[6])}
+                if point.x and point.y and point.z and point.lv and point.gv then
+                    map.list[#map.list + 1] = point
+                    map.by_name[point.name] = point
+                end
+            end
+        end
+        table.sort(map.list, function(a, b) return a.name < b.name end)
+        points[row.key] = map
+        debug_log('Points ' .. row.key .. ': ' .. #map.list)
+    end
+    for _, name in ipairs({'common', 'rare_south', 'rare_industrial', 'advanced_industrial'}) do
+        pools[name] = {}
+        for _, row in ipairs(rows(config, name)) do
+            local weight = tonumber(row.value)
+            if weight and weight > 0 and ini_sys:section_exist(row.key) then
+                pools[name][#pools[name] + 1] = {section = row.key, weight = weight}
+            end
+        end
+    end
+    state.seed = state.seed or 24681357
+    if (state.version or 1) < 2 then
+        local now = now_hours()
+        for _, map_state in pairs(state.maps) do
+            map_state.next_at = math.min(map_state.next_at or now, now)
+        end
+        state.version = 2
+        log('Migrated daily schedule; existing items preserved')
+    end
+    initialized = true
+    log('Initialized 0.2.0; daily cycle, cap ' .. settings.cap .. ', distance ' .. settings.distance .. 'm')
+end
+
+local function same_object(record, object)
+    return object and object:section_name() == record.section and object:name() == record.name
+end
+
+local function active_count(map_state)
+    local n = 0
+    for _ in pairs(map_state.active) do n = n + 1 end
+    return n
+end
+
+local function reconcile(map_state, now, actor_position)
+    for id, record in pairs(map_state.active) do
+        local object = alife():object(id)
+        if not same_object(record, object) or object.parent_id ~= 65535 then
+            map_state.active[id] = nil
+        elseif now >= record.expires and distance_squared(actor_position, object.position) > settings.distance ^ 2 then
+            -- Only remove this addon's own unattended item, never inventory loot.
+            alife_release(object)
+            map_state.active[id] = nil
+        end
+    end
+end
+
+local function plan_cycle(map, map_state, now)
+    -- Discard missed cycles: sleeping/travelling cannot accumulate a loot backlog.
+    map_state.next_at = now + settings.min_hours + random() * (settings.max_hours - settings.min_hours)
+    map_state.pending = {}
+    local choices = {}
+    for _, point in ipairs(map.list) do
+        if not map_state.used[point.name] or now >= map_state.used[point.name] then
+            choices[#choices + 1] = point
+        end
+    end
+    for i = #choices, 2, -1 do
+        local j = math.floor(random() * i) + 1
+        choices[i], choices[j] = choices[j], choices[i]
+    end
+    local wanted = {}
+    for _ = 1, settings.common do wanted[#wanted + 1] = choose(pools.common) end
+    if random() < settings.rare then wanted[#wanted + 1] = choose(pools['rare_' .. map.kind]) end
+    if random() < settings.advanced then wanted[#wanted + 1] = choose(pools['advanced_' .. map.kind]) end
+    local free = settings.cap - active_count(map_state)
+    local planned = math.min(#wanted, #choices, free)
+    for i = 1, planned do
+        local point = choices[i]
+        local candidate = {point = point.name, section = wanted[i], alternatives = {}}
+        -- Reserve deterministic fallback positions without rerolling item quality.
+        for j = 1, 5 do
+            local fallback = choices[planned + (i - 1) * 5 + j]
+            if fallback then
+                candidate.alternatives[#candidate.alternatives + 1] = fallback.name
+                map_state.used[fallback.name] = now + settings.cooldown
+            end
+        end
+        map_state.pending[#map_state.pending + 1] = candidate
+        -- Reserve at planning time, even when deferred/blocked: no reroll on pickup.
+        map_state.used[point.name] = now + settings.cooldown
+    end
+    debug_log('Cycle: planned=' .. planned .. ', active=' .. active_count(map_state)
+        .. ', eligible=' .. #choices .. ', next_in=' .. string.format('%.1f', map_state.next_at - now) .. 'h')
+end
+
+local function loose_items(level_id)
+    -- Once per actual spawn attempt (at most one per 15 real seconds).
+    -- Conservative occupancy check also prevents stacking on vanilla dynamic loot.
+    local out = {}
+    local sim = alife()
+    local graph = game_graph()
+    for id = 1, 65534 do
+        local object = sim:object(id)
+        if object and object.parent_id == 65535 and object.m_game_vertex_id
+            and graph:vertex(object.m_game_vertex_id):level_id() == level_id then
+            local section = object:section_name()
+            if ini_sys:line_exist(section, 'inv_name') then out[#out + 1] = object.position end
+        end
+    end
+    return out
+end
+
+local function place_pending(map, map_state, now, actor_position)
+    if active_count(map_state) >= settings.cap or #map_state.pending == 0 then return end
+    local candidate_index, point
+    for i, candidate in ipairs(map_state.pending) do
+        local location = map.by_name[candidate.point]
+        if location and distance_squared(actor_position, location) > settings.distance ^ 2 then
+            candidate_index, point = i, location
+            break
+        end
+    end
+    if not point then
+        if not map_state.nearby_logged then
+            debug_log('Deferred: ' .. #map_state.pending .. ' pending positions too close to actor or unavailable')
+            map_state.nearby_logged = true
+        end
+        return
+    end
+    map_state.nearby_logged = nil
+    local candidate = table.remove(map_state.pending, candidate_index)
+    local function blocked(reason)
+        local fallback = candidate.alternatives and table.remove(candidate.alternatives, 1)
+        debug_log('Skipped ' .. point.name .. ': ' .. reason .. (fallback and '; retry at ' .. fallback or '; no fallback'))
+        if fallback then
+            candidate.point = fallback
+            map_state.pending[#map_state.pending + 1] = candidate
+        end
+    end
+    for _, occupied in ipairs(loose_items(game_graph():vertex(point.gv):level_id())) do
+        if distance_squared(occupied, point) < 1 then blocked('occupied'); return end
+    end
+    for _, record in pairs(map_state.active) do
+        local occupied = map.by_name[record.point]
+        if occupied and distance_squared(occupied, point) < 4 then blocked('near another FLX item'); return end
+    end
+    local position = vector():set(point.x, point.y, point.z)
+    local object = alife_create_item(candidate.section, {position, point.lv, point.gv})
+    if not object then blocked('create_item returned nil'); return end
+    local id = object.id
+    map_state.active[id] = {section = candidate.section, name = object:name(), point = point.name,
+        expires = now + settings.lifetime}
+    -- Consumables receive one use immediately, not a fresh reroll on pickup.
+    if alife_process_item and world_config:line_exist('possible_uses', candidate.section) then
+        alife_process_item(candidate.section, id, {uses = 1})
+    end
+    if settings.debug then log('Spawned ' .. candidate.section .. ' at ' .. point.name) end
+end
+
+local function update_impl()
+    if not db.actor or not db.actor:alive() then return end
+    local tick = time_global()
+    if tick < next_check then return end
+    initialize()
+    next_check = tick + settings.interval
+    if not settings.enabled then return end
+    local map_name = level.name()
+    local map = points[map_name]
+    if not map or #map.list == 0 then return end
+    local now = now_hours()
+    local map_state = state.maps[map_name]
+    if not map_state then
+        map_state = {next_at = now, active = {}, used = {}, pending = {}}
+        state.maps[map_name] = map_state
+    end
+    local actor_position = db.actor:position()
+    reconcile(map_state, now, actor_position)
+    if not status_at[map_name] or now >= status_at[map_name] then
+        debug_log('Status ' .. map_name .. ': active=' .. active_count(map_state) .. ', pending='
+            .. #map_state.pending .. ', next_in=' .. string.format('%.1f', math.max(0, map_state.next_at - now)) .. 'h')
+        status_at[map_name] = now + 1
+    end
+    if now >= map_state.next_at then plan_cycle(map, map_state, now) end
+    place_pending(map, map_state, now, actor_position)
+end
+
+function actor_on_update()
+    local ok, err = pcall(update_impl)
+    if not ok then
+        next_check = time_global() + 60000
+        if not warned then log('Runtime error; deferred for 60 seconds: ' .. tostring(err)); warned = true end
+    end
+end
+
+function actor_on_item_take(object)
+    local id = object:id()
+    for map_name, map_state in pairs(state.maps) do
+        local record = map_state.active[id]
+        if record then debug_log('Picked up ' .. record.section .. ' at ' .. record.point .. ' on ' .. map_name) end
+        map_state.active[id] = nil
+    end
+end
+
+function save_state(data)
+    data.flx_repeat_loot = state
+end
+
+function load_state(data)
+    state = data.flx_repeat_loot or {version = 2, maps = {}, seed = nil}
+    initialized, next_check, warned = false, 0, false
+    points, pools = {}, {}
+    status_at = {}
+end
+
+function on_game_start()
+    RegisterScriptCallback('actor_on_update', actor_on_update)
+    RegisterScriptCallback('actor_on_item_take', actor_on_item_take)
+    RegisterScriptCallback('save_state', save_state)
+    RegisterScriptCallback('load_state', load_state)
+end

@@ -1,0 +1,15 @@
+{
+  "id": "zone-field-gear",
+  "title": "Снаряжение Зоны",
+  "group": "Персонажи и снаряжение",
+  "version": "0.7.1",
+  "description": "32 фракционных костюма: восемь семейств, модели, руки, иконки и баланс.",
+  "requires": [
+    "gamma",
+    "dltx"
+  ],
+  "notes": "При удалении сначала убрать добавленные предметы или вернуться к сохранению до установки. Основы: Anomaly, Blackgrowl, IENCE, LASS; см. CREDITS.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1010- FLX Zone Field Gear"
+}

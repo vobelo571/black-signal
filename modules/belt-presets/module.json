@@ -1,0 +1,14 @@
+{
+  "id": "belt-presets",
+  "title": "Пресеты пояса",
+  "group": "Интерфейс и удобство",
+  "version": "1.0.0",
+  "description": "Три пресета артефактов пояса в инвентаре.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "Использует уже имеющиеся предметы.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1009- FLX Belt Presets"
+}

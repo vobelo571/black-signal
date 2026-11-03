@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<game_dialogs>
+  <dialog id="flx_arena_zhila_hello"><phrase_list><phrase id="0"><text>flx_arena_zhila_hello_0</text></phrase></phrase_list></dialog>
+  <dialog id="flx_arena_zhila_trade"><phrase_list>
+    <phrase id="0"><text>flx_arena_zhila_trade_0</text><next>1</next></phrase>
+    <phrase id="1"><text>flx_arena_zhila_trade_1</text><action>dialogs.npc_is_trader</action></phrase>
+  </phrase_list></dialog>
+  <dialog id="flx_arena_zhila_about"><phrase_list>
+    <phrase id="0"><text>flx_arena_zhila_about_0</text><next>1</next></phrase>
+    <phrase id="1"><text>flx_arena_zhila_about_1</text><next>2</next></phrase>
+    <phrase id="2"><text>flx_arena_zhila_about_2</text><next>3</next></phrase>
+    <phrase id="3"><text>flx_arena_zhila_about_3</text></phrase>
+  </phrase_list></dialog>
+  <dialog id="flx_arena_zhila_stock"><phrase_list>
+    <phrase id="0"><text>flx_arena_zhila_stock_0</text><next>1</next></phrase>
+    <phrase id="1"><text>flx_arena_zhila_stock_1</text></phrase>
+  </phrase_list></dialog>
+</game_dialogs>

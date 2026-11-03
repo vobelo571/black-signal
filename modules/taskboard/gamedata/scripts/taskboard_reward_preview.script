@@ -1,0 +1,155 @@
+-- Read-only money preview. Never run reward effects or consume random numbers.
+-- The currency is drawn by a dedicated CUIStatic next to the ASCII amount.
+local CURRENCY = ""
+
+local function read(task_id, key)
+    if type(task_id) ~= "string" or task_id == ""
+        or not task_manager or not task_manager.task_ini then return "" end
+    if not task_manager.task_ini:section_exist(task_id) then return "" end
+    return task_manager.task_ini:r_string_ex(task_id, key) or ""
+end
+
+local function stored(key)
+    if type(key) ~= "string" or key == "" or not db or not db.actor
+        or type(load_var) ~= "function" then return nil end
+    return load_var(db.actor, key)
+end
+
+local function number(value, default)
+    local n = tonumber(value)
+    if not n or n ~= n or n == math.huge or n == -math.huge then return default end
+    return n
+end
+
+local function eco(key, default)
+    if not game_difficulties or type(game_difficulties.get_eco_factor) ~= "function" then
+        return default
+    end
+    return number(game_difficulties.get_eco_factor(key), default)
+end
+
+local function format_money(low, high, estimated, bonus, cash_cap)
+    local percent = math.max(0, math.min(20, number(bonus, 0)))
+    local cap = math.max(0, math.min(5000, number(cash_cap, 2000)))
+    local function total(value)
+        local base = math.max(0, math.floor(number(value, 0) + 0.5))
+        local premium = math.min(cap, math.floor(base * percent / 100 + 0.5))
+        return math.min(2147483647, base + premium)
+    end
+    low, high = total(low), total(high)
+    high = math.max(low, high)
+    local prefix = estimated and "~ " or ""
+    if low == high then return prefix .. string.format("%d", low) .. CURRENCY end
+    return prefix .. string.format("%d - %d", low, high) .. CURRENCY
+end
+
+local function calculate(info, bonus, cash_cap)
+    info = type(info) == "table" and info or {}
+    if tonumber(info.money_reward) then
+        return format_money(info.money_reward, info.money_reward, false, bonus, cash_cap)
+    end
+    local id = info.task_id
+    local multi = eco("rewards", 1)
+    local low, high, found, estimated = 0, 0, false, false
+    local function add(a, b)
+        low, high, found = low + a, high + (b or a), true
+    end
+    local effects = read(id, "on_complete")
+    -- Conditional branches describe alternative rewards, so show their envelope.
+    local conditional = effects:find("{", 1, true) ~= nil
+    local function reward(a, b)
+        if conditional then
+            low = found and math.min(low, a) or a
+            high = found and math.max(high, b or a) or (b or a)
+            found, estimated = true, true
+        else
+            add(a, b)
+        end
+    end
+    for name, args in effects:gmatch("=([%w_]+)%(([^)]*)%)") do
+        local p = {}
+        for arg in args:gmatch("[^:]+") do p[#p + 1] = arg end
+        if name == "reward_money" then
+            reward((tonumber(p[1]) or 500) * multi)
+        elseif name == "reward_random_money" or name == "reward_random_money_by_dist" then
+            local dist = name == "reward_random_money_by_dist"
+            local offset = dist and 1 or 0
+            local a = ((tonumber(p[1 + offset]) or 500) * multi) / 50
+            local b = ((tonumber(p[2 + offset]) or (a + 1000)) * multi) / 50
+            a, b = math.ceil(a) * 50, math.ceil(b) * 50
+            if dist then
+                local var = stored(p[1])
+                local n = 1
+                if type(var) == "table" and type(var.lvl_task) == "string"
+                    and type(var.lvl_target) == "string" and txr_routes
+                    and type(txr_routes.get_shortest_path_num) == "function" then
+                    n = number(txr_routes.get_shortest_path_num(var.lvl_task, var.lvl_target), 1)
+                end
+                local factor = tonumber(p[4]) or 0.2
+                a, b = a + math.ceil(n * a * factor), b + math.ceil(n * b * factor)
+                estimated = type(var) ~= "table" or not var.lvl_target or estimated
+            end
+            reward(a, b)
+        elseif name == "give_reward" then
+            local var = stored(p[1])
+            if type(var) == "table" and tonumber(var.reward_money) then
+                reward(tonumber(var.reward_money))
+            else
+                local setup = read(id, "on_init") .. read(id, "on_job_descr")
+                    .. read(id, "on_create") .. read(id, "on_task_accept")
+                for key, a, tail in setup:gmatch("prepare_reward_money%(([^:()]+):(%d+)([^)]*)%)") do
+                    if key == p[1] then
+                        local b = tonumber(tail:match(":(%d+)")) or tonumber(a)
+                        reward(math.ceil(tonumber(a) * multi), math.ceil(b * multi))
+                    end
+                end
+            end
+        elseif name == "fetch_reward_and_remove" and p[1] then
+            local sec = info.fetch_section or stored(p[1])
+            local count = tonumber(info.fetch_amount) or tonumber(stored(p[1] .. "_count")) or 1
+            if type(sec) == "string" and sec ~= "" and ini_sys
+                and ini_sys:section_exist(sec) then
+                local uses = type(IsItem) == "function" and number(IsItem("multiuse", sec), 1) or 1
+                local cost = ini_sys:r_float_ex(sec, "cost") or 0
+                local total = cost / math.max(1, uses) * count * (tonumber(p[2]) or 1)
+                if sec:find("^af_") then
+                    local eco = eco("type", 0.5)
+                    total = total * ((eco == 3 and 0.4) or (eco == 2 and 0.5) or 0.6)
+                end
+                local delta = math.floor(total * 0.1)
+                -- Lower bound allows for worn items; upper bound assumes full condition.
+                reward(math.ceil(math.max(50, (total - delta) * 0.25) * multi / 50) * 50,
+                    math.ceil(math.max(50, total + delta) * multi / 50) * 50)
+                estimated = true
+            end
+        end
+    end
+    if not found then
+        -- Script-defined rewards have no universal introspection API. Use a broad
+        -- estimate based on task type, rather than pretending the reward is zero.
+        local context = (id or "") .. read(id, "on_job_descr") .. read(id, "fetch_func")
+        local a, b = 3000, 15000
+        if context:find("fetch") or info.fetch_section then a, b = 500, 12000 end
+        if context:find("bounty") or context:find("assault") then a, b = 5000, 18000 end
+        if info.bonus_eligible then a, b = 8000, 25000 end
+        reward(a * multi, b * multi)
+        estimated = true
+    end
+    return format_money(low, high, estimated, bonus, cash_cap)
+end
+
+-- Preview data comes from many task addons. A malformed optional reward must
+-- not prevent opening the PDA; log once and retain an approximate amount.
+local warned = {}
+function get(info, bonus, cash_cap)
+    local ok, result = pcall(calculate, info, bonus, cash_cap)
+    if ok and type(result) == "string" then return result end
+    local id = type(info) == "table" and tostring(info.task_id or "unknown") or "unknown"
+    if not warned[id] then
+        warned[id] = true
+        if type(printf) == "function" then
+            printf("[Taskboard] reward preview fallback for %s: %s", id, tostring(result))
+        end
+    end
+    return format_money(3000, 15000, true, number(bonus, 0), cash_cap)
+end

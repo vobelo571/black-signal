@@ -1,0 +1,253 @@
+-- Duty, Military and Ecologist Career Ranks
+-- Adds a faction-specific career title in front of the actor's chosen name.
+
+local CONFIG_PATH = "plugins\\flx_duty_military_ranks.ltx"
+local STORAGE_KEY = "flx_duty_military_career_ranks"
+local DEFAULT_UPDATE_INTERVAL = 2000
+
+local default_military_ranks = {
+	{ threshold = 0,     title_id = "name_private_0" },
+	{ threshold = 4000,  title_id = "name_private_1" },
+	{ threshold = 6000,  title_id = "name_sergeant_0" },
+	{ threshold = 10000, title_id = "name_sergeant_1" },
+	{ threshold = 16000, title_id = "name_senior_sergeant_0" },
+	{ threshold = 24000, title_id = "name_senior_sergeant_1" },
+	{ threshold = 30000, title_id = "name_lieutenant_0" },
+	{ threshold = 35000, title_id = "name_lieutenant_1" },
+	{ threshold = 40000, title_id = "name_lieutenant_2" },
+	{ threshold = 50000, title_id = "name_captain_0" },
+}
+
+local default_ecologist_ranks = {
+	{ threshold = 0,     title_id = "flx_ecologist_rank_1" },
+	{ threshold = 4000,  title_id = "flx_ecologist_rank_2" },
+	{ threshold = 6000,  title_id = "flx_ecologist_rank_3" },
+	{ threshold = 10000, title_id = "flx_ecologist_rank_4" },
+	{ threshold = 16000, title_id = "flx_ecologist_rank_5" },
+	{ threshold = 24000, title_id = "flx_ecologist_rank_6" },
+	{ threshold = 30000, title_id = "flx_ecologist_rank_7" },
+	{ threshold = 35000, title_id = "flx_ecologist_rank_8" },
+	{ threshold = 40000, title_id = "flx_ecologist_rank_9" },
+	{ threshold = 50000, title_id = "flx_ecologist_rank_10" },
+}
+
+local allowed_factions = {
+	dolg = true,
+	army = true,
+	military = true,
+	ecolog = true,
+}
+
+local ranks_by_faction = {
+	dolg = default_military_ranks,
+	army = default_military_ranks,
+	military = default_military_ranks,
+	ecolog = default_ecologist_ranks,
+}
+local update_interval = DEFAULT_UPDATE_INTERVAL
+local next_update = 0
+
+local function read_rank_list(ini, section_prefix, fallback)
+	local configured_ranks = {}
+	for index = 1, 32 do
+		local section = section_prefix .. index
+		if not ini:section_exist(section) then
+			break
+		end
+
+		local threshold = ini:r_float_ex(section, "threshold")
+		local title_id = ini:r_string_ex(section, "title_id")
+		if threshold and title_id and title_id ~= "" then
+			configured_ranks[#configured_ranks + 1] = {
+				threshold = threshold,
+				title_id = title_id,
+			}
+		end
+	end
+
+	if #configured_ranks == 0 then
+		return fallback
+	end
+
+	table.sort(configured_ranks, function(a, b)
+		return a.threshold < b.threshold
+	end)
+	return configured_ranks
+end
+
+local function load_config()
+	local ini = ini_file(CONFIG_PATH)
+	if not ini then
+		return
+	end
+
+	update_interval = ini:r_float_ex("settings", "check_interval_ms") or DEFAULT_UPDATE_INTERVAL
+	if update_interval < 250 then
+		update_interval = 250
+	end
+
+	allowed_factions.dolg = ini:r_bool_ex("factions", "dolg") ~= false
+	allowed_factions.army = ini:r_bool_ex("factions", "army") ~= false
+	allowed_factions.military = allowed_factions.army
+	allowed_factions.ecolog = ini:r_bool_ex("factions", "ecolog") ~= false
+
+	local military_ranks = read_rank_list(ini, "rank_", default_military_ranks)
+	ranks_by_faction.dolg = military_ranks
+	ranks_by_faction.army = military_ranks
+	ranks_by_faction.military = military_ranks
+	ranks_by_faction.ecolog = read_rank_list(ini, "ecolog_rank_", default_ecologist_ranks)
+end
+
+local function get_storage()
+	local root = alife_storage_manager.get_state()
+	if not root[STORAGE_KEY] then
+		root[STORAGE_KEY] = {}
+	end
+	return root[STORAGE_KEY]
+end
+
+local function normalize_faction(faction)
+	if not faction then
+		return nil
+	end
+	if faction:sub(1, 6) == "actor_" then
+		return faction:sub(7)
+	end
+	return faction
+end
+
+local function get_actor_faction()
+	local state = alife_storage_manager.get_state()
+	local faction = normalize_faction(state.default_faction)
+	if faction then
+		return faction
+	end
+	return normalize_faction(character_community(db.actor))
+end
+
+local function translate_title(title_id)
+	local title = game.translate_string(title_id)
+	if not title or title == "" or title == title_id then
+		return nil
+	end
+	return title
+end
+
+local function get_rank_index(rank_points, ranks)
+	local result = 1
+	for index = 1, #ranks do
+		if rank_points < ranks[index].threshold then
+			break
+		end
+		result = index
+	end
+	return result
+end
+
+local function strip_rank_prefix(name)
+	if not name or name == "" then
+		return name, false
+	end
+
+	local checked_lists = {}
+	for _, ranks in pairs(ranks_by_faction) do
+		if not checked_lists[ranks] then
+			checked_lists[ranks] = true
+			for index = 1, #ranks do
+				local title = translate_title(ranks[index].title_id)
+				if title then
+					local prefix = title .. " "
+					if name:sub(1, #prefix) == prefix then
+						return name:sub(#prefix + 1), true
+					end
+				end
+			end
+		end
+	end
+
+	return name, false
+end
+
+local function set_actor_name(se_actor, old_name, new_name)
+	if new_name and new_name ~= "" and old_name ~= new_name then
+		se_actor:set_character_name(new_name)
+		printf("- Faction Career Ranks | player name: (%s) -> (%s)", old_name, new_name)
+	end
+end
+
+local function update_actor_name()
+	if not db.actor then
+		return
+	end
+
+	local simulation = alife()
+	local se_actor = simulation and simulation:actor()
+	if not se_actor then
+		return
+	end
+
+	local storage = get_storage()
+	local current_name = se_actor:character_name()
+	if not current_name or current_name == "" then
+		return
+	end
+
+	local stripped_name, had_prefix = strip_rank_prefix(current_name)
+	local faction = get_actor_faction()
+	local ranks = ranks_by_faction[faction]
+	if not allowed_factions[faction] or not ranks then
+		if storage.applied_name and current_name == storage.applied_name and storage.base_name then
+			set_actor_name(se_actor, current_name, storage.base_name)
+		elseif had_prefix and (not storage.base_name or stripped_name == storage.base_name) then
+			storage.base_name = stripped_name
+			set_actor_name(se_actor, current_name, stripped_name)
+		elseif not had_prefix then
+			storage.base_name = current_name
+		end
+		storage.rank_index = nil
+		storage.applied_name = nil
+		return
+	end
+
+	if not storage.base_name or storage.base_name == "" then
+		storage.base_name = stripped_name
+	elseif storage.applied_name and current_name == storage.applied_name then
+		-- This is still the name last applied by the mod. Keep the saved base name.
+	elseif not had_prefix and current_name ~= storage.base_name then
+		-- Respect a name changed later in the gameplay options.
+		storage.base_name = current_name
+	elseif had_prefix and stripped_name ~= storage.base_name then
+		-- Also accept a manually entered name that already contains a known title.
+		storage.base_name = stripped_name
+	end
+
+	local rank_index = get_rank_index(db.actor:character_rank(), ranks)
+	local title = translate_title(ranks[rank_index].title_id)
+	if not title then
+		return
+	end
+
+	local desired_name = title .. " " .. storage.base_name
+	set_actor_name(se_actor, current_name, desired_name)
+	storage.rank_index = rank_index
+	storage.applied_name = desired_name
+end
+
+local function actor_on_update()
+	local now = time_global()
+	if now < next_update then
+		return
+	end
+	next_update = now + update_interval
+	update_actor_name()
+end
+
+local function on_game_load()
+	next_update = 0
+end
+
+function on_game_start()
+	load_config()
+	RegisterScriptCallback("on_game_load", on_game_load)
+	RegisterScriptCallback("actor_on_update", actor_on_update)
+end

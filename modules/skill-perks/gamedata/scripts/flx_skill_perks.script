@@ -1,0 +1,355 @@
+-- FLX Skill Perks 0.1.1. Runtime additions to the active GAMMA Haruka system.
+local floor, min, max = math.floor, math.min, math.max
+local installed = false
+local baseline, applied, weapon_state = {}, {}, nil
+local last_time, wind_remaining, previous_power = nil, 0, nil
+local known_levels, initialized = {}, false
+local cfg = {enabled=true, base_xp=1.25, xp_step=0.02, effect_scale=1, notifications=true}
+local skill_order = {"endurance", "strength", "scavenging", "survival"}
+local pending_items = {}
+local last_bias
+local effect_cache = {}
+
+local function tr(id) return game.translate_string(id) end
+local function clamp_value(v, lo, hi) return max(lo, min(hi, v)) end
+function level_of(skill)
+    local s = haru_skills.skills_levels and haru_skills.skills_levels[skill]
+    return clamp_value(s and s.current_level or 0, 0, 30)
+end
+local function tier(l, thresholds)
+    local v = 0
+    for i=1,#thresholds do if l >= thresholds[i][1] then v = thresholds[i][2] end end
+    return v * cfg.effect_scale
+end
+function effects(skill, requested_level)
+    local l = requested_level or level_of(skill)
+    effect_cache[skill]=effect_cache[skill] or {}
+    if effect_cache[skill][l] then return effect_cache[skill][l] end
+    local e = {xp = floor(l / 2) * cfg.xp_step, base_xp=cfg.base_xp}
+    if not cfg.enabled then e.xp=0; e.base_xp=1; effect_cache[skill][l]=e; return e end
+    if skill == "endurance" then
+        e.regen = floor(l/2) * 0.005 * cfg.effect_scale
+        e.walk = tier(l, {{5,0.02},{15,0.04}})
+        e.sprint = tier(l, {{10,0.02},{20,0.04}})
+        e.wind = tier(l, {{25,0.05},{30,0.10}})
+    elseif skill == "strength" then
+        e.load = tier(l, {{5,0.02},{15,0.04},{30,0.06}})
+        e.recoil = tier(l, {{10,0.02},{20,0.04}})
+        e.ads = tier(l, {{25,0.03},{30,0.05}})
+    elseif skill == "scavenging" then
+        e.sale = floor(l/2) * 0.002 * cfg.effect_scale
+        e.discount = tier(l, {{5,0.01},{10,0.02},{20,0.03},{30,0.05}})
+        e.tool = tier(l, {{15,0.03},{25,0.05}})
+    elseif skill == "survival" then
+        e.hunger = floor(l/2) * 0.005 * cfg.effect_scale
+        e.bandage = tier(l, {{5,0.03},{20,0.05}})
+        e.stomach = tier(l, {{10,0.05},{25,0.10}})
+        e.medkit = tier(l, {{15,0.03},{30,0.05}})
+    end
+    effect_cache[skill][l]=e
+    return e
+end
+function xp_factor(skill)
+    local e = effects(skill)
+    return e.base_xp * (1 + e.xp)
+end
+function recoil_factor(zoomed)
+    local e = effects("strength")
+    return (1 - (e.recoil or 0)) * (zoomed and (1 - (e.ads or 0)) or 1)
+end
+
+function refresh_options()
+    effect_cache={}
+    if not ui_mcm then return end
+    for key, default in pairs({enabled=true,base_xp=1.25,xp_step=0.02,effect_scale=1,notifications=true}) do
+        local v = ui_mcm.get("flx_skill_perks/" .. key)
+        cfg[key] = v == nil and default or v
+    end
+    cfg.base_xp=clamp_value(tonumber(cfg.base_xp) or 1.25,1,2)
+    cfg.xp_step=clamp_value(tonumber(cfg.xp_step) or 0.02,0,0.04)
+    cfg.effect_scale=clamp_value(tonumber(cfg.effect_scale) or 1,0,2)
+end
+
+local function conditions() return db.actor:cast_Actor():conditions() end
+-- Adopt changes made by other scripts; never multiply the previous perk value again.
+local function scale_condition(c, key, factor)
+    local current = c[key]
+    if baseline[key] == nil or (applied[key] and math.abs(current-applied[key]) > 0.0000001) then
+        baseline[key] = current
+    end
+    local target = baseline[key] * factor
+    if current ~= target then c[key] = target end
+    applied[key] = target
+end
+local recoil_properties = {
+    {"GetCamDispersion","SetCamDispersion",false},
+    {"GetCamDispersionInc","SetCamDispersionInc",false},
+    {"GetCamStepAngleHorz","SetCamStepAngleHorz",false},
+    {"GetZoomCamDispersion","SetZoomCamDispersion",true},
+    {"GetZoomCamDispersionInc","SetZoomCamDispersionInc",true},
+    {"GetZoomCamStepAngleHorz","SetZoomCamStepAngleHorz",true}
+}
+local function restore_weapon()
+    if not weapon_state then return end
+    local obj = level.object_by_id(weapon_state.id)
+    if obj and obj:section() == weapon_state.section then
+        local w = obj:cast_Weapon()
+        for _,p in ipairs(recoil_properties) do
+            local st = weapon_state.values[p[1]]
+            if st and math.abs(w[p[1]](w)-st.applied) < 0.0000001 then w[p[2]](w,st.base) end
+        end
+    end
+    weapon_state=nil
+end
+function update_weapon()
+    local obj = db.actor and db.actor:active_item()
+    if not (obj and utils_item.item_is_fa(obj)) then restore_weapon(); return end
+    if weapon_state and (weapon_state.id ~= obj:id() or weapon_state.section ~= obj:section()) then restore_weapon() end
+    if not weapon_state then weapon_state={id=obj:id(),section=obj:section(),values={}} end
+    local w = obj:cast_Weapon()
+    for _,p in ipairs(recoil_properties) do
+        local current = w[p[1]](w)
+        local st = weapon_state.values[p[1]]
+        if not st or math.abs(current-st.applied) > 0.0000001 then st={base=current}; weapon_state.values[p[1]]=st end
+        st.applied=st.base*recoil_factor(p[3])
+        if current ~= st.applied then w[p[2]](w,st.applied) end
+    end
+end
+
+local function is_walking()
+    return IsMoveState("mcAnyMove") and not IsMoveState("mcSprint")
+        and not IsMoveState("mcJump") and not IsMoveState("mcFall") and not IsMoveState("mcClimb")
+end
+function update_walk_bias(force)
+    local stats = haru_skills.skills_stats and haru_skills.skills_stats.endurance
+    if not stats then return end
+    local target = stats.power_loss * (is_walking() and (1-(effects("endurance").walk or 0)) or 1)
+    if force or target ~= last_bias then exec_console_cmd("power_loss_bias " .. tostring(target)); last_bias=target end
+end
+
+local function percent(v) return string.format("%.1f", (v or 0)*100):gsub("%.0$","") end
+local function notice(skill, l)
+    if not cfg.notifications then return end
+    db.actor:give_game_news(tr("flx_perks_title"), tr("st_player_skills_"..skill)..": "..l..". "..tr("flx_perks_notice"), "ui_skills_icon_"..skill, 0, 7000)
+end
+local function update_notifications()
+    for _,s in ipairs(skill_order) do
+        local l = level_of(s)
+        local old = known_levels[s]
+        if initialized and cfg.enabled and old and l > old then
+            local milestones={}
+            for n=old+1,l do if n%2==0 or n%5==0 then milestones[#milestones+1]=n end end
+            if #milestones > 0 then notice(s,l) end
+        end
+        known_levels[s]=l
+    end
+    initialized=true
+end
+
+local function boost_existing(c, typ, configured_value, configured_duration, bonus)
+    if bonus <= 0 or configured_value <= 0 or configured_duration <= 0 then return end
+    local remaining, value
+    c:BoosterForEach(function(t,d,v) if t==typ then remaining=d; value=v end end)
+    -- Do not amplify a different, stronger drug already in effect.
+    if not value or math.abs(value-configured_value) > 0.0000001 then return end
+    if remaining > configured_duration + 0.1 then return end
+    local b = SBooster()
+    b.m_type=typ; b.fBoostTime=remaining; b.fBoostValue=value*(1+bonus)
+    c:ApplyBooster(b,"flx_skill_perks_silent")
+end
+local function enhance_item(sec)
+    if not cfg.enabled then return end
+    local e = effects("survival")
+    local c = conditions()
+    if sec == "bandage" then
+        boost_existing(c,3,ini_sys:r_float_ex(sec,"boost_bleeding_restore") or 0,ini_sys:r_float_ex(sec,"boost_time") or 0,e.bandage or 0)
+    elseif sec == "medkit" or sec == "medkit_army" or sec == "medkit_scientic" then
+        boost_existing(c,0,ini_sys:r_float_ex(sec,"boost_health_restore") or 0,ini_sys:r_float_ex(sec,"boost_time") or 0,e.medkit or 0)
+    end
+end
+function item_used(obj, sec)
+    sec=sec or (obj and obj:section())
+    if not sec then return end
+    pending_items[#pending_items+1]=sec
+    local kind=ini_sys:r_string_ex(sec,"kind") or ""
+    if cfg.enabled and (kind=="i_food" or kind=="i_meat") then
+        local harmful=ini_sys:r_float_ex(sec,"eat_health") or 0
+        if harmful<0 then db.actor:change_health(-harmful*(effects("survival").stomach or 0)) end
+    end
+end
+
+function update()
+    if not (db.actor and db.actor:alive()) then return end
+    local c = conditions()
+    local now=game.get_game_time()
+    local dt=last_time and max(0,now:diffSec(last_time)) or 0
+    last_time=now
+    wind_remaining=max(0,wind_remaining-dt)
+    local e, s = effects("endurance"), effects("strength")
+    scale_condition(c,"m_fWalkWeightPower",1-(s.load or 0))
+    scale_condition(c,"m_fStandPower",1+(e.regen or 0))
+    scale_condition(c,"m_fSprintK",1-(e.sprint or 0))
+    update_walk_bias(false)
+    update_weapon()
+    -- No repayment of item hunger costs, sleep, fast travel, or time skips.
+    if cfg.enabled and dt>0 and dt<=2 then
+        local hunger=effects("survival").hunger or 0
+        if c:GetSatiety()>0 then c:ChangeSatiety(c:V_Satiety()*dt*hunger) end
+        if (e.regen or 0)>0 and c:GetPower()<1 then
+            c:ChangePower(c:V_SatietyPower()*c:GetSatiety()*dt*e.regen)
+        end
+    end
+    local p=c:GetPower()
+    if (e.wind or 0)>0 and p<0.10 and previous_power and previous_power>=0.10 and wind_remaining<=0 then
+        c:ChangePower(min(e.wind,1-p)); wind_remaining=300
+        if cfg.notifications then db.actor:give_game_news(tr("flx_wind"),tr("flx_wind_trigger"),"ui_skills_icon_endurance",0,4000) end
+        p=min(1,p+e.wind)
+    end
+    previous_power=p
+    for _,sec in ipairs(pending_items) do enhance_item(sec) end
+    pending_items={}
+    update_notifications()
+end
+
+function restore()
+    restore_weapon()
+    if db.actor then
+        local c=conditions()
+        for key,value in pairs(baseline) do
+            if applied[key] and math.abs(c[key]-applied[key])<0.0000001 then c[key]=value end
+        end
+        local stats=haru_skills.skills_stats and haru_skills.skills_stats.endurance
+        if stats then exec_console_cmd("power_loss_bias "..tostring(stats.power_loss)) end
+    end
+    baseline={}; applied={}; last_bias=nil
+end
+function save(data)
+    restore()
+    data.flx_skill_perks={wind_remaining=wind_remaining}
+end
+function load(data)
+    restore()
+    local st=data.flx_skill_perks or {}
+    wind_remaining=clamp_value(tonumber(st.wind_remaining) or 0,0,300)
+    last_time=nil; previous_power=nil; initialized=false; known_levels={}; pending_items={}
+    baseline={}; applied={}; weapon_state=nil; last_bias=nil
+end
+function reset_after_spawn()
+    last_time=nil; previous_power=nil; initialized=false; baseline={}; applied={}; weapon_state=nil; last_bias=nil
+end
+
+-- Separate inventory categories use the normal trading cost function: mode 1 sells, mode 2 buys.
+local function sale_allowed(obj)
+    return not (IsWeapon(obj) or IsOutfit(obj) or IsHeadgear(obj) or IsArtefact(obj))
+end
+local function install_hooks()
+    if installed then return end
+    installed=true
+    local old_xp=haru_skills.increase_skill
+    haru_skills.increase_skill=function(skill,amount) return old_xp(skill,amount*xp_factor(skill)) end
+    local old_endurance=haru_skills.update_endurance
+    haru_skills.update_endurance=function(...) local result=old_endurance(...); update_walk_bias(true); return result end
+    -- Wrap the completed price, AFTER all registered callbacks (including AlifePlus).
+    local old_cost=utils_item.get_item_cost
+    utils_item.get_item_cost=function(obj,profile)
+        local cost=old_cost(obj,profile)
+        if type(cost)~="number" or not profile then return cost end
+        local e=effects("scavenging")
+        if profile.mode==2 then return cost*(1-(e.discount or 0)) end
+        if profile.mode==1 and sale_allowed(obj) then return cost*(1+(e.sale or 0)) end
+        return cost
+    end
+    local context_tool, preserve_tool
+    local old_degrade=utils_item.degrade
+    utils_item.degrade=function(obj,num)
+        if context_tool and obj and obj:id()==context_tool and preserve_tool then return obj:condition() end
+        return old_degrade(obj,num)
+    end
+    -- Restrict the roll to the disassembly tool; never preserve the dismantled object.
+    for _,name in ipairs({"disassembly_item","disassembly_weapon","disassembly_outfit"}) do
+        local original=item_parts[name]
+        item_parts[name]=function(obj,tool)
+            local old_id,old_keep=context_tool,preserve_tool
+            context_tool=tool and tool:id()
+            preserve_tool=context_tool and math.random()<(effects("scavenging").tool or 0)
+            local result=original(obj,tool)
+            context_tool,preserve_tool=old_id,old_keep
+            return result
+        end
+    end
+    local old_descr=ui_pda_encyclopedia_tab.UpdateDescr
+    ui_pda_encyclopedia_tab.UpdateDescr=function(section,str)
+        local skill=section:match("^encyclopedia_flx_perks_(%a+)$")
+        if skill then return article(skill) end
+        return old_descr(section,str)
+    end
+    -- BHS medicine restores temporary health of individual limbs. Keep that effect proportional too.
+    local bhs=zzz_player_injuries
+    if bhs and bhs.medkits then
+        for _,sec in ipairs({"medkit","medkit_army","medkit_scientic"}) do
+            local original=bhs.medkits[sec]
+            if original then
+                local proxy={}
+                setmetatable(proxy,{__index=function(_,key)
+                    local value=original[key]
+                    if type(value)=="number" and key~="timeregen" then return value*(1+(effects("survival").medkit or 0)) end
+                    return value
+                end})
+                bhs.medkits[sec]=proxy
+            end
+        end
+    end
+end
+
+local effect_rows={
+    endurance={{"regen","flx_regen"},{"walk","flx_walk"},{"sprint","flx_sprint"},{"wind","flx_wind"}},
+    strength={{"load","flx_load"},{"recoil","flx_recoil"},{"ads","flx_ads"}},
+    scavenging={{"sale","flx_sale"},{"discount","flx_discount"},{"tool","flx_tool"}},
+    survival={{"hunger","flx_hunger"},{"bandage","flx_bandage"},{"stomach","flx_stomach"},{"medkit","flx_medkit"}}
+}
+local function line(id, value) return tr(id)..": "..percent(value).."%" end
+function article(skill)
+    if skill=="overview" then
+        if not cfg.enabled then return tr("flx_disabled") end
+        return tr("flx_overview").."\\n\\n"..tr("flx_base_xp")..": x"..string.format("%.2f",cfg.base_xp)
+            .."\\n"..tr("flx_xp_step")..": +"..percent(cfg.xp_step).."% / 2 "..tr("flx_levels")
+    end
+    local l=level_of(skill)
+    local e=effects(skill)
+    local rows=effect_rows[skill]
+    if not rows then return "" end
+    local out={tr("st_player_skills_"..skill)..": "..l.." / 30"}
+    if not cfg.enabled then out[#out+1]=tr("flx_disabled"); return table.concat(out,"\\n") end
+    out[#out+1]=line("flx_xp_bonus",e.xp).." (x"..string.format("%.2f",xp_factor(skill))..")"
+    out[#out+1]=""
+    for _,row in ipairs(rows) do
+        if (e[row[1]] or 0)>0 then out[#out+1]=line(row[2],e[row[1]]) end
+    end
+    if skill=="endurance" and (e.wind or 0)>0 then out[#out+1]=tr("flx_wind_rule") end
+    local next_level=l+1
+    while next_level<=30 and next_level%2~=0 and next_level%5~=0 do next_level=next_level+1 end
+    if next_level<=30 then
+        local future=effects(skill,next_level)
+        out[#out+1]=""; out[#out+1]=tr("flx_next")..": "..next_level
+        if future.xp>e.xp then out[#out+1]=line("flx_xp_bonus",future.xp) end
+        for _,row in ipairs(rows) do
+            if (future[row[1]] or 0)>(e[row[1]] or 0) then out[#out+1]=line(row[2],future[row[1]]) end
+        end
+    else out[#out+1]=""; out[#out+1]=tr("flx_max") end
+    return table.concat(out,"\\n")
+end
+
+function on_game_start()
+    refresh_options()
+    RegisterScriptCallback("actor_on_first_update",function() reset_after_spawn(); install_hooks() end)
+    RegisterScriptCallback("actor_on_update",update)
+    RegisterScriptCallback("actor_on_item_use",item_used)
+    RegisterScriptCallback("actor_on_weapon_before_fire",update_weapon)
+    RegisterScriptCallback("actor_on_item_drop",restore_weapon)
+    RegisterScriptCallback("ActorMenu_on_item_before_move",restore_weapon)
+    RegisterScriptCallback("save_state",save)
+    RegisterScriptCallback("load_state",load)
+    RegisterScriptCallback("actor_on_net_destroy",restore)
+    RegisterScriptCallback("actor_on_before_death",restore)
+    RegisterScriptCallback("on_option_change",refresh_options)
+end

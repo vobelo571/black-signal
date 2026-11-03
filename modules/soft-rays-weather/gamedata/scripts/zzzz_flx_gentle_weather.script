@@ -1,0 +1,43 @@
+-- FLX: disable the airborne Pulse only; ordinary anomaly fields remain active.
+-- Runtime hook follows the enabled SSS binder and preserves other modules' fixes.
+local function no_pulse()
+end
+
+local function write_options()
+    local cfg = axr_main.config
+    cfg:w_value("options", "video/weather/rain_occurrence", 1)
+    cfg:w_value("options", "video/weather/storm_occurrence", 1)
+    cfg:w_value("options", "SMR/smr_anomalies/pulse", false)
+    cfg:save()
+end
+
+local function apply_on_load()
+    bind_anomaly_field.pulse_anomaly_update = no_pulse
+    write_options()
+    local manager = level_weathers.get_weather_manager()
+    if manager then
+        manager.distant_storm_on = false
+        -- A save can retain a rainy cycle even after disabling it in the menu.
+        -- Leave active emission/psi-storm weather effects to their own managers.
+        if manager.weatherType == "atmosfear" and not level.is_wfx_playing()
+            and (manager.cycle == "rain" or manager.cycle == "storm") then
+            manager.cycle = "partly"
+            manager.preset = nil
+            manager.last_weather_file = nil
+            manager.weather_file_saved = nil
+            manager:select_weather(true)
+            manager:reset_change_date(true)
+        end
+    end
+    printf("[FLX visual] Pulse disabled; ordinary rain/storm cycles disabled; residual rain capped at 8%%")
+end
+
+function on_game_start()
+    write_options()
+    bind_anomaly_field.pulse_anomaly_update = no_pulse
+    -- Distant thunder is separate from storm occurrence in AtmosFear.
+    level_weathers.WeatherManager.distant_storm = function(self)
+        self.distant_storm_on = false
+    end
+    RegisterScriptCallback("actor_on_first_update", apply_on_load)
+end

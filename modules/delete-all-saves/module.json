@@ -1,0 +1,14 @@
+{
+  "id": "delete-all-saves",
+  "title": "Удалить все сохранения",
+  "group": "Интерфейс и удобство",
+  "version": "1.0.0",
+  "description": "Кнопка массового удаления сохранений в меню загрузки.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "Удаляет сохранения после подтверждения. Выбирать осознанно; заранее сделать копию savedgames.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1007- FLX Delete All Saves"
+}

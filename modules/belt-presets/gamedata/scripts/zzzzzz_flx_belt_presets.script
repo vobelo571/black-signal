@@ -1,0 +1,171 @@
+-- Three save-local belt presets. No replacement of the inventory script/XML.
+local presets = {}
+local installed = false
+local busy = false
+local generation = 0
+local step_id = 0
+
+local function message(ui, index, key)
+    ui.flx_bp_status = ui.flx_bp_status or {}
+    ui.flx_bp_status[index] = game.translate_string("flx_bp_" .. key)
+end
+
+-- Inventory movement is processed by the engine between frames.
+local function later(token, action)
+    step_id = step_id + 1
+    CreateTimeEvent("flx_belt_presets", tostring(step_id), 0.2, function()
+        if token == generation and db.actor then action() end
+        return true
+    end)
+end
+
+local function snapshot()
+    local items = {}
+    local actor = db.actor
+    for i = 0, actor:belt_count() - 1 do
+        local obj = actor:item_on_belt(i)
+        items[#items + 1] = {id = obj:id(), section = obj:section()}
+    end
+    return items
+end
+
+local function refresh(ui)
+    for i = 1, 3 do
+        ui.flx_bp_buttons[i]:TextControl():SetText(tostring(i) .. (presets[i] and "*" or ""))
+    end
+    ui:On_Item_Update()
+end
+
+local function click(ui, index)
+    if ui.mode ~= "inventory" or busy then return end
+    if ui.holding_shift then
+        presets[index] = snapshot()
+        refresh(ui)
+        message(ui, index, "saved")
+        return
+    end
+    local preset = presets[index]
+    if not preset then message(ui, index, "empty"); return end
+    local actor = db.actor
+    local outfit = actor:item_in_slot(7)
+    local capacity = outfit and outfit:cast_CustomOutfit():get_artefact_count() or 0
+    if #preset > capacity then message(ui, index, "capacity"); return end
+    -- Validate the entire preset before removing anything from the belt.
+    local target = {}
+    for i, entry in ipairs(preset) do
+        local obj = actor:object_id(entry.id)
+        if not obj or obj:section() ~= entry.section or not IsArtefact(obj) then
+            message(ui, index, "missing")
+            return
+        end
+        target[i] = obj
+    end
+    local previous = snapshot()
+    busy = true
+    generation = generation + 1
+    local token = generation
+    message(ui, index, "working")
+    -- Finish unequipping before asking the engine to equip the next set.
+    for _, entry in ipairs(previous) do
+        actor:move_to_ruck(actor:object_id(entry.id))
+    end
+    later(token, function()
+        local next_item = 1
+        local function equip_next()
+            if next_item <= #target then
+                actor:move_to_belt(target[next_item])
+                next_item = next_item + 1
+                later(token, equip_next)
+                return
+            end
+            local complete = actor:belt_count() == #target
+            for _, obj in ipairs(target) do complete = complete and actor:is_on_belt(obj) end
+            if complete then
+                busy = false
+                refresh(ui)
+                message(ui, index, "loaded")
+                return
+            end
+            local partial = snapshot()
+            for _, entry in ipairs(partial) do actor:move_to_ruck(actor:object_id(entry.id)) end
+            later(token, function()
+                local restore_index = 1
+                local function restore_next()
+                    if restore_index <= #previous then
+                        local obj = actor:object_id(previous[restore_index].id)
+                        if obj then actor:move_to_belt(obj) end
+                        restore_index = restore_index + 1
+                        later(token, restore_next)
+                        return
+                    end
+                    busy = false
+                    refresh(ui)
+                    message(ui, index, "rejected")
+                end
+                restore_next()
+            end)
+        end
+        equip_next()
+    end)
+
+end
+
+local function add_controls(ui)
+    if ui.flx_bp_buttons then return end
+    local xml = CScriptXmlInit()
+    xml:ParseFile("flx_belt_presets.xml")
+    ui.flx_bp_buttons = {}
+    ui.flx_bp_tip = xml:InitStatic("tooltip", ui.equ_dialog)
+    ui.flx_bp_tip_text = xml:InitTextWnd("tooltip:label", ui.flx_bp_tip)
+    ui.flx_bp_tip:Show(false)
+    for i = 1, 3 do
+        local index = i
+        local button = xml:Init3tButton("preset" .. i, ui.equ_dialog)
+        ui.flx_bp_buttons[i] = button
+        ui:Register(button, "flx_bp_" .. i)
+        ui:AddCallback("flx_bp_" .. i, ui_events.BUTTON_CLICKED,
+            function(self) click(self, index) end, ui)
+    end
+    refresh(ui)
+end
+
+function on_game_start()
+    if installed then return end
+    installed = true
+    RegisterScriptCallback("save_state", function(data) data.flx_belt_presets_v1 = presets end)
+    RegisterScriptCallback("load_state", function(data)
+        presets = data.flx_belt_presets_v1 or {}
+        generation = generation + 1
+        busy = false
+    end)
+    local base_init = ui_inventory.UIInventory.InitControls
+    function ui_inventory.UIInventory:InitControls()
+        base_init(self)
+        add_controls(self)
+    end
+    local base_update = ui_inventory.UIInventory.Update
+    function ui_inventory.UIInventory:Update()
+        base_update(self)
+        if self.flx_bp_buttons then
+            local visible = self.mode == "inventory"
+            local hovered = nil
+            for i = 1, 3 do
+                self.flx_bp_buttons[i]:Show(visible)
+                if visible and self.flx_bp_buttons[i]:IsCursorOverWindow() then hovered = i end
+                self.flx_bp_buttons[i]:TextControl():SetText(tostring(i) .. (presets[i] and "*" or ""))
+            end
+            if hovered ~= self.flx_bp_hover then
+                self.flx_bp_hover = hovered
+                self.flx_bp_hover_time = time_global()
+            end
+            local show = hovered and time_global() - (self.flx_bp_hover_time or 0) > 350
+            self.flx_bp_tip:Show(show and true or false)
+            if show then
+                local text = game.translate_string("flx_bp_help")
+                local status = self.flx_bp_status and self.flx_bp_status[hovered]
+                self.flx_bp_tip_text:SetText(text .. (status and "\n" .. status or ""))
+            end
+        end
+    end
+    if ui_inventory.GUI then add_controls(ui_inventory.GUI) end
+end

@@ -1,0 +1,18 @@
+{
+  "id": "scrounger-perk",
+  "title": "Навык «Падальщик»",
+  "group": "Мир и баланс",
+  "version": "0.1.0",
+  "description": "Пятый навык Haruka: опыт за находки и улучшение состояния отдельных деталей.",
+  "requires": [
+    "gamma",
+    "skills"
+  ],
+  "notes": "FLX Skill Perks необязателен. Не улучшает оружие целиком.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "FLX Scrounger Perk",
+  "optional_modules": [
+    "skill-perks"
+  ]
+}

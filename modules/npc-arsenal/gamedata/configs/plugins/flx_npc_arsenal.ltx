@@ -1,0 +1,72 @@
+; FLX NPC Arsenal 1.1.1
+; Live system.ltx discovery includes enabled addon weapons automatically.
+; Scope variants are handled by Weighted NPC Random Loadouts, not counted as guns.
+
+[exclude]
+; Add a section as a key to opt out an AI-incompatible addon weapon:
+; wpn_example = true
+
+[tier_overrides]
+; Grades: 1 primitive/budget, 2 regular, 3 professional, 4 elite.
+; Basic service rifles remain appropriate for experienced soldiers and masters.
+wpn_ak74 = 3
+wpn_ak74m = 3
+wpn_ak74u = 2
+wpn_ak74u_old = 2
+wpn_ak74u_custom = 2
+wpn_akms_alt = 3
+wpn_akm = 3
+wpn_m4 = 3
+wpn_m4a1 = 3
+wpn_m4a1_siber = 3
+wpn_l85 = 2
+wpn_l85_m1 = 2
+wpn_l85_m2 = 3
+wpn_adar2_15 = 2
+wpn_toz106 = 1
+wpn_toz106_m1 = 1
+wpn_pm = 1
+wpn_pm_custom = 1
+wpn_pb = 1
+wpn_tt33 = 1
+wpn_tt33_modern = 1
+wpn_fort17 = 2
+wpn_mp443 = 2
+wpn_sr1m = 3
+wpn_pl15 = 3
+wpn_pl15_tan = 3
+wpn_glock = 2
+wpn_sig220_n = 2
+wpn_beretta = 2
+wpn_pkp_siber = 4
+wpn_rpk74_16_drum = 4
+
+[origin_overrides]
+; east / west / neutral; learned faction affinity also affects distribution.
+wpn_brn180 = west
+wpn_xm4 = west
+wpn_grot = west
+wpn_grot_tan = west
+wpn_grot_bl = west
+wpn_mp155 = east
+
+[family_overrides]
+wpn_pm_custom_pm_upgr_kit = pm
+wpn_pb_pb_upgr_kit = pb
+
+[migration]
+enable = true
+startup_delay_ms = 3000
+batch_interval_ms = 200
+retry_interval_ms = 10000
+
+[migration_exclude]
+; Optional extra exclusions by NPC section name.
+
+[minimum_rank_by_family]
+; 1 novice, 2 trainee, 3 experienced, 4 professional,
+; 5 veteran, 6 expert, 7 master, 8 legend. Armour cannot bypass this gate.
+vintorez = 5
+
+[minimum_rank_overrides]
+; Optional individual weapon minimum rank, using the same 1..8 scale.

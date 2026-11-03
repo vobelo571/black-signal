@@ -1,0 +1,132 @@
+-- Zhila's offers use the installed Announcements board and its normal NPC rows.
+-- No extra PDA page, button, category or taskboard script replacement.
+local installed=false
+local CATEGORY="rest"
+local kinds={day=true,night=true,forest=true,rare=true}
+local PREFIX="flx_zhila_contract_"
+
+local function kind_of(id)
+    if type(id)~="string" or id:sub(1,#PREFIX)~=PREFIX then return end
+    local kind=id:sub(#PREFIX+1)
+    return kinds[kind] and kind or nil
+end
+
+local function valid(info)
+    local kind=info and kind_of(info.task_id)
+    return kind and zz_flx_zhila_contracts.remote_can(kind)
+        and info.npc_id==zz_flx_zhila_contracts.remote_giver_id()
+end
+
+local function split(tasks)
+    local normal,own={},{}
+    for _,info in ipairs(tasks or {})do
+        if kind_of(info.task_id) then
+            if valid(info) then own[#own+1]=info end
+        else normal[#normal+1]=info end
+    end
+    return normal,own
+end
+
+local function make_offers(npc_list)
+    local result={}
+    local id=zz_flx_zhila_contracts.remote_giver_id()
+    if not id then return result end
+    -- Respect the actual nearby-NPC scan, including its filters and BG batching.
+    local scanned=false
+    for _,npc in ipairs(type(npc_list)=="table" and npc_list or {})do
+        if npc:id()==id then scanned=true;break end
+    end
+    if not scanned then return result end
+    for _,kind in ipairs({"day","night","forest","rare"})do
+        if zz_flx_zhila_contracts.remote_can(kind) then
+            local description=zz_flx_zhila_contracts.remote_text(kind)
+            result[#result+1]={
+                task_id=PREFIX..kind,npc_id=id,
+                npc_name=game.translate_string("flx_arena_zhila_name"),
+                npc_community="trader",npc_icon="ui_inGame2_neutral_2_old",
+                has_details=true,task_description=description,
+                money_reward=zz_flx_zhila_contracts.remote_reward(kind),bonus_eligible=false,
+                captured_details={task_title=game.translate_string("flx_zhila_"..kind.."_title"),
+                    task_details=description,task_icon="ui_iconsTotal_mutant"},
+            }
+        end
+    end
+    return result
+end
+
+local function install()
+    if installed then return end
+    local board=ui_pda_taskboard_tab
+    if not (board and board.pda_taskboard_tab and board.get_prepared_task_data
+        and board.filter_valid_tasks and board.add_grouped_task_entries
+        and board.task_offer_key and board.entry_cache) then
+        printf("[Zhila PDA] Announcements integration unavailable; personal dialogue remains active")
+        return
+    end
+    installed=true
+    local original_prepare=board.get_prepared_task_data
+    board.get_prepared_task_data=function(npc_list,...)
+        local data=original_prepare(npc_list,...) or {}
+        local offers=make_offers(npc_list)
+        if #offers>0 then
+            data[CATEGORY]=data[CATEGORY] or {}
+            for _,info in ipairs(offers)do data[CATEGORY][#data[CATEGORY]+1]=info end
+        end
+        return data
+    end
+
+    local original_filter=board.filter_valid_tasks
+    board.filter_valid_tasks=function(data,...)
+        local saved={}
+        for category,tasks in pairs(data)do
+            local normal,own=split(tasks)
+            data[category]=normal;saved[category]=own
+        end
+        original_filter(data,...)
+        -- Revalidate saved offers against the current radius, time window and cooldown.
+        for category,tasks in pairs(saved)do
+            if #tasks>0 then
+                data[category]=data[category] or {}
+                for _,info in ipairs(tasks)do table.insert(data[category],info)end
+            end
+        end
+    end
+
+    local original_draw=board.pda_taskboard_tab.DrawTaskList
+    function board.pda_taskboard_tab:DrawTaskList(category,...)
+        local data=self.board_data
+        if not data or type(data[category])~="table" then return original_draw(self,category,...)end
+        local normal,own=split(data[category])
+        data[category]=normal
+        local shown=original_draw(self,category,...)
+        local merged={}
+        for _,info in ipairs(normal)do merged[#merged+1]=info end
+        local entries={}
+        for _,info in ipairs(own)do
+            merged[#merged+1]=info
+            local entry={task_data=info,task_details=info.captured_details,reached_limit=false,priority=0}
+            entries[#entries+1]=entry
+            board.entry_cache[board.task_offer_key(info.task_id,info.npc_id)]=entry
+        end
+        data[category]=merged
+        if #entries>0 then
+            -- Reuse the board's grouped NPC row, details and Accept hitbox.
+            board.add_grouped_task_entries(self.task_list,entries,category)
+            return true
+        end
+        return shown
+    end
+
+    local original_accept=board.accept_task
+    board.accept_task=function(id,npc_id,...)
+        local kind=kind_of(id)
+        if not kind then return original_accept(id,npc_id,...)end
+        if npc_id~=zz_flx_zhila_contracts.remote_giver_id() then return false end
+        return zz_flx_zhila_contracts.remote_accept(kind)
+    end
+end
+
+function on_game_start()
+    RegisterScriptCallback("on_game_load",install)
+    RegisterScriptCallback("actor_on_first_update",install)
+end

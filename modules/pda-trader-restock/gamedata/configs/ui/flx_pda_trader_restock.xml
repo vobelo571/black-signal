@@ -1,0 +1,25 @@
+<w>
+    <!-- Fallback only; runtime placement follows the Contacts checkbox row. -->
+    <btn_restock x="298" y="103" width="224" height="24" stretch="1" hint="st_flx_restock_hint">
+        <texture>ui_button_ordinary</texture>
+        <text align="c" vert_align="c" font="letterica16" r="210" g="195" b="120">st_flx_restock_button</text>
+    </btn_restock>
+    <restock_dialog_bg x="150" y="220" width="520" height="300" stretch="1">
+        <texture>ui_inGame2_pda_buttons_background</texture>
+    </restock_dialog_bg>
+    <restock_dialog_text x="174" y="240" width="472" height="190" complex_mode="1">
+        <text font="letterica16" align="c" vert_align="c" r="220" g="220" b="210"/>
+    </restock_dialog_text>
+    <restock_yes x="240" y="458" width="150" height="36" stretch="1">
+        <texture>ui_button_ordinary</texture>
+        <text font="letterica16" align="c" vert_align="c" r="210" g="195" b="120">st_flx_restock_yes</text>
+    </restock_yes>
+    <restock_no x="430" y="458" width="150" height="36" stretch="1">
+        <texture>ui_button_ordinary</texture>
+        <text font="letterica16" align="c" vert_align="c" r="210" g="195" b="120">st_flx_restock_no</text>
+    </restock_no>
+    <restock_close x="335" y="458" width="150" height="36" stretch="1">
+        <texture>ui_button_ordinary</texture>
+        <text font="letterica16" align="c" vert_align="c" r="210" g="195" b="120">st_flx_restock_close</text>
+    </restock_close>
+</w>

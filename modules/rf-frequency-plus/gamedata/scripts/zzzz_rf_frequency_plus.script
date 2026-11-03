@@ -1,0 +1,179 @@
+-- RF Frequency Plus. Read-only tooltip integration for Anomaly / G.A.M.M.A.
+-- Keep this script ASCII; localized strings are in the game's string tables.
+-- Keep spaces around the break: the engine can discard an empty colored
+-- subline containing only \\n, merging the heading with the first entry.
+local newline = " \\n "
+local gray = "%c[255,170,170,170]"
+local blue = "%c[255,80,190,230]"
+local white = "%c[255,220,220,220]"
+local installed = false
+
+local function tr(key)
+    return game.translate_string(key)
+end
+
+local function valid_map(map)
+    return type(map) == "string" and map ~= "" and map ~= "empty"
+end
+
+local function valid_frequency(freq)
+    freq = tonumber(freq)
+    if freq and freq > 0 and freq < math.huge then return freq end
+end
+
+local directions = {"nw", "ne", "sw", "se", "n", "s", "w", "e", "c"}
+
+local function direction_from_text(text)
+    if type(text) ~= "string" then return nil end
+    text = string.lower(tr(text))
+    for _, direction in ipairs(directions) do
+        local key = "rfp_match_" .. direction
+        local fragment = tr(key)
+        if fragment ~= key and text:find(fragment, 1, true) then
+            return direction
+        end
+    end
+end
+
+local function is_receiver(obj, sec)
+    return (sec or (obj and obj:section())) == "detector_radio"
+end
+
+local function server_object(id)
+    if not id or id == 0 or id == 65535 then return nil end
+    return alife_object(id)
+end
+
+-- A collected package/PDA is no longer a search objective, even before the
+-- quest's next update. Follow inventory owners for items inside containers.
+local function owned_by_actor(obj)
+    local actor_id = db.actor:id()
+    for _ = 1, 8 do
+        if not obj then return false end
+        if obj.id == actor_id or obj.parent_id == actor_id then return true end
+        obj = server_object(obj.parent_id)
+    end
+    return false
+end
+
+local function package_direction(tb, map)
+    local spots = tb.tb_package_coords and tb.tb_package_coords[map]
+    if type(spots) ~= "table" then return nil end
+    -- Match the saved spawn vertices, not the nearest point on another map.
+    for _, spot in ipairs(spots) do
+        if spot[4] == tb.tb_target_lvid and spot[5] == tb.tb_target_gvid then
+            return spot[6] and spot[6]:match("^tb_loc_(%a+)_r$")
+        end
+    end
+end
+
+local function append_entry(entries, seen, map, freq, direction, id)
+    freq = valid_frequency(freq)
+    if not valid_map(map) or not freq then return end
+    local key = map .. ":" .. tostring(freq) .. ":" .. tostring(id or "")
+    if seen[key] then return end
+    seen[key] = true
+    entries[#entries + 1] = {
+        map = map, freq = freq, direction = direction, key = key
+    }
+end
+
+local function collect_package(entries, seen)
+    -- X-Ray enumerates script names in lowercase. An uppercase lookup can
+    -- auto-load a second namespace whose package state stays at defaults.
+    -- Read loaded namespaces only; never instantiate another package module.
+    local tb = rawget(_G, "tb_rf_receiver_packages")
+        or rawget(_G, "TB_RF_Receiver_Packages")
+    if not tb or not tb.tb_package_active then return end
+    local obj = server_object(tb.tb_target_item)
+    if not obj or owned_by_actor(obj) then return end
+    local map = tb.tb_package_in_level
+    append_entry(entries, seen, map, tb.tb_freq,
+        package_direction(tb, map) or direction_from_text(tb.tb_reminder), tb.tb_target_item)
+end
+
+local function collect_tasks(entries, seen)
+    if not task_manager or not task_manager.get_task_manager then return end
+    local manager = task_manager.get_task_manager()
+    for id, tsk in pairs(manager and manager.task_info or {}) do
+        if (tsk.status == "normal" or tsk.status == "selected")
+            and not tsk.forced_status and not tsk.cancelled_by_actor then
+            local var = load_var(db.actor, id)
+            if type(var) == "table" and valid_frequency(var.freq) then
+                local is_fate = tsk.status_functor == "fate_task"
+                    or tsk.target_functor == "general_fate"
+                local searching = not is_fate or ((tonumber(tsk.stage) or 0) <= 2
+                    and not has_alife_info(id .. "_target_found"))
+                local obj = server_object(var.item_2_id)
+                if searching and not (obj and owned_by_actor(obj)) then
+                    -- Use the quest's own region when its description supplies
+                    -- one. Do not infer compass directions from spawn positions.
+                    local direction = direction_from_text(tsk.current_descr)
+                    append_entry(entries, seen, var.map, var.freq, direction,
+                        var.item_2_id or id)
+                end
+            end
+        end
+    end
+end
+
+function get_active_frequencies()
+    local entries, seen = {}, {}
+    if not db.actor then return entries end
+    collect_package(entries, seen)
+    collect_tasks(entries, seen)
+    local current_map = level.name()
+    table.sort(entries, function(a, b)
+        if (a.map == current_map) ~= (b.map == current_map) then
+            return a.map == current_map
+        end
+        if a.map ~= b.map then return tr(a.map) < tr(b.map) end
+        if a.freq ~= b.freq then return a.freq < b.freq end
+        return a.key < b.key
+    end)
+    return entries
+end
+
+function build_description(obj)
+    local lines = {}
+    if obj then
+        local charge = math.ceil(obj:condition() * 100)
+        lines[#lines + 1] = gray .. tr("rfp_charge") .. ": " .. blue
+            .. tostring(charge) .. "%"
+        lines[#lines + 1] = " "
+    end
+    lines[#lines + 1] = gray .. tr("rfp_short_description")
+    lines[#lines + 1] = " "
+    lines[#lines + 1] = white .. tr("rfp_active_frequencies")
+    local entries = get_active_frequencies()
+    if #entries == 0 then
+        lines[#lines + 1] = gray .. tr("rfp_no_active_frequencies")
+    else
+        for index, entry in ipairs(entries) do
+            local direction = entry.direction and tr("rfp_direction_" .. entry.direction)
+                or tr("rfp_area_unknown")
+            lines[#lines + 1] = gray .. tostring(index) .. ") " .. white
+                .. tr(entry.map) .. " " .. blue .. tostring(entry.freq)
+                .. " " .. tr("st_mhz") .. gray .. " - " .. direction
+        end
+    end
+    return table.concat(lines, newline) .. gray
+end
+
+function on_game_start()
+    if installed then return end
+    installed = true
+    local original_item_description = ui_item.item_description
+    local original_sec_description = ui_item.get_sec_desc
+    -- Wrap the final description entry point. Receiver text is built afresh
+    -- on hover, bypassing ui_item's per-item description cache. Other items
+    -- retain the complete original tooltip / crafting / spoilage chain.
+    ui_item.item_description = function(obj, str)
+        if is_receiver(obj) then return build_description(obj) end
+        return original_item_description(obj, str)
+    end
+    ui_item.get_sec_desc = function(sec)
+        if is_receiver(nil, sec) then return build_description(nil) end
+        return original_sec_description(sec)
+    end
+end

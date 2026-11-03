@@ -1,0 +1,18 @@
+{
+  "id": "yantar-guide",
+  "title": "Ориентир: проводник Янтаря",
+  "group": "Персонажи и снаряжение",
+  "version": "1.0.1",
+  "description": "Постоянный проводник с восемью платными маршрутами и подтверждением оплаты.",
+  "requires": [
+    "gamma",
+    "dltx",
+    "hf",
+    "hf-expansion",
+    "hf-more"
+  ],
+  "notes": "Поддержка существующих сохранений предусмотрена модулем.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1014- FLX Yantar Guide"
+}

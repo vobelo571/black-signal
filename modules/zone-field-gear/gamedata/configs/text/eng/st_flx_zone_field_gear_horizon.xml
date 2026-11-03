@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_zfg_horizon_ecolog_outfit_name">
+    <text>Horizon Ecologist Expedition Suit</text>
+  </string>
+  <string id="st_zfg_horizon_ecolog_outfit_descr">
+    <text>An expedition SEVA conversion with extra load straps and artifact mounts. Built to bring samples and equipment home, with limited combat armor. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_horizon_csky_outfit_name">
+    <text>Horizon Clear Sky Expedition Suit</text>
+  </string>
+  <string id="st_zfg_horizon_csky_outfit_descr">
+    <text>An expedition SEVA conversion with extra load straps and artifact mounts. Built to bring samples and equipment home, with limited combat armor. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_horizon_stalker_outfit_name">
+    <text>Horizon Free Stalkers Expedition Suit</text>
+  </string>
+  <string id="st_zfg_horizon_stalker_outfit_descr">
+    <text>An expedition SEVA conversion with extra load straps and artifact mounts. Built to bring samples and equipment home, with limited combat armor. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_horizon_freedom_outfit_name">
+    <text>Horizon Freedom Expedition Suit</text>
+  </string>
+  <string id="st_zfg_horizon_freedom_outfit_descr">
+    <text>An expedition SEVA conversion with extra load straps and artifact mounts. Built to bring samples and equipment home, with limited combat armor. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+</string_table>

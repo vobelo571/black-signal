@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="flx_yantar_guide_name">
+    <text>Павел «Веха» Волошин</text>
+  </string>
+  <string id="flx_yantar_guide_bio">
+    <text>Проводник научных экспедиций, сотрудник группировки учёных на Янтаре. Прокладывает обходные маршруты, сверяет карты и выводит сталкеров к известным стоянкам.</text>
+  </string>
+  <string id="flx_yantar_guide_hello_0">
+    <text>Веха. Провожу с Янтаря, если нужна дорога без лишних блужданий. Куда собрался?</text>
+  </string>
+  <string id="flx_yantar_guide_travel_0">
+    <text>Мне нужен проводник. Какие есть маршруты?</text>
+  </string>
+  <string id="flx_yantar_guide_travel_1">
+    <text>Выбирай направление. Цена за один переход, оплата перед выходом. У каждого маршрута своя точка прибытия.</text>
+  </string>
+  <string id="flx_yantar_guide_about_0">
+    <text>Давно здесь работаешь?</text>
+  </string>
+  <string id="flx_yantar_guide_about_1">
+    <text>Давно хожу с научными группами. Им нужны образцы и замеры, мне — чтобы люди дошли туда и обратно. Здесь держу карты, журнал проходов и запас снаряжения. В Баре свой проводник, на Янтаре теперь можешь обращаться ко мне.</text>
+  </string>
+  <string id="flx_yantar_guide_rules_0">
+    <text>Что входит в плату?</text>
+  </string>
+  <string id="flx_yantar_guide_rules_1">
+    <text>Один переход к указанной точке. Назову направление и цену, потом отдельно подтвердишь оплату. Если денег не хватит, останемся здесь. Местные группировки от твоего сопровождения друзьями не станут — учитывай отношения. За обратную дорогу договаривайся с проводником на месте.</text>
+  </string>
+  <string id="flx_yantar_guide_pay">
+    <text>Оплачиваю. Выдвигаемся.</text>
+  </string>
+  <string id="flx_yantar_guide_no_money">
+    <text>Сейчас не хватает денег. Вернусь позже.</text>
+  </string>
+  <string id="flx_yantar_guide_cancel">
+    <text>Пока останусь здесь.</text>
+  </string>
+  <string id="flx_yantar_guide_route_agroprom">
+    <text>Агропром. %c[d_orange][1500 руб.]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_agroprom">
+    <text>Маршрут: Агропром. Стоимость: 1500 рублей. Подтверждаешь оплату и выход?</text>
+  </string>
+  <string id="flx_yantar_guide_route_garbage">
+    <text>Свалка. %c[d_orange][2500 руб.]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_garbage">
+    <text>Маршрут: Свалка. Стоимость: 2500 рублей. Подтверждаешь оплату и выход?</text>
+  </string>
+  <string id="flx_yantar_guide_route_bar">
+    <text>Росток — Бар. %c[d_orange][3500 руб.]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_bar">
+    <text>Маршрут: Росток — Бар. Стоимость: 3500 рублей. Подтверждаешь оплату и выход?</text>
+  </string>
+  <string id="flx_yantar_guide_route_cordon">
+    <text>Кордон — деревня новичков. %c[d_orange][4500 руб.]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_cordon">
+    <text>Маршрут: Кордон — деревня новичков. Стоимость: 4500 рублей. Подтверждаешь оплату и выход?</text>
+  </string>
+  <string id="flx_yantar_guide_route_warehouses">
+    <text>Армейские склады. %c[d_orange][5000 руб.]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_warehouses">
+    <text>Маршрут: Армейские склады. Стоимость: 5000 рублей. Подтверждаешь оплату и выход?</text>
+  </string>
+  <string id="flx_yantar_guide_route_cemetery">
+    <text>Кладбище техники — переход к Ростоку. %c[d_orange][6000 руб.]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_cemetery">
+    <text>Маршрут: Кладбище техники — переход к Ростоку. Стоимость: 6000 рублей. Подтверждаешь оплату и выход?</text>
+  </string>
+  <string id="flx_yantar_guide_route_marsh">
+    <text>Болота. %c[d_orange][6500 руб.]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_marsh">
+    <text>Маршрут: Болота. Стоимость: 6500 рублей. Подтверждаешь оплату и выход?</text>
+  </string>
+  <string id="flx_yantar_guide_route_jupiter">
+    <text>Юпитер — Янов. %c[d_orange][9000 руб.]</text>
+  </string>
+  <string id="flx_yantar_guide_confirm_jupiter">
+    <text>Маршрут: Юпитер — Янов. Стоимость: 9000 рублей. Подтверждаешь оплату и выход?</text>
+  </string>
+</string_table>

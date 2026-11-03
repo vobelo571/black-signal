@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_zfg_kontur_ecolog_outfit_name">
+    <text>Kontur Ecologist Dielectric Suit</text>
+  </string>
+  <string id="st_zfg_kontur_ecolog_outfit_descr">
+    <text>An electrical-protection conversion with insulating layers and sealed cuffs. Light ballistic protection leaves it poorly suited to firefights. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_kontur_csky_outfit_name">
+    <text>Kontur Clear Sky Dielectric Suit</text>
+  </string>
+  <string id="st_zfg_kontur_csky_outfit_descr">
+    <text>An electrical-protection conversion with insulating layers and sealed cuffs. Light ballistic protection leaves it poorly suited to firefights. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_kontur_stalker_outfit_name">
+    <text>Kontur Free Stalkers Dielectric Suit</text>
+  </string>
+  <string id="st_zfg_kontur_stalker_outfit_descr">
+    <text>An electrical-protection conversion with insulating layers and sealed cuffs. Light ballistic protection leaves it poorly suited to firefights. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+  <string id="st_zfg_kontur_killer_outfit_name">
+    <text>Kontur Mercenary Dielectric Suit</text>
+  </string>
+  <string id="st_zfg_kontur_killer_outfit_descr">
+    <text>An electrical-protection conversion with insulating layers and sealed cuffs. Light ballistic protection leaves it poorly suited to firefights. Uses the stock upgrade tree and replaceable repair parts. See the repair-kit class in the item parameters.</text>
+  </string>
+</string_table>

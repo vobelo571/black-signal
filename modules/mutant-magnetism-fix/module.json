@@ -1,0 +1,15 @@
+{
+  "id": "mutant-magnetism-fix",
+  "title": "Без притягивания к мутантам",
+  "group": "Исправления",
+  "version": "1.0",
+  "description": "DLTX-правка притягивания игрока при атаках мутантов.",
+  "requires": [
+    "gamma",
+    "dltx"
+  ],
+  "notes": "Не заменяет модели мутантов.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1009- FLX Mutants No Attack Magnetism"
+}

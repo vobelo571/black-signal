@@ -1,0 +1,28 @@
+<w>
+	<!-- Compact direct playlist selectors. They sit above the stock player controls. -->
+	<flx_playlist_1 x="214" y="636" width="58" height="15" stretch="1">
+		<texture>ui_inGame2_pda_Filtr_radio_plyr_btn_playlist</texture>
+		<text x="0" y="0" font="letterica16" r="170" g="170" b="170" align="c">1</text>
+	</flx_playlist_1>
+	<flx_playlist_2 x="277" y="636" width="58" height="15" stretch="1">
+		<texture>ui_inGame2_pda_Filtr_radio_plyr_btn_playlist</texture>
+		<text x="0" y="0" font="letterica16" r="170" g="170" b="170" align="c">2</text>
+	</flx_playlist_2>
+	<flx_playlist_3 x="340" y="636" width="58" height="15" stretch="1">
+		<texture>ui_inGame2_pda_Filtr_radio_plyr_btn_playlist</texture>
+		<text x="0" y="0" font="letterica16" r="170" g="170" b="170" align="c">3</text>
+	</flx_playlist_3>
+	<flx_playlist_4 x="403" y="636" width="58" height="15" stretch="1">
+		<texture>ui_inGame2_pda_Filtr_radio_plyr_btn_playlist</texture>
+		<text x="0" y="0" font="letterica16" r="170" g="170" b="170" align="c">4</text>
+	</flx_playlist_4>
+	<flx_playlist_5 x="466" y="636" width="58" height="15" stretch="1">
+		<texture>ui_inGame2_pda_Filtr_radio_plyr_btn_playlist</texture>
+		<text x="0" y="0" font="letterica16" r="170" g="170" b="170" align="c">5</text>
+	</flx_playlist_5>
+	<flx_playlist_6 x="529" y="636" width="58" height="15" stretch="1">
+		<texture>ui_inGame2_pda_Filtr_radio_plyr_btn_playlist</texture>
+		<text x="0" y="0" font="letterica16" r="170" g="170" b="170" align="c">6</text>
+	</flx_playlist_6>
+
+</w>

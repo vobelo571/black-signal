@@ -1,0 +1,14 @@
+{
+  "id": "stash-network",
+  "title": "Сеть тайников",
+  "group": "Интерфейс и удобство",
+  "version": "1.2.0",
+  "description": "Управление сетью хранилищ и распределением предметов.",
+  "requires": [
+    "gamma"
+  ],
+  "notes": "Настройки и подробности в исходном README. Проверить на копии сохранения.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1008- FLX Stash Network"
+}

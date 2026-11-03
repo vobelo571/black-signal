@@ -1,0 +1,444 @@
+{
+  "name": "BLACK SIGNAL",
+  "author": "@Flixmo",
+  "version": "0.1.0-rc.1",
+  "target": "S.T.A.L.K.E.R. Anomaly 1.5.3 / G.A.M.M.A. 0.9.5",
+  "modules": [
+    {
+      "id": "repeat-loot",
+      "title": "Повторный обыск",
+      "group": "Мир и баланс",
+      "version": "0.2.0",
+      "description": "Небольшие дополнительные находки каждые 24 игровых часа на поддерживаемых локациях.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "Прототип 0.2.0. Меняет доступность ресурсов. More Dynamic Items поддерживается, но не обязателен.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1004- FLX Repeat Loot"
+    },
+    {
+      "id": "pda-trader-restock",
+      "title": "Пополнение торговцев из КПК",
+      "group": "Интерфейс и удобство",
+      "version": "1.0.0",
+      "description": "Кнопка платного пополнения ассортимента: 25 000 RU за подтверждённый заказ.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "Не открывает закрытые уровни ассортимента.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1005- FLX PDA Trader Restock"
+    },
+    {
+      "id": "bhs-fixes",
+      "title": "BHS Fixes",
+      "group": "Исправления",
+      "version": "1.0.0",
+      "description": "Сохранение состояния конечностей, лечение у врачей и восстановление BHS при загрузке.",
+      "requires": [
+        "gamma",
+        "bhs"
+      ],
+      "notes": "Совместим с отдыхом и лечением у костра.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1006- BHS Fixes by flx"
+    },
+    {
+      "id": "delete-all-saves",
+      "title": "Удалить все сохранения",
+      "group": "Интерфейс и удобство",
+      "version": "1.0.0",
+      "description": "Кнопка массового удаления сохранений в меню загрузки.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "Удаляет сохранения после подтверждения. Выбирать осознанно; заранее сделать копию savedgames.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1007- FLX Delete All Saves"
+    },
+    {
+      "id": "arena-mutant-trader",
+      "title": "Жила: торговец Арены",
+      "group": "Персонажи и снаряжение",
+      "version": "1.5.5",
+      "description": "Торговец частями мутантов, мастерская и контракты.",
+      "requires": [
+        "gamma",
+        "dux",
+        "hf",
+        "hf-expansion"
+      ],
+      "notes": "Нужен доступ в помещения Арены. Внешний Taskboard необязателен.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1008- FLX Arena Mutant Trader",
+      "optional_modules": [
+        "taskboard"
+      ]
+    },
+    {
+      "id": "stash-network",
+      "title": "Сеть тайников",
+      "group": "Интерфейс и удобство",
+      "version": "1.2.0",
+      "description": "Управление сетью хранилищ и распределением предметов.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "Настройки и подробности в исходном README. Проверить на копии сохранения.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1008- FLX Stash Network"
+    },
+    {
+      "id": "belt-presets",
+      "title": "Пресеты пояса",
+      "group": "Интерфейс и удобство",
+      "version": "1.0.0",
+      "description": "Три пресета артефактов пояса в инвентаре.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "Использует уже имеющиеся предметы.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1009- FLX Belt Presets"
+    },
+    {
+      "id": "mutant-magnetism-fix",
+      "title": "Без притягивания к мутантам",
+      "group": "Исправления",
+      "version": "1.0",
+      "description": "DLTX-правка притягивания игрока при атаках мутантов.",
+      "requires": [
+        "gamma",
+        "dltx"
+      ],
+      "notes": "Не заменяет модели мутантов.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1009- FLX Mutants No Attack Magnetism"
+    },
+    {
+      "id": "zone-field-gear",
+      "title": "Снаряжение Зоны",
+      "group": "Персонажи и снаряжение",
+      "version": "0.7.1",
+      "description": "32 фракционных костюма: восемь семейств, модели, руки, иконки и баланс.",
+      "requires": [
+        "gamma",
+        "dltx"
+      ],
+      "notes": "При удалении сначала убрать добавленные предметы или вернуться к сохранению до установки. Основы: Anomaly, Blackgrowl, IENCE, LASS; см. CREDITS.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1010- FLX Zone Field Gear"
+    },
+    {
+      "id": "soft-rays-weather",
+      "title": "Мягкие лучи и спокойная погода",
+      "group": "Графика и звук",
+      "version": "1.0",
+      "description": "Мягкие лучи, сокращённые выборки шейдеров, ослабление дождя и отключение Airborne Pulse.",
+      "requires": [
+        "gamma",
+        "sss"
+      ],
+      "notes": "Патч текущих DX11/r3-шейдеров. Не устанавливает 4K-паки и не меняет user.ltx или MCM. Результат на других версиях SSS не проверен.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1011- FLX Soft Rays HD and Gentle Weather"
+    },
+    {
+      "id": "yantar-hunter",
+      "title": "Калибр: снабженец Янтаря",
+      "group": "Персонажи и снаряжение",
+      "version": "1.0.0",
+      "description": "Торговец противомутантными боеприпасами с пятью ступенями репутации.",
+      "requires": [
+        "gamma",
+        "dltx",
+        "hf",
+        "hf-expansion",
+        "hf-more"
+      ],
+      "notes": "Ассортимент рассчитан на текущую баллистику GAMMA; для чистой Anomaly не заявлен.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1012- FLX Yantar Hunter Trader"
+    },
+    {
+      "id": "artefact-weight-fix",
+      "title": "Фикс веса артефактов",
+      "group": "Исправления",
+      "version": "1.0.0",
+      "description": "Выравнивает заданный вес секций артефактов через DLTX.",
+      "requires": [
+        "gamma",
+        "dltx"
+      ],
+      "notes": "Установить после модов артефактов.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1013- FLX Artefact Weight Fix"
+    },
+    {
+      "id": "yantar-guide",
+      "title": "Ориентир: проводник Янтаря",
+      "group": "Персонажи и снаряжение",
+      "version": "1.0.1",
+      "description": "Постоянный проводник с восемью платными маршрутами и подтверждением оплаты.",
+      "requires": [
+        "gamma",
+        "dltx",
+        "hf",
+        "hf-expansion",
+        "hf-more"
+      ],
+      "notes": "Поддержка существующих сохранений предусмотрена модулем.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1014- FLX Yantar Guide"
+    },
+    {
+      "id": "npc-arsenal",
+      "title": "Арсенал NPC",
+      "group": "Мир и баланс",
+      "version": "1.1.1",
+      "description": "Вооружение NPC по рангу, броне и фракции; миграция подходящих существующих NPC.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "Меняет оружие обычных NPC с сохранением результата. Резервная копия сейва обязательна для отката изменений.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1015- FLX NPC Arsenal"
+    },
+    {
+      "id": "qaw-food-meds",
+      "title": "Колесо еды и медикаментов",
+      "group": "Интерфейс и удобство",
+      "version": "1.0.0.0",
+      "description": "Автозаполнение QAW едой и медициной.",
+      "requires": [
+        "gamma",
+        "qaw"
+      ],
+      "notes": "Отключить G.A.M.M.A. Quick Action Wheel Balance; базовый Quick Action Wheel оставить включённым.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "999- FLX QAW Auto Food Meds"
+    },
+    {
+      "id": "career-ranks",
+      "title": "Звания и научные должности",
+      "group": "Мир и баланс",
+      "version": "1.0.0",
+      "description": "Карьерные приставки для Долга, военных и учёных.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "RU/EN. Сохраняет отдельные шкалы фракций.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "Duty and Military Career Ranks - FLX"
+    },
+    {
+      "id": "scrounger-perk",
+      "title": "Навык «Падальщик»",
+      "group": "Мир и баланс",
+      "version": "0.1.0",
+      "description": "Пятый навык Haruka: опыт за находки и улучшение состояния отдельных деталей.",
+      "requires": [
+        "gamma",
+        "skills"
+      ],
+      "notes": "FLX Skill Perks необязателен. Не улучшает оружие целиком.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "FLX Scrounger Perk",
+      "optional_modules": [
+        "skill-perks"
+      ]
+    },
+    {
+      "id": "skill-perks",
+      "title": "Полезные эффекты навыков",
+      "group": "Мир и баланс",
+      "version": "0.1.1",
+      "description": "Пассивные эффекты и множители опыта по уровням навыков.",
+      "requires": [
+        "gamma",
+        "skills",
+        "mcm",
+        "gamma-recoil"
+      ],
+      "notes": "Первая тестовая версия. Содержит override Enhanced Recoil текущей GAMMA.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "FLX Skill Perks"
+    },
+    {
+      "id": "footsteps-config",
+      "title": "Шаги NPC: конфигурация Oleh",
+      "group": "Графика и звук",
+      "version": "1.0.0",
+      "description": "Выделенная настройка step_params исходного конфига Oleh.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "Исходный автор oleh5230. Старый вариант; не является восстановленной звуковой частью Fireteam.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "NPC Audible Footsteps - Flixmo"
+    },
+    {
+      "id": "taskboard",
+      "title": "Taskboard: редакция FLX",
+      "group": "Интерфейс и удобство",
+      "version": "2026.10.25",
+      "description": "Группировка заданий, накопительные бонусы, метки и настраиваемая сдача.",
+      "requires": [
+        "gamma",
+        "mcm"
+      ],
+      "notes": "Основа — iTheon PDA Taskboard. Установить после оригинального Taskboard и его патчей.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "Taskbord edt by flx"
+    },
+    {
+      "id": "campfire-rest",
+      "title": "Отдых у костра",
+      "group": "Мир и баланс",
+      "version": "1.0.0",
+      "description": "Посадка у костра, плавная камера и интеграция лечения.",
+      "requires": [
+        "gamma",
+        "lnct"
+      ],
+      "notes": "Ctrl+V; MCM для настроек необязателен. Включает override LNCT Campfire Healing.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "Chiki-Briki Campfire Rest",
+      "optional": [
+        "mcm",
+        "bhs"
+      ]
+    },
+    {
+      "id": "rf-frequency-plus",
+      "title": "RF-Частота+",
+      "group": "Интерфейс и удобство",
+      "version": "1.0.2",
+      "description": "Активные частоты заданий и районы поиска в подсказке ресивера.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "RF-задания берутся из установленной GAMMA; собственных заданий не создаёт.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "RF-Частота+"
+    },
+    {
+      "id": "audible-footsteps",
+      "title": "Слышимые шаги врагов",
+      "group": "Графика и звук",
+      "version": "1.0.0",
+      "description": "Пространственный звук движущихся врагов из звуковой части Fireteam.",
+      "requires": [
+        "gamma",
+        "gamma-footsteps"
+      ],
+      "notes": "Не включать вместе с полным Fireteam AI; дополнительные шаги могут суммироваться с обычными.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "Audible NPC Footsteps Plus"
+    },
+    {
+      "id": "merramun-casino",
+      "title": "Merramun: ноутбук-казино",
+      "group": "Персонажи и снаряжение",
+      "version": "0.3.0-laptop",
+      "description": "Каскадный слот на ноутбуке в бункере учёных.",
+      "requires": [
+        "gamma",
+        "dltx"
+      ],
+      "notes": "Взята установленная версия. Использует изображения и звуки Welcome to the Game III; авторы оригинала сохраняются.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1001- WTTG3 Merramun PDA Slots"
+    },
+    {
+      "id": "nasoska-photo",
+      "title": "Ycatan_: фотография",
+      "group": "Персонажи и снаряжение",
+      "version": "1.0",
+      "description": "Отдельная замена фотографии и её иконки.",
+      "requires": [
+        "gamma",
+        "dltx"
+      ],
+      "notes": "Персональный мод для Ycatan_; материал пользователя. Необязательный компонент.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "Ycatan_ - Nasoska Photo"
+    },
+    {
+      "id": "personal-radio",
+      "title": "Личное радио КПК",
+      "group": "Графика и звук",
+      "version": "1.0.0",
+      "description": "Личный плейлист, сохранение трека и состояния, импортёр музыки.",
+      "requires": [
+        "gamma"
+      ],
+      "notes": "Музыка и FFmpeg не включены. Импортёр: Python 3.10+ с Tk и FFmpeg. Импортировать свои треки до запуска игры. PDA Radio Extended не требуется: музыка и материалы Starcry_ не включены.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "1000- FLX Personal PDA Radio",
+      "optional": [
+        "python",
+        "ffmpeg"
+      ]
+    },
+    {
+      "id": "laser-fix",
+      "title": "Лазеры: исправление шейдеров",
+      "group": "Исправления",
+      "version": "1.0.0",
+      "description": "Лазеры: исправление шейдеров. Совместимые файлы из исправленной локальной установки.",
+      "requires": [
+        "gamma",
+        "laser-settings",
+        "sss"
+      ],
+      "notes": "DX11/r3. Проверять с той же версией базовых шейдеров. Диагностические скрипты и кэш не включены.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "overwrite"
+    },
+    {
+      "id": "reticle-fix",
+      "title": "Ракурс и 1П76: исправление сеток",
+      "group": "Исправления",
+      "version": "1.0.0",
+      "description": "Ракурс и 1П76: исправление сеток. Совместимые файлы из исправленной локальной установки.",
+      "requires": [
+        "gamma",
+        "3dss",
+        "mark-switch"
+      ],
+      "notes": "DX11/r3. Проверять с той же версией базовых шейдеров. Диагностические скрипты и кэш не включены.",
+      "default": false,
+      "author": "@Flixmo",
+      "source_folder": "410- 3DSS for GAMMA - Redotix99 & Andtheherois & party50"
+    }
+  ]
+}

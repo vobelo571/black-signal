@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_player_skills_scrounger"><text>Падальщик</text></string>
+  <string id="st_player_skills_hint_scrounger"><text>Находите детали оружия и брони в лучшем состоянии. Каждый уровень: +0,5 процентного пункта, максимум +15. Пул предметов и редкость инструментов не меняются.\n\nОпыт: новая находка на земле, в тайнике или на трупе — 10; деталь — 20. Повторный подбор, покупки и передача от живых персонажей не дают опыт.\n\n</text></string>
+  <string id="st_skills_stats_scrounger_quality_bonus"><text>\nСостояние найденных деталей: +$stat п.п.</text></string>
+  <string id="st_new_level_scrounger"><text>Навык «Падальщик» улучшен: найденные детали будут в лучшем состоянии.</text></string>
+</string_table>

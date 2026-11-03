@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<game_dialogs>
+  <dialog id="flx_arena_zhila_jobs">
+    <precondition>zz_flx_zhila_contracts.has_no_active</precondition>
+    <phrase_list>
+    <phrase id="0">
+      <text>flx_zhila_jobs_ask</text>
+      <next>1</next>
+    </phrase>
+    <phrase id="1">
+      <text>flx_zhila_jobs_reply</text>
+      <next>10</next>
+      <next>20</next>
+      <next>30</next>
+      <next>40</next>
+      <next>50</next>
+      <next>99</next>
+    </phrase>
+    <phrase id="10">
+      <precondition>zz_flx_zhila_contracts.can_day</precondition>
+      <text>flx_zhila_day_choice</text>
+      <next>11</next>
+    </phrase>
+    <phrase id="11">
+      <script_text>zz_flx_zhila_contracts.offer_day</script_text>
+      <next>12</next>
+      <next>98</next>
+    </phrase>
+    <phrase id="12">
+      <text>flx_zhila_accept</text>
+      <action>zz_flx_zhila_contracts.accept_day</action>
+      <next>13</next>
+    </phrase>
+    <phrase id="13">
+      <text>flx_zhila_accepted</text>
+    </phrase>
+    <phrase id="20">
+      <precondition>zz_flx_zhila_contracts.can_night</precondition>
+      <text>flx_zhila_night_choice</text>
+      <next>21</next>
+    </phrase>
+    <phrase id="21">
+      <script_text>zz_flx_zhila_contracts.offer_night</script_text>
+      <next>22</next>
+      <next>98</next>
+    </phrase>
+    <phrase id="22">
+      <text>flx_zhila_accept</text>
+      <action>zz_flx_zhila_contracts.accept_night</action>
+      <next>23</next>
+    </phrase>
+    <phrase id="23">
+      <text>flx_zhila_accepted</text>
+    </phrase>
+    <phrase id="30">
+      <precondition>zz_flx_zhila_contracts.can_forest</precondition>
+      <text>flx_zhila_forest_choice</text>
+      <next>31</next>
+    </phrase>
+    <phrase id="31">
+      <script_text>zz_flx_zhila_contracts.offer_forest</script_text>
+      <next>32</next>
+      <next>98</next>
+    </phrase>
+    <phrase id="32">
+      <text>flx_zhila_accept</text>
+      <action>zz_flx_zhila_contracts.accept_forest</action>
+      <next>33</next>
+    </phrase>
+    <phrase id="33">
+      <text>flx_zhila_accepted</text>
+    </phrase>
+    <phrase id="40">
+      <precondition>zz_flx_zhila_contracts.resting</precondition>
+      <script_text>zz_flx_zhila_contracts.cooldown_text</script_text>
+    </phrase>
+    <phrase id="50">
+      <precondition>zz_flx_zhila_contracts.no_offer</precondition>
+      <text>flx_zhila_no_offer</text>
+    </phrase>
+    <phrase id="98">
+      <text>flx_zhila_not_now</text>
+    </phrase>
+    <phrase id="99">
+      <text>flx_zhila_leave</text>
+    </phrase>
+    </phrase_list>
+  </dialog>
+  <dialog id="flx_arena_zhila_contract_status">
+    <precondition>zz_flx_zhila_contracts.has_active</precondition>
+    <phrase_list>
+    <phrase id="0">
+      <text>flx_zhila_status_ask</text>
+      <next>1</next>
+    </phrase>
+    <phrase id="1">
+      <text>flx_zhila_status_reply</text>
+      <next>2</next>
+      <next>4</next>
+      <next>6</next>
+    </phrase>
+    <phrase id="2">
+      <precondition>zz_flx_zhila_contracts.can_finish</precondition>
+      <text>flx_zhila_hand_over</text>
+      <next>3</next>
+    </phrase>
+    <phrase id="3">
+      <text>flx_zhila_thanks</text>
+      <action>zz_flx_zhila_contracts.finish</action>
+    </phrase>
+    <phrase id="4">
+      <precondition>zz_flx_zhila_contracts.can_cancel</precondition>
+      <text>flx_zhila_cancel</text>
+      <next>5</next>
+    </phrase>
+    <phrase id="5">
+      <text>flx_zhila_cancel_reply</text>
+      <action>zz_flx_zhila_contracts.cancel</action>
+    </phrase>
+    <phrase id="6">
+      <precondition>zz_flx_zhila_contracts.not_finished</precondition>
+      <text>flx_zhila_still_working</text>
+      <next>7</next>
+    </phrase>
+    <phrase id="7">
+      <text>flx_zhila_still_working_reply</text>
+    </phrase>
+    </phrase_list>
+  </dialog>
+  <dialog id="flx_arena_zhila_rare_jobs">
+    <precondition>zz_flx_zhila_contracts.has_no_rare</precondition>
+    <phrase_list>
+    <phrase id="0">
+      <text>flx_zhila_rare_jobs_ask</text>
+      <next>1</next>
+    </phrase>
+    <phrase id="1">
+      <text>flx_zhila_rare_jobs_reply</text>
+      <next>10</next>
+      <next>40</next>
+      <next>50</next>
+      <next>99</next>
+    </phrase>
+    <phrase id="10">
+      <precondition>zz_flx_zhila_contracts.can_rare</precondition>
+      <text>flx_zhila_rare_choice</text>
+      <next>11</next>
+    </phrase>
+    <phrase id="11">
+      <script_text>zz_flx_zhila_contracts.offer_rare</script_text>
+      <next>12</next>
+      <next>98</next>
+    </phrase>
+    <phrase id="12">
+      <text>flx_zhila_accept</text>
+      <action>zz_flx_zhila_contracts.accept_rare</action>
+      <next>13</next>
+    </phrase>
+    <phrase id="13">
+      <text>flx_zhila_accepted</text>
+    </phrase>
+    <phrase id="40">
+      <precondition>zz_flx_zhila_contracts.rare_resting</precondition>
+      <script_text>zz_flx_zhila_contracts.rare_cooldown_text</script_text>
+    </phrase>
+    <phrase id="50">
+      <precondition>zz_flx_zhila_contracts.rare_no_offer</precondition>
+      <text>flx_zhila_no_offer</text>
+    </phrase>
+    <phrase id="98">
+      <text>flx_zhila_not_now</text>
+    </phrase>
+    <phrase id="99">
+      <text>flx_zhila_leave</text>
+    </phrase>
+    </phrase_list>
+  </dialog>
+  <dialog id="flx_arena_zhila_rare_status">
+    <precondition>zz_flx_zhila_contracts.has_rare</precondition>
+    <phrase_list>
+    <phrase id="0">
+      <text>flx_zhila_rare_status_ask</text>
+      <next>1</next>
+    </phrase>
+    <phrase id="1">
+      <text>flx_zhila_status_reply</text>
+      <next>2</next>
+      <next>4</next>
+      <next>6</next>
+    </phrase>
+    <phrase id="2">
+      <precondition>zz_flx_zhila_contracts.can_finish_rare</precondition>
+      <text>flx_zhila_hand_over</text>
+      <next>3</next>
+    </phrase>
+    <phrase id="3">
+      <text>flx_zhila_thanks</text>
+      <action>zz_flx_zhila_contracts.finish_rare</action>
+    </phrase>
+    <phrase id="4">
+      <precondition>zz_flx_zhila_contracts.can_cancel_rare</precondition>
+      <text>flx_zhila_cancel</text>
+      <next>5</next>
+    </phrase>
+    <phrase id="5">
+      <text>flx_zhila_cancel_reply</text>
+      <action>zz_flx_zhila_contracts.cancel_rare</action>
+    </phrase>
+    <phrase id="6">
+      <precondition>zz_flx_zhila_contracts.rare_not_finished</precondition>
+      <text>flx_zhila_still_working</text>
+      <next>7</next>
+    </phrase>
+    <phrase id="7">
+      <text>flx_zhila_still_working_reply</text>
+    </phrase>
+    </phrase_list>
+  </dialog>
+</game_dialogs>

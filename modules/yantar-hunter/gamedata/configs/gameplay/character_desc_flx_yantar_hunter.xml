@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<xml><specific_character id="flx_yantar_hunter" team_default="1">
+  <name>flx_yantar_hunter_name</name>
+  <icon>ui_inGame2_ecolog_green</icon>
+  <bio>flx_yantar_hunter_bio</bio>
+  <class>flx_yantar_hunter</class>
+  <community>ecolog</community><terrain_sect>stalker_terrain</terrain_sect>
+  <snd_config>characters_voice\human\ecolog_3\</snd_config>
+  <rank>2071</rank><reputation>400</reputation>
+  <money min="1000000" max="1000000" infinitive="1"/>
+  <visual>actors\stalker_ecologist\stalker_ecolog_military</visual>
+  <supplies>[spawn] \n</supplies>
+  <start_dialog>flx_yantar_hunter_hello</start_dialog>
+  <actor_dialog>flx_yantar_hunter_trade</actor_dialog>
+  <actor_dialog>flx_yantar_hunter_about</actor_dialog>
+  <actor_dialog>flx_yantar_hunter_stock</actor_dialog>
+  <actor_dialog>flx_yantar_hunter_trust</actor_dialog>
+  <actor_dialog>actor_break_dialog</actor_dialog>
+</specific_character></xml>

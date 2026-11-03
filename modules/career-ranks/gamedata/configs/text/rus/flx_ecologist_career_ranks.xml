@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<string id="flx_ecologist_rank_1"><text>Полевой лаборант</text></string>
+	<string id="flx_ecologist_rank_2"><text>Старший лаборант</text></string>
+	<string id="flx_ecologist_rank_3"><text>Техник-исследователь</text></string>
+	<string id="flx_ecologist_rank_4"><text>Младший научный сотрудник</text></string>
+	<string id="flx_ecologist_rank_5"><text>Научный сотрудник</text></string>
+	<string id="flx_ecologist_rank_6"><text>Старший научный сотрудник</text></string>
+	<string id="flx_ecologist_rank_7"><text>Ведущий научный сотрудник</text></string>
+	<string id="flx_ecologist_rank_8"><text>Главный научный сотрудник</text></string>
+	<string id="flx_ecologist_rank_9"><text>Заведующий лабораторией</text></string>
+	<string id="flx_ecologist_rank_10"><text>Руководитель научной экспедиции</text></string>
+</string_table>

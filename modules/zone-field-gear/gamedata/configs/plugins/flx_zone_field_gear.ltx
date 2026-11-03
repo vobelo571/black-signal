@@ -1,0 +1,61 @@
+[distribution]
+; Per 1000 eligible NPCs, stable hash (not rolled on every load).
+npc_chance = 15
+npc_min_rank = 6500
+; One roll per newly generated stash, for the WHOLE Jaeger family.
+stash_common_chance = 10
+stash_rare_chance = 40
+stash_north_chance = 20
+; Same damaged condition as the active GAMMA stash overhaul.
+stash_condition_min = 5
+stash_condition_max = 35
+
+[sapper_distribution]
+; 8 per 1000 eligible high-rank heavy-armour NPCs; deterministic, not re-rolled.
+npc_chance = 8
+npc_min_rank = 9000
+; Percent of successful shared-pool rolls in rare or northern stashes.
+; The TOTAL pool chance remains controlled by [distribution].
+stash_weight = 30
+
+[kontur_distribution]
+; Per 1000 eligible NBC/science NPCs. Story characters are excluded.
+npc_chance = 10
+npc_min_rank = 6500
+; Percent of the SAME successful shared-pool rolls. Not a second chance.
+stash_weight = 25
+
+[horizon_distribution]
+; Per 1000 eligible scientific/SEVA NPCs; no story characters or traders.
+npc_chance = 8
+npc_min_rank = 8000
+; Share of the SAME successful common outfit-pool roll. Not a new roll.
+stash_weight = 15
+
+[bastion_distribution]
+; Per 1000 eligible heavy-armor NPCs; no story characters or traders.
+npc_chance = 6
+npc_min_rank = 10000
+; Share of the SAME successful rare/northern outfit roll. Zero in common southern/central caches.
+stash_weight = 10
+
+[termit_distribution]
+; Per 1000 eligible ordinary NPCs, disjoint from older families.
+npc_chance = 6
+npc_min_rank = 7500
+; Share of the existing successful stash roll, not an extra chance.
+stash_weight = 8
+
+[zaslon_distribution]
+; Per 1000 eligible ordinary NPCs, disjoint from older families.
+npc_chance = 6
+npc_min_rank = 7500
+; Share of the existing successful stash roll, not an extra chance.
+stash_weight = 8
+
+[dozor_distribution]
+; Per 1000 eligible ordinary NPCs, disjoint from older families.
+npc_chance = 8
+npc_min_rank = 6500
+; Share of the existing successful stash roll, not an extra chance.
+stash_weight = 8

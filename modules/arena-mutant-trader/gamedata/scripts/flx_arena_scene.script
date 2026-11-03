@@ -1,0 +1,83 @@
+-- Persistent scene definitions. Heights follow the actual model bounds and supporting surfaces.
+revision = 16
+npc = {x=143.4, y=0.10, z=88.9, yaw=0, game_vertex=1688,
+       look_x=143.4, look_y=1.50, look_z=94.0}
+objects = {
+    {key="counter", section="flx_arena_prop_counter", x=143.4, y=0.09663, z=90.0, yaw=90, bones="link,link1,link2,link3,link4,link5,link6,link7,link8"},
+    {key="side_table", section="flx_arena_prop_side_table", x=145.9, y=0.099508, z=87.4, yaw=90, bones="link,link1,link2,link3,link4,link5"},
+    {key="fridge", section="flx_arena_prop_fridge", x=139.0, y=0.09199, z=88.7, yaw=90, bones="link"},
+    {key="shelf", section="flx_arena_prop_shelf", x=147.0, y=0.096372, z=98.2, yaw=0, bones="link,link1,link2,link3,link4,link5"},
+    {key="crate_bottom", section="flx_arena_prop_crate_bottom", x=139.2, y=0.097807, z=100.9, yaw=0, bones="link,bottom_jnt,left_bottom_jnt,left_jnt,left_top_jnt,right_bottom_jnt,right_jnt,right_top_jnt,top_jnt"},
+    {key="crate_top", section="flx_arena_prop_crate_top", x=139.2, y=0.601039, z=100.9, yaw=0, bones="link,bottom_jnt,left_bottom_jnt,left_jnt,left_top_jnt,right_bottom_jnt,right_jnt,right_top_jnt,top_jnt"},
+    {key="crate_spare", section="flx_arena_prop_crate_spare", x=140.6, y=0.097807, z=100.9, yaw=0, bones="link,bottom_jnt,left_bottom_jnt,left_jnt,left_top_jnt,right_bottom_jnt,right_jnt,right_top_jnt,top_jnt"},
+    {key="tray", section="flx_arena_prop_tray", x=143.45, y=1.011138, z=90.0, yaw=90, bones="link"},
+    {key="tray_side", section="flx_arena_prop_tray_side", x=146.22, y=0.745936, z=87.18, yaw=0, bones="link"},
+    {key="jaw", section="flx_arena_prop_jaw", x=143.469065, y=1.030846, z=90.00733, yaw=110, bones="link"},
+    {key="tail", section="flx_arena_prop_tail", x=143.8, y=1.014954, z=90.0, yaw=160, bones="link"},
+    {key="hoof", section="flx_arena_prop_hoof", x=145.61969, y=0.872186, z=87.562819, yaw=0, bones="bone01", pitch=90},
+    {key="mug", section="flx_arena_prop_mug", x=143.05, y=1.012245, z=89.85, yaw=90, bones="link"},
+    {key="lamp", section="flx_arena_prop_lamp", x=142.85, y=1.011571, z=89.95, yaw=0, bones="link,link.001,link.002,link.003,link.004,bone_light", light=true, color=4294954382, brightness=0.6, range=4.5, shadows=false},
+    {key="work_cabinet", section="flx_arena_prop_work_cabinet", x=140.3, y=0.09663, z=87.3, yaw=90, bones="link,link1,link2,link3,link4,link5,link6,link7,link8"},
+    {key="chair", section="flx_arena_prop_chair", x=143.4, y=0.097672, z=87.5, yaw=0, bones="link,link1"},
+    {key="cutting_board", section="flx_arena_prop_cutting_board", x=145.68, y=0.746048, z=87.4, yaw=90, bones="link"},
+    {key="sample_container", section="flx_arena_prop_sample_container", x=146.0, y=0.1, z=86.4, yaw=0, bones="link"},
+    {key="ledger", section="flx_arena_prop_ledger", x=139.85, y=1.015303, z=87.47, yaw=0, bones="link"},
+    {key="field_case", section="flx_arena_prop_field_case", x=140.7, y=1.012563, z=87.3, yaw=90, bones="link"},
+    {key="barrel_1", section="flx_arena_prop_barrel_1", x=138.8, y=0.109204, z=90.2, yaw=0, bones="link"},
+    {key="barrel_2", section="flx_arena_prop_barrel_2", x=139.6, y=0.109204, z=91.0, yaw=15, bones="link"},
+    {key="sealed_can", section="flx_arena_prop_sealed_can", x=139.7, y=0.1, z=89.7, yaw=0, bones="link"},
+    {key="packing_box", section="flx_arena_prop_packing_box", x=140.6, y=0.606349, z=100.9, yaw=0, bones="link"},
+    {key="sample_table", section="flx_arena_prop_sample_table", x=139.2, y=0.099508, z=93.0, yaw=0, bones="link,link1,link2,link3,link4,link5"},
+    {key="shelf_tray", section="flx_arena_prop_shelf_tray", x=139.2, y=0.745936, z=92.85, yaw=270, bones="link"},
+    {key="shelf_sample", section="flx_arena_prop_shelf_sample", x=139.198744, y=0.759144, z=92.852327, yaw=270, bones="link"},
+    {key="lamp_task", section="flx_arena_prop_lamp_task", x=146.18, y=0.745209, z=87.55, yaw=225, bones="link,link.001,link.002,link.003,link.004,bone_light", light=true, color=4294960056, brightness=0.65, range=4.5, shadows=false},
+    {key="lamp_shelf", section="flx_arena_prop_lamp_shelf", x=139.85, y=1.011571, z=87.1, yaw=0, bones="link,link.001,link.002,link.003,link.004,bone_light", light=true, color=4292273648, brightness=0.6, range=4.5, shadows=false},
+    {key="hunting_rack", section="flx_arena_prop_hunting_rack", x=147.1, y=0.145, z=92.6, yaw=270, bones="link"},
+    {key="butcher_bucket", section="flx_arena_prop_butcher_bucket", x=146.4, y=0.098095, z=93.4, yaw=0, bones="link,joint1,joint2,joint3,joint4"},
+    {key="wash_bucket", section="flx_arena_prop_wash_bucket", x=146.4, y=0.098095, z=91.8, yaw=35, bones="link,joint1,joint2,joint3,joint4"},
+    {key="jar_1", section="flx_arena_prop_jar_1", x=139.22, y=0.746211, z=92.58, yaw=270, bones="link"},
+    {key="jar_2", section="flx_arena_prop_jar_2", x=139.18, y=0.746211, z=93.32, yaw=270, bones="link"},
+    {key="trophy_table", section="flx_arena_prop_trophy_table", x=147.0, y=0.099508, z=88.3, yaw=0, bones="link,link1,link2,link3,link4,link5"},
+    {key="trophy_tray", section="flx_arena_prop_trophy_tray", x=146.95, y=0.744775, z=88.35, yaw=0, bones="link"},
+    {key="trophy_head", section="flx_arena_prop_trophy_head", x=146.75212, y=0.338001, z=88.46368, yaw=295, bones="kost"},
+    {key="hide_bundle", section="flx_arena_prop_hide_bundle", x=139.2, y=1.104695, z=100.9, yaw=0, bones="bone01"},
+    {key="specimen_box", section="flx_arena_prop_specimen_box", x=146.9, y=0.103118, z=99.3, yaw=90, bones="link"},
+    {key="reserve_can", section="flx_arena_prop_reserve_can", x=141.3, y=0.1, z=86.5, yaw=0, bones="link"},
+    {key="rack_light_table", section="flx_arena_prop_rack_light_table", x=146.9, y=0.099508, z=96.3, yaw=0, bones="link,link1,link2,link3,link4,link5"},
+    {key="rack_light", section="flx_arena_prop_rack_light", x=146.9, y=0.745209, z=96.0, yaw=90, bones="link,link.001,link.002,link.003,link.004,bone_light", light=true, color=4294956448, brightness=0.65, range=4.5, shadows=false},
+    {key="rack_tray", section="flx_arena_prop_rack_tray", x=146.9, y=0.744775, z=96.6, yaw=270, bones="link"},
+    {key="rack_trophy", section="flx_arena_prop_rack_trophy", x=146.87601, y=0.864187, z=96.753987, yaw=0, bones="bone01", pitch=90},
+    {key="reserve_light", section="flx_arena_prop_reserve_light", x=147.0, y=0.98257, z=98.4, yaw=90, bones="link,link.001,link.002,link.003,link.004,bone_light", light=true, color=4294959024, brightness=0.6, range=4.5, shadows=false},
+    {key="ceiling_counter", section="flx_arena_prop_ceiling_counter", x=143.4, y=4.905565, z=90.0, yaw=0, bones="link,provod,korpus,bone_lamp,bone_omni", light=true, color=4294962639, brightness=0.9, range=9, shadows=true, main_bone="bone_lamp", ambient_bone="bone_omni", pitch=180},
+    {key="ceiling_middle", section="flx_arena_prop_ceiling_middle", x=143.4, y=4.905565, z=95.0, yaw=0, bones="link,provod,korpus,bone_lamp,bone_omni", light=true, color=4294962639, brightness=0.8, range=9, shadows=false, main_bone="bone_lamp", ambient_bone="bone_omni", pitch=180},
+    {key="ceiling_entry", section="flx_arena_prop_ceiling_entry", x=143.4, y=4.905565, z=100.0, yaw=0, bones="link,provod,korpus,bone_lamp,bone_omni", light=true, color=4294962639, brightness=0.75, range=9, shadows=false, main_bone="bone_lamp", ambient_bone="bone_omni", pitch=180},
+}
+
+-- Self-contained binding: old saves can call this module before any helper is loaded.
+function stabilize(obj)
+    local shell=obj:get_physics_shell()
+    if not shell then return false end
+    shell:block_breaking()
+    shell:freeze() -- native Fix() for every element + cbNCStatic; never moves the object
+    return true
+end
+
+function bind_static(obj)
+    obj:bind_object(flx_arena_scene_physics_binder(obj))
+end
+
+class "flx_arena_scene_physics_binder" (object_binder)
+function flx_arena_scene_physics_binder:__init(obj) super(obj)
+    self.settled=false
+end
+
+function flx_arena_scene_physics_binder:net_spawn(data)
+    if not object_binder.net_spawn(self,data) then return false end
+    self.settled=stabilize(self.object)
+    return true
+end
+
+function flx_arena_scene_physics_binder:update(delta)
+    object_binder.update(self,delta)
+    if not self.settled then self.settled=stabilize(self.object) end
+end

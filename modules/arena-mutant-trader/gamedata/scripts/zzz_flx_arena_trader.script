@@ -1,0 +1,255 @@
+-- Zhila: a persistent trophy trader in Rostok's windowed workshop hall.
+-- Only this mod's unique sections are discovered or created. Existing Arena logic is untouched.
+local npc_section = "flx_arena_zhila"
+local last_level, checked, next_tick, attempts = nil, false, 0, 0
+local known = {}
+local layout_revision = 0
+local settled = {}
+local npc_pending, props_pending, stock_ready = false, true, false
+local stock_revision = 2
+
+local function log(fmt, ...)
+    printf("[FLX Arena Trader] " .. fmt, ...)
+end
+
+local function pos(x, y, z)
+    return vector():set(x, y, z)
+end
+
+local function discover()
+    known = {}
+    local wanted = {[npc_section] = true}
+    for _, def in ipairs(flx_arena_scene.objects) do wanted[def.section] = true end
+    local sim = alife()
+    for id = 0, 65534 do
+        local obj = sim:object(id)
+        -- Retire only this mod's obsolete displays (including the old Arena walls).
+        if obj and string.sub(obj:section_name(),1,15)=="flx_arena_prop_" and not wanted[obj:section_name()] then
+            log("Removed obsolete shop display %s",obj:section_name())
+            alife_release(obj)
+            obj=nil
+        end
+        if obj and wanted[obj:section_name()] then
+            known[obj:section_name()] = obj.id
+        end
+    end
+end
+
+local function create(section, point, yaw, configure, pitch, roll)
+    -- Static decor can sit against walls or above the floor, outside navigation cells.
+    -- Use the valid trader floor vertex; keep each display's exact world coordinates.
+    local is_prop = section ~= npc_section
+    local location=flx_arena_scene.npc
+    local lvid = level.vertex_id(is_prop and pos(location.x,location.y,location.z) or point)
+    if not lvid or lvid == 4294967295 then
+        log("No navigation vertex for %s; deferred", section)
+        return nil
+    end
+    if not is_prop then
+        local floor = level.vertex_position(lvid)
+        if math.abs(floor.y - point.y) > 0.7 then
+            log("Wrong floor for trader: %s instead of %s; creation skipped", floor.y, point.y)
+            return nil
+        end
+    end
+    local sim = alife()
+    -- Use the normal registered creation path, as Hideout Furniture does.
+    -- Manual registration can invoke modded engine callbacks before an ID is assigned.
+    local obj = sim:create(section, point, lvid, location.game_vertex)
+    if not obj then return nil end
+    obj.angle = pos(math.rad(pitch or 0), math.rad(yaw or 0), math.rad(roll or 0))
+    if configure then configure(obj) end
+    known[section] = obj.id
+    log("Created %s id=%s position=%s,%s,%s vertex=%s", section, obj.id, point.x, point.y, point.z, lvid)
+    return obj
+end
+
+local function migrate_layout()
+    -- Move the old misplaced trader without replacing his inventory or trade state.
+    local npc_id = known[npc_section]
+    local npc = npc_id and alife():object(npc_id)
+    if npc then
+        local online = level.object_by_id(npc_id)
+        local p = online and online:position() or npc.position
+        local location=flx_arena_scene.npc
+        if math.abs(p.x - location.x) > 0.65 or math.abs(p.z - location.z) > 0.65 or math.abs(p.y - location.y) > 0.7 then
+            local destination = pos(location.x,location.y,location.z)
+            local lvid = level.vertex_id(destination)
+            if lvid and lvid ~= 4294967295 and math.abs(level.vertex_position(lvid).y - destination.y) <= 0.7 then
+                if online then
+                    online:set_npc_position(destination)
+                else
+                    TeleportObject(npc_id, destination, lvid, location.game_vertex)
+                end
+                npc.position = destination
+                npc.m_level_vertex_id = lvid
+                npc.m_game_vertex_id = location.game_vertex
+                npc_pending = true -- verify after any already-queued client spawn has completed
+                log("Moved existing Zhila to the Rostok workshop hall")
+            end
+        elseif online then
+            npc_pending = false
+        end
+    end
+    -- Replace only this mod's static displays when upgrading from the old layout.
+    for _, def in ipairs(flx_arena_scene.objects) do
+        local id = known[def.section]
+        local obj = id and alife():object(id)
+        if obj then
+            local p = obj.position
+            local rotation_diff = math.abs((obj.angle.y - math.rad(def.yaw) + math.pi) % (2 * math.pi) - math.pi)
+            rotation_diff = math.max(rotation_diff,
+                math.abs((obj.angle.x-math.rad(def.pitch or 0)+math.pi)%(2*math.pi)-math.pi),
+                math.abs((obj.angle.z-math.rad(def.roll or 0)+math.pi)%(2*math.pi)-math.pi))
+            if layout_revision ~= flx_arena_scene.revision or math.abs(p.x - def.x) > 0.02 or math.abs(p.y - def.y) > 0.02 or math.abs(p.z - def.z) > 0.02 or rotation_diff > 0.01 then
+                alife_release(obj)
+                known[def.section] = nil
+            end
+        end
+    end
+end
+
+local function ensure_scene()
+    if not known[npc_section] then
+        local location=flx_arena_scene.npc
+        create(npc_section, pos(location.x,location.y,location.z), location.yaw)
+    end
+    local complete = known[npc_section] ~= nil
+    for _, def in ipairs(flx_arena_scene.objects) do
+        if not known[def.section] then
+            create(def.section, pos(def.x, def.y, def.z), def.yaw, function(obj)
+                if def.light then
+                    local data = utils_stpk.get_lamp_data(obj)
+                    data.object_flags = bit_and(data.object_flags, bit_not(128))
+                    data.main_color = def.color
+                    data.main_brightness = def.brightness
+                    data.main_range = def.range
+                    data.light_flags = def.shadows and 14 or 12 -- R1/R2 + optional shadow; flPhysic (1) stays off
+                    data.main_bone = def.main_bone or "bone_light"
+                    data.ambient_bone = def.ambient_bone or data.main_bone
+                    data.main_color_animator = ""
+                    data.health = 100
+                    data.glow_texture = "glow\\glow_yellow"
+                    data.glow_radius = 0.08
+                    data.lamp_fixed_bones = def.bones
+                    utils_stpk.set_lamp_data(data, obj)
+                else
+                    local data = utils_stpk.get_physic_data(obj)
+                    data.object_flags = bit_and(data.object_flags, bit_not(128))
+                    data.physic_type = 3 -- skeleton; fix every model bone before registration
+                    data.mass = 50
+                    data.fixed_bones = def.bones
+                    -- Applied by CreateSkeleton before its first physics step. Fixed set dressing
+                    -- must not solve contacts against the floor, walls or window geometry.
+                    data.custom_data = "[collide]\nignore_static = true\n"
+                    utils_stpk.set_physic_data(data, obj)
+                end
+            end,def.pitch,def.roll)
+        end
+        complete = complete and known[def.section] ~= nil
+    end
+    return complete
+end
+
+local function settle_props()
+    local complete = true
+    for _, def in ipairs(flx_arena_scene.objects) do
+        local id = known[def.section]
+        if id and not settled[id] then
+            local obj = level.object_by_id(id)
+            if obj then
+                if def.light or flx_arena_scene.stabilize(obj) then
+                    settled[id] = true
+                else
+                    complete = false -- retry after the online shell has finished spawning
+                end
+            else
+                complete = false
+            end
+        end
+    end
+    props_pending = not complete
+end
+
+local function update_stock_once()
+    local id = known[npc_section]
+    local npc = id and level.object_by_id(id)
+    local profile = id and trade_manager.get_trade_profile(id)
+    if not (npc and profile) then return end
+    if profile.flx_arena_stock_revision ~= stock_revision then
+        -- Apply the corrected complete list once, without resetting the shared restock phase.
+        local resupply_time = profile.resupply_time
+        trade_manager.update(npc, true)
+        profile.resupply_time = resupply_time
+        profile.flx_arena_stock_revision = stock_revision
+        log("Complete trophy assortment applied; normal trader restock timer preserved")
+    end
+    stock_ready = true
+end
+
+function save_state(data)
+    data.flx_arena_layout_revision = layout_revision
+end
+
+function load_state(data)
+    layout_revision = data.flx_arena_layout_revision or 0
+end
+
+function actor_on_first_update()
+    last_level, checked, next_tick, attempts = nil, false, 0, 0
+    settled = {}
+    npc_pending, props_pending, stock_ready = false, true, false
+end
+
+function actor_on_update()
+    if not db.actor then return end
+    local tg = time_global()
+    if tg < next_tick then return end
+    next_tick = tg + 2000
+    local current = level.name()
+    if current ~= last_level then
+        last_level, checked, attempts = current, false, 0
+    end
+    if current ~= "l05_bar" then return end
+    if not checked and attempts < 3 then
+        attempts = attempts + 1
+        discover()
+        migrate_layout()
+        checked = ensure_scene()
+        if checked then
+            layout_revision = flx_arena_scene.revision
+            log("Zhila and work area ready; existing saves supported")
+        end
+    elseif npc_pending then
+        migrate_layout()
+    end
+    if checked then
+        if props_pending then settle_props() end
+        if not stock_ready then update_stock_once() end
+    end
+end
+
+function on_game_start()
+    -- This one stationary shopkeeper faces the counter and the entrance, rather
+    -- than turning his entire body toward the actor from every side of the room.
+    local original_init_target = xr_remark.init_target
+    xr_remark.init_target = function(obj, target)
+        if obj and obj:section() == npc_section and target == "flx_arena_counter" then
+            local location=flx_arena_scene.npc
+            return pos(location.look_x,location.look_y,location.look_z), nil, true
+        end
+        return original_init_target(obj, target)
+    end
+    -- Several installed weapon/furniture injectors assume a vanilla named trader.
+    -- Keep this specialist out of the entire delayed injection chain, preserving
+    -- the normal trade_manager stock and restock timer for mutant parts.
+    local original_timed_update = trader_autoinject.timed_update
+    trader_autoinject.timed_update = function(npc)
+        if npc and npc:section() == npc_section then return true end
+        return original_timed_update(npc)
+    end
+    RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+    RegisterScriptCallback("actor_on_update", actor_on_update)
+    RegisterScriptCallback("save_state", save_state)
+    RegisterScriptCallback("load_state", load_state)
+end

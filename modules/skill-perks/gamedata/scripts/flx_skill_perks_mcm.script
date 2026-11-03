@@ -1,0 +1,11 @@
+function on_mcm_load()
+    return {id="flx_skill_perks",sh=true,gr={
+        {id="title",type="slide",link="ui_options_slider_gameplay_diff",text="flx_perks_title",size={512,50},spacing=20},
+        {id="enabled",type="check",val=1,def=true},
+        {id="base_xp",type="track",val=2,min=1,max=2,step=0.05,def=1.25},
+        {id="xp_step",type="track",val=2,min=0,max=0.04,step=0.005,def=0.02},
+        {id="effect_scale",type="track",val=2,min=0,max=2,step=0.1,def=1},
+        {id="notifications",type="check",val=1,def=true},
+        {id="help",type="desc",text="flx_mcm_help"}
+    }}
+end

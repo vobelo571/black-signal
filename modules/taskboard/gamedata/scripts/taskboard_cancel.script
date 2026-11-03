@@ -1,0 +1,71 @@
+-- Neutral manual cancellation for the Taskboard. Keep cleanup effects and
+-- conditions, but never execute reputation/goodwill changes for this request.
+local pending = {}
+
+local function copy(value)
+    if type(value) ~= "table" then return value end
+    local out = {}
+    for k, v in pairs(value) do out[k] = copy(v) end
+    return out
+end
+
+local function neutral_effects(condlist)
+    local out = copy(condlist or {})
+    for _, branch in ipairs(out) do
+        if type(branch[3]) == "table" then
+            local actions = {}
+            for _, action in ipairs(branch[3]) do
+                local name = type(action[1]) == "string" and action[1]:lower() or ""
+                local reputation = (action[2] == 3 or action[2] == 4)
+                    and (name:find("goodwill", 1, true) or name:find("reputation", 1, true))
+                if not reputation then actions[#actions + 1] = action end
+            end
+            branch[3] = actions
+        end
+    end
+    return out
+end
+
+function prepare(task_id)
+    if not pending[task_id] then return false end
+    local manager = task_manager.get_task_manager()
+    local runtime = manager and manager.task_info and manager.task_info[task_id]
+    if not runtime then return false end
+    -- Many GAMMA quests have no on_cancel. Their on_fail also frees the
+    -- giver's task slot, removes squads/items and resets quest flags.
+    runtime.on_cancel = neutral_effects(runtime.on_cancel or runtime.on_fail)
+    runtime.on_fail = nil
+    runtime.cancelled_by_actor = true
+    return true
+end
+
+function request(task_id)
+    local manager = task_manager.get_task_manager()
+    local runtime = manager and manager.task_info and manager.task_info[task_id]
+    if not runtime or runtime.status == "fail" or runtime.status == "completed" then
+        pending[task_id] = nil
+        return false
+    end
+    pending[task_id] = true
+    prepare(task_id)
+    manager:set_task_cancelled(task_id)
+    return true
+end
+
+function finish(task_id)
+    pending[task_id] = nil
+end
+
+function save_state()
+    return copy(pending)
+end
+
+function load_state(saved)
+    pending = type(saved) == "table" and copy(saved) or {}
+end
+
+function resume()
+    local ids = {}
+    for id in pairs(pending) do ids[#ids + 1] = id end
+    for _, id in ipairs(ids) do request(id) end
+end

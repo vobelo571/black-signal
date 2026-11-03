@@ -1,0 +1,339 @@
+-- Snaryazhenie Zony / Zone Field Gear. Additive distribution only.
+-- No stock script replacements. No trader stock, guaranteed gifts or repeat rolls.
+local pending_stashes = {}
+local installed = false
+local settings
+local sections = {
+    stalker = "zfg_jaeger_stalker_outfit",
+    dolg = "zfg_jaeger_dolg_outfit",
+    freedom = "zfg_jaeger_freedom_outfit",
+    csky = "zfg_jaeger_csky_outfit"
+}
+local visuals = {
+    stalker = {stalker_neutral2a = true, stalker_neutral_2 = true},
+    dolg = {stalker_dolg_2 = true},
+    freedom = {stalker_freedom_1 = true},
+    csky = {stalker_nebo_s_old = true}
+}
+local sapper_sections = {
+    army = "zfg_sapper_army_outfit", dolg = "zfg_sapper_dolg_outfit",
+    killer = "zfg_sapper_killer_outfit", csky = "zfg_sapper_csky_outfit"
+}
+local sapper_visuals = {
+    army = {stalker_soldier_4=true}, dolg = {stalker_dolg_3=true},
+    killer = {stalker_merc_military=true}, csky = {stalker_nebo_military=true}
+}
+local kontur_sections = {
+    ecolog = "zfg_kontur_ecolog_outfit", csky = "zfg_kontur_csky_outfit",
+    stalker = "zfg_kontur_stalker_outfit", killer = "zfg_kontur_killer_outfit"
+}
+local kontur_visuals = {
+    ecolog = {stalker_ecolog_yellow=true}, csky = {stalker_nebo_s_gp5=true},
+    stalker = {stalker_neutral_2_gp5=true}, killer = {stalker_merc_2a_gp5=true}
+}
+local north = {l10_red_forest=true, l10_limansk=true, l11_pripyat=true,
+    l11_hospital=true, l12_stancia=true, l12_stancia_2=true,
+    l12u_sarcofag=true, l12u_control_monolith=true, jupiter=true,
+    jupiter_underground=true, pripyat=true, zaton=true, l13_generators=true}
+local south = {l01_escape=true, k00_marsh=true, k01_darkscape=true, y04_pole=true}
+local horizon_sections = {
+    ecolog="zfg_horizon_ecolog_outfit", csky="zfg_horizon_csky_outfit",
+    stalker="zfg_horizon_stalker_outfit", freedom="zfg_horizon_freedom_outfit"
+}
+local horizon_visuals = {
+    ecolog={stalker_ecolog_white=true}, csky={stalker_nebo_seva_3=true},
+    stalker={stalker_neutral_nauchniy=true}, freedom={stalker_free_0=true}
+}
+local bastion_sections = {
+    army="zfg_bastion_army_outfit", dolg="zfg_bastion_dolg_outfit",
+    killer="zfg_bastion_killer_outfit", monolith="zfg_bastion_monolith_outfit"
+}
+local bastion_visuals = {
+    army={stalker_soldier_4=true}, dolg={stalker_dolg_3=true},
+    killer={stalker_merc_military=true}, monolith={stalker_soldier_4_monolith=true}
+}
+
+local function option(key, default)
+    settings = settings or ini_file("plugins\\flx_zone_field_gear.ltx")
+    return settings:r_float_ex("distribution", key) or default
+end
+local function sapper_option(key, default)
+    settings = settings or ini_file("plugins\\flx_zone_field_gear.ltx")
+    return settings:r_float_ex("sapper_distribution", key) or default
+end
+local function kontur_option(key, default)
+    settings = settings or ini_file("plugins\\flx_zone_field_gear.ltx")
+    return settings:r_float_ex("kontur_distribution", key) or default
+end
+local function horizon_option(key, default)
+    settings = settings or ini_file("plugins\\flx_zone_field_gear.ltx")
+    return settings:r_float_ex("horizon_distribution", key) or default
+end
+local function bastion_option(key, default)
+    settings = settings or ini_file("plugins\\flx_zone_field_gear.ltx")
+    return settings:r_float_ex("bastion_distribution", key) or default
+end
+
+local function basename(name)
+    return name and name:lower():gsub("/", "\\"):match("([^\\]+)$"):gsub("%.ogf$", "")
+end
+
+
+local extension_visuals = {
+ termit={ecolog={stalker_ecolog_red=true},csky={stalker_nebo_s_gp5=true},
+  army={stalker_soldier_3=true},stalker={stalker_neutral_2_gp5=true}},
+ zaslon={ecolog={stalker_ecolog_blue=true},csky={stalker_nebo_s_gp5=true},
+  stalker={stalker_neutral_2_gp5=true},killer={stalker_merc_2a_gp5=true}},
+ dozor={stalker={stalker_neutral2a=true},freedom={stalker_freedom_1=true},
+  killer={stalker_merc_2=true},csky={stalker_nebo_s_old=true}}
+}
+local function extension_option(family,key,default)
+ settings=settings or ini_file("plugins\\flx_zone_field_gear.ltx")
+ return settings:r_float_ex(family.."_distribution",key) or default
+end
+local function extension_matches(family,community,visual)
+ local group=extension_visuals[family][community]
+ return group and group[visual]
+end
+local function extension_npc(npc,id,community,visual)
+ -- Reserve old intervals even below their rank threshold: updating cannot
+ -- silently convert an NPC that belonged to a previous family's selection.
+ for _,family in ipairs({"termit","zaslon","dozor"})do
+  if extension_matches(family,community,visual)then
+   local agile=family=="dozor"
+   local reserved=0
+   if agile then
+    if visuals[community] and visuals[community][visual]then
+     reserved=math.max(0,math.min(1000,option("npc_chance",15)))
+    end
+   else
+    if kontur_visuals[community] and kontur_visuals[community][visual]then
+     reserved=math.max(0,math.min(1000,kontur_option("npc_chance",10)))
+    end
+    if family=="zaslon" and extension_matches("termit",community,visual)then
+     reserved=reserved+math.max(0,math.min(1000-reserved,extension_option("termit","npc_chance",6)))
+    end
+   end
+   local chance=math.max(0,math.min(1000-reserved,extension_option(family,"npc_chance",agile and 8 or 6)))
+   local roll=agile and ((id*73+311)%1000) or ((id*83+229)%1000)
+   if npc:character_rank()>=extension_option(family,"npc_min_rank",agile and 6500 or 7500)
+    and roll>=reserved and roll<reserved+chance then
+    npc:set_visual_name("actors\\flx_zone_gear\\"..family.."_"..community.."_body.ogf")
+    return true
+   end
+  end
+ end
+ return false
+end
+local function choose_extension_faction(family,map)
+ local roll=math.random(1,100)
+ if family=="dozor"then
+  if map=="l07_military"then return roll<=70 and "freedom" or "stalker"end
+  if map=="l09_deadcity"then return roll<=70 and "killer" or "stalker"end
+  if map=="k00_marsh"then return roll<=70 and "csky" or "stalker"end
+  if roll<=45 then return "stalker"elseif roll<=70 then return "freedom"elseif roll<=90 then return "killer"else return "csky"end
+ end
+ if map=="l08_yantar"then return roll<=70 and "ecolog" or "csky"end
+ if map=="k00_marsh"then return roll<=70 and "csky" or "stalker"end
+ if family=="termit" and map=="l03_agroprom"then return roll<=70 and "army" or "stalker"end
+ if family=="zaslon" and map=="l09_deadcity"then return roll<=70 and "killer" or "stalker"end
+ if roll<=35 then return "ecolog"elseif roll<=60 then return "csky"elseif roll<=85 then return "stalker"end
+ return family=="termit" and "army" or "killer"
+end
+
+local function npc_on_net_spawn(npc, se_obj)
+    if not npc or not se_obj or not npc:alive() then return end
+    local id = npc:id()
+    -- Only ordinary simulation NPCs, never story characters or traders.
+    local sec = se_obj:section_name()
+    if not sec or not sec:find("^sim_default_") then return end
+    if get_object_story_id(id) then return end
+    local community = npc:character_community()
+    local visual = basename(npc:get_visual_name())
+    if extension_npc(npc,id,community,visual) then return end
+    if bastion_visuals[community] and bastion_visuals[community][visual]
+        and npc:character_rank() >= bastion_option("npc_min_rank",10000) then
+        -- Reserve Sapper's existing deterministic interval. Bastion cannot
+        -- steal its old NPCs, and the two families can never select one NPC.
+        local reserved=(sapper_visuals[community] and sapper_visuals[community][visual])
+            and math.max(0,math.min(1000,sapper_option("npc_chance",8))) or 0
+        local chance=math.max(0,math.min(1000-reserved,bastion_option("npc_chance",6)))
+        local roll=(id*79+419)%1000
+        if roll>=reserved and roll<reserved+chance then
+            npc:set_visual_name("actors\\flx_zone_gear\\bastion_" .. community .. "_body.ogf")
+            return
+        end
+    end
+    if horizon_visuals[community] and horizon_visuals[community][visual] then
+        if npc:character_rank() < horizon_option("npc_min_rank",8000) then return end
+        if ((id * 89 + 157) % 1000) >= horizon_option("npc_chance",8) then return end
+        npc:set_visual_name("actors\\flx_zone_gear\\horizon_" .. community .. "_body.ogf")
+    elseif kontur_visuals[community] and kontur_visuals[community][visual] then
+        if npc:character_rank() < kontur_option("npc_min_rank",6500) then return end
+        if ((id * 83 + 229) % 1000) >= kontur_option("npc_chance",10) then return end
+        npc:set_visual_name("actors\\flx_zone_gear\\kontur_" .. community .. "_body.ogf")
+    elseif sapper_visuals[community] and sapper_visuals[community][visual] then
+        if npc:character_rank() < sapper_option("npc_min_rank",9000) then return end
+        if ((id * 79 + 419) % 1000) >= sapper_option("npc_chance",8) then return end
+        npc:set_visual_name("actors\\flx_zone_gear\\sapper_" .. community .. "_body.ogf")
+    elseif visuals[community] and visuals[community][visual] then
+        if npc:character_rank() < option("npc_min_rank", 6500) then return end
+        if ((id * 73 + 311) % 1000) >= option("npc_chance", 15) then return end
+        npc:set_visual_name("actors\\flx_zone_gear\\jaeger_" .. community .. "_body.ogf")
+    end
+end
+
+local function choose_faction(map)
+    -- Stashes do not carry a reliable owner faction: use regional weights.
+    local roll = math.random(1,100)
+    if map == "l05_bar" or map == "l06_rostok" or map == "l03_agroprom" then
+        return roll <= 70 and "dolg" or "stalker"
+    elseif map == "l07_military" then
+        return roll <= 70 and "freedom" or "stalker"
+    elseif map == "k00_marsh" then
+        return roll <= 70 and "csky" or "stalker"
+    end
+    if roll <= 50 then return "stalker" end
+    if roll <= 70 then return "dolg" end
+    if roll <= 90 then return "freedom" end
+    return "csky"
+end
+
+local function choose_sapper_faction(map)
+    local roll=math.random(1,100)
+    if map=="l03_agroprom" then return roll<=70 and "army" or "dolg" end
+    if map=="l05_bar" or map=="l06_rostok" then return roll<=70 and "dolg" or "army" end
+    if map=="l09_deadcity" then return roll<=70 and "killer" or "army" end
+    if map=="k00_marsh" then return roll<=70 and "csky" or "army" end
+    if roll<=35 then return "army" end
+    if roll<=65 then return "dolg" end
+    if roll<=90 then return "killer" end
+    return "csky"
+end
+local function choose_kontur_faction(map)
+    local roll=math.random(1,100)
+    if map=="l08_yantar" then return roll<=70 and "ecolog" or "csky" end
+    if map=="k00_marsh" then return roll<=70 and "csky" or "stalker" end
+    if map=="l09_deadcity" then return roll<=70 and "killer" or "stalker" end
+    if roll<=35 then return "ecolog" end
+    if roll<=65 then return "csky" end
+    if roll<=90 then return "stalker" end
+    return "killer"
+end
+
+local function choose_horizon_faction(map)
+    local roll=math.random(1,100)
+    if map=="l08_yantar" then return roll<=70 and "ecolog" or "csky" end
+    if map=="k00_marsh" then return roll<=70 and "csky" or "stalker" end
+    if map=="l07_military" then return roll<=70 and "freedom" or "stalker" end
+    if map=="jupiter" then return roll<=55 and "ecolog" or "stalker" end
+    if roll<=35 then return "ecolog" end
+    if roll<=60 then return "csky" end
+    if roll<=80 then return "stalker" end
+    return "freedom"
+end
+
+local function choose_bastion_faction(map)
+    local roll=math.random(1,100)
+    if map=="l03_agroprom" then return roll<=70 and "army" or "dolg" end
+    if map=="l05_bar" or map=="l06_rostok" then return roll<=70 and "dolg" or "army" end
+    if map=="l09_deadcity" then return roll<=70 and "killer" or "dolg" end
+    if map=="l11_pripyat" or map=="l12_stancia" or map=="l12_stancia_2"
+        or map=="l13_generators" or map=="l12u_sarcofag" then
+        return roll<=65 and "monolith" or "army"
+    end
+    if roll<=35 then return "army" end
+    if roll<=65 then return "dolg" end
+    if roll<=90 then return "killer" end
+    return "monolith"
+end
+
+local function install_stash_hooks()
+    -- All eight families use the same saved, single-use stash ticket.
+    if installed or not treasure_manager or not treasure_manager.set_random_stash
+        or not treasure_manager.try_spawn_treasure then return end
+    installed = true
+    local original_set = treasure_manager.set_random_stash
+    treasure_manager.set_random_stash = function(no_spot, hint, bonus_items, id, dbg)
+        local result = original_set(no_spot, hint, bonus_items, id, dbg)
+        if not dbg and result then
+            pending_stashes[result] = nil
+            local se_obj = alife_object(result)
+            if se_obj then
+                local map = alife():level_name(game_graph():vertex(se_obj.m_game_vertex_id):level_id())
+                local rare = level.map_has_object_spot(result, "treasure_searched") ~= 0
+                local chance = rare and option("stash_rare_chance",40)
+                    or (south[map] and 0 or (north[map] and option("stash_north_chance",20)
+                    or option("stash_common_chance",10)))
+                if math.random(1,1000) <= chance then
+                    -- One successful ticket still creates exactly one outfit.
+                    -- New families share at most half the old pool; the old
+                    -- five shares are scaled together, rather than starved.
+                    local termit_weight=math.max(0,math.min(50,extension_option("termit","stash_weight",8)))
+                    local zaslon_weight=math.max(0,math.min(50-termit_weight,extension_option("zaslon","stash_weight",8)))
+                    local dozor_weight=math.max(0,math.min(50-termit_weight-zaslon_weight,extension_option("dozor","stash_weight",8)))
+                    local scale=(100-termit_weight-zaslon_weight-dozor_weight)/100
+                    local s=(rare or north[map]) and math.max(0,math.min(100,sapper_option("stash_weight",30))) or 0
+                    local k=math.max(0,math.min(100-s,kontur_option("stash_weight",25)))
+                    local h=math.max(0,math.min(100-s-k,horizon_option("stash_weight",15)))
+                    local b=(rare or north[map]) and math.max(0,math.min(100-s-k-h,bastion_option("stash_weight",10))) or 0
+                    s,k,h,b=s*scale,k*scale,h*scale,b*scale
+                    local family_roll=math.random(0,99)
+                    local section
+                    if family_roll<s then section=sapper_sections[choose_sapper_faction(map)]
+                    elseif family_roll<s+k then section=kontur_sections[choose_kontur_faction(map)]
+                    elseif family_roll<s+k+h then section=horizon_sections[choose_horizon_faction(map)]
+                    elseif family_roll<s+k+h+b then section=bastion_sections[choose_bastion_faction(map)]
+                    elseif family_roll<s+k+h+b+termit_weight then
+                        section="zfg_termit_"..choose_extension_faction("termit",map).."_outfit"
+                    elseif family_roll<s+k+h+b+termit_weight+zaslon_weight then
+                        section="zfg_zaslon_"..choose_extension_faction("zaslon",map).."_outfit"
+                    elseif family_roll<s+k+h+b+termit_weight+zaslon_weight+dozor_weight then
+                        section="zfg_dozor_"..choose_extension_faction("dozor",map).."_outfit"
+                    else section=sections[choose_faction(map)]end
+                    pending_stashes[result] = {
+                        section = section,
+                        condition = math.random(option("stash_condition_min",5),option("stash_condition_max",35)) / 100
+                    }
+                end
+            end
+        end
+        return result
+    end
+    local original_spawn = treasure_manager.try_spawn_treasure
+    treasure_manager.try_spawn_treasure = function(box)
+        local result = original_spawn(box)
+        local id = box:id()
+        local reward = pending_stashes[id]
+        if reward then
+            -- Delete the ticket before creating anything: each assigned cache pays once.
+            pending_stashes[id] = nil
+            local se_obj = alife_create(reward.section,box:position(),box:level_vertex_id(),box:game_vertex_id(),id,false)
+            if se_obj then
+                local data = utils_stpk.get_item_data(se_obj)
+                data.condition = reward.condition
+                utils_stpk.set_item_data(data,se_obj)
+                alife():register(se_obj)
+            end
+        end
+        return result
+    end
+    local original_release = treasure_manager.release_stash_by_id
+    if original_release then
+        treasure_manager.release_stash_by_id = function(id)
+            pending_stashes[id] = nil
+            return original_release(id)
+        end
+    end
+end
+
+function on_game_start()
+    RegisterScriptCallback("npc_on_net_spawn",npc_on_net_spawn)
+    RegisterScriptCallback("actor_on_first_update",install_stash_hooks)
+    RegisterScriptCallback("save_state",function(data)
+        data.flx_zone_field_gear_stashes = pending_stashes
+    end)
+    RegisterScriptCallback("load_state",function(data)
+        pending_stashes = data.flx_zone_field_gear_stashes or {}
+    end)
+end

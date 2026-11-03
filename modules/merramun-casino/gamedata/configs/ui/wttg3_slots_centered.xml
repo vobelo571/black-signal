@@ -1,0 +1,149 @@
+<w>
+    <main_wnd x="0" y="0" width="1024" height="768" />
+
+    <portrait x="246.0" y="48" width="533" height="629.8" stretch="1">
+        <texture>ui\wttg3_slots\I_Slots_PortraitBackground</texture>
+    </portrait>
+    <reels_bg x="255.0" y="143.1" width="515" height="397.7" stretch="1">
+        <texture>ui\wttg3_slots\I_Reels_Background</texture>
+    </reels_bg>
+    <title_deco x="287.8" y="76.7" width="449.4" height="65.6" stretch="1">
+        <texture>ui\wttg3_slots\I_Reels_Title_Decoration</texture>
+    </title_deco>
+    <title_logo x="287.8" y="76.7" width="449.4" height="65.6" stretch="1">
+        <texture>ui\wttg3_slots\I_Reels_Title_Logo</texture>
+    </title_logo>
+
+    <balance x="299.3" y="551.5" width="147.6" height="23">
+        <text font="graffiti22" align="c" vert_align="c" r="242" g="204" b="105" />
+    </balance>
+    <bet x="451.0" y="551.5" width="123" height="23">
+        <text font="graffiti22" align="c" vert_align="c" r="242" g="204" b="105" />
+    </bet>
+    <win x="578.1" y="551.5" width="147.6" height="23">
+        <text font="graffiti22" align="c" vert_align="c" r="242" g="204" b="105" />
+    </win>
+    <status x="299.3" y="579" width="147.6" height="25">
+        <text font="letterica16" align="c" vert_align="c" r="238" g="220" b="170" />
+    </status>
+    <total_win x="578.1" y="579" width="147.6" height="25">
+        <text font="graffiti22" align="c" vert_align="c" r="255" g="220" b="112" />
+    </total_win>
+
+    <bet_down x="380.5" y="613.8" width="39.4" height="39.4" stretch="1">
+        <texture_e>ui\wttg3_slots\I_BetDown_Default</texture_e>
+        <texture_d>ui\wttg3_slots\I_BetDown_Disabled</texture_d>
+        <texture_t>ui\wttg3_slots\I_BetDown_Down</texture_t>
+        <texture_h>ui\wttg3_slots\I_BetDown_Hover</texture_h>
+    </bet_down>
+    <spin x="460.0" y="583.5" width="105" height="105" stretch="1">
+        <texture_e>ui\wttg3_slots\I_Spin_Default</texture_e>
+        <texture_d>ui\wttg3_slots\I_Spin_Disabled</texture_d>
+        <texture_t>ui\wttg3_slots\I_Spin_Down</texture_t>
+        <texture_h>ui\wttg3_slots\I_Spin_Hover</texture_h>
+    </spin>
+    <bet_up x="605.2" y="613.8" width="39.4" height="39.4" stretch="1">
+        <texture_e>ui\wttg3_slots\I_BetUp_Default</texture_e>
+        <texture_d>ui\wttg3_slots\I_BetUp_Disabled</texture_d>
+        <texture_t>ui\wttg3_slots\I_BetUp_Down</texture_t>
+        <texture_h>ui\wttg3_slots\I_BetUp_Hover</texture_h>
+    </bet_up>
+
+    <slot_1 x="294.8" y="173.5" width="70" height="70" stretch="1" />
+    <slot_2 x="367.5" y="173.5" width="70" height="70" stretch="1" />
+    <slot_3 x="440.2" y="173.5" width="70" height="70" stretch="1" />
+    <slot_4 x="512.9" y="173.5" width="70" height="70" stretch="1" />
+    <slot_5 x="585.6" y="173.5" width="70" height="70" stretch="1" />
+    <slot_6 x="658.3" y="173.5" width="70" height="70" stretch="1" />
+    <slot_7 x="294.8" y="243.7" width="70" height="70" stretch="1" />
+    <slot_8 x="367.5" y="243.7" width="70" height="70" stretch="1" />
+    <slot_9 x="440.2" y="243.7" width="70" height="70" stretch="1" />
+    <slot_10 x="512.9" y="243.7" width="70" height="70" stretch="1" />
+    <slot_11 x="585.6" y="243.7" width="70" height="70" stretch="1" />
+    <slot_12 x="658.3" y="243.7" width="70" height="70" stretch="1" />
+    <slot_13 x="294.8" y="313.9" width="70" height="70" stretch="1" />
+    <slot_14 x="367.5" y="313.9" width="70" height="70" stretch="1" />
+    <slot_15 x="440.2" y="313.9" width="70" height="70" stretch="1" />
+    <slot_16 x="512.9" y="313.9" width="70" height="70" stretch="1" />
+    <slot_17 x="585.6" y="313.9" width="70" height="70" stretch="1" />
+    <slot_18 x="658.3" y="313.9" width="70" height="70" stretch="1" />
+    <slot_19 x="294.8" y="384.1" width="70" height="70" stretch="1" />
+    <slot_20 x="367.5" y="384.1" width="70" height="70" stretch="1" />
+    <slot_21 x="440.2" y="384.1" width="70" height="70" stretch="1" />
+    <slot_22 x="512.9" y="384.1" width="70" height="70" stretch="1" />
+    <slot_23 x="585.6" y="384.1" width="70" height="70" stretch="1" />
+    <slot_24 x="658.3" y="384.1" width="70" height="70" stretch="1" />
+    <slot_25 x="294.8" y="454.3" width="70" height="70" stretch="1" />
+    <slot_26 x="367.5" y="454.3" width="70" height="70" stretch="1" />
+    <slot_27 x="440.2" y="454.3" width="70" height="70" stretch="1" />
+    <slot_28 x="512.9" y="454.3" width="70" height="70" stretch="1" />
+    <slot_29 x="585.6" y="454.3" width="70" height="70" stretch="1" />
+    <slot_30 x="658.3" y="454.3" width="70" height="70" stretch="1" />
+
+    <!-- Each pyramid applies its displayed multiplier to the complete round
+         payout. These labels move with their symbols during every cascade. -->
+    <mult_1 x="294.8" y="173.5" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_1>
+    <mult_2 x="367.5" y="173.5" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_2>
+    <mult_3 x="440.2" y="173.5" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_3>
+    <mult_4 x="512.9" y="173.5" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_4>
+    <mult_5 x="585.6" y="173.5" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_5>
+    <mult_6 x="658.3" y="173.5" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_6>
+    <mult_7 x="294.8" y="243.7" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_7>
+    <mult_8 x="367.5" y="243.7" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_8>
+    <mult_9 x="440.2" y="243.7" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_9>
+    <mult_10 x="512.9" y="243.7" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_10>
+    <mult_11 x="585.6" y="243.7" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_11>
+    <mult_12 x="658.3" y="243.7" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_12>
+    <mult_13 x="294.8" y="313.9" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_13>
+    <mult_14 x="367.5" y="313.9" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_14>
+    <mult_15 x="440.2" y="313.9" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_15>
+    <mult_16 x="512.9" y="313.9" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_16>
+    <mult_17 x="585.6" y="313.9" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_17>
+    <mult_18 x="658.3" y="313.9" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_18>
+    <mult_19 x="294.8" y="384.1" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_19>
+    <mult_20 x="367.5" y="384.1" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_20>
+    <mult_21 x="440.2" y="384.1" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_21>
+    <mult_22 x="512.9" y="384.1" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_22>
+    <mult_23 x="585.6" y="384.1" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_23>
+    <mult_24 x="658.3" y="384.1" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_24>
+    <mult_25 x="294.8" y="454.3" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_25>
+    <mult_26 x="367.5" y="454.3" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_26>
+    <mult_27 x="440.2" y="454.3" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_27>
+    <mult_28 x="512.9" y="454.3" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_28>
+    <mult_29 x="585.6" y="454.3" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_29>
+    <mult_30 x="658.3" y="454.3" width="70" height="70"><text font="graffiti22" align="c" vert_align="c" r="255" g="237" b="145" /></mult_30>
+    
+    <!-- Original WTTG3 flipbook layers, kept above the reel symbols. -->
+    <match_1 x="289.8" y="168.5" width="80" height="80" stretch="1" />
+    <match_2 x="362.5" y="168.5" width="80" height="80" stretch="1" />
+    <match_3 x="435.2" y="168.5" width="80" height="80" stretch="1" />
+    <match_4 x="507.9" y="168.5" width="80" height="80" stretch="1" />
+    <match_5 x="580.6" y="168.5" width="80" height="80" stretch="1" />
+    <match_6 x="653.3" y="168.5" width="80" height="80" stretch="1" />
+    <match_7 x="289.8" y="238.7" width="80" height="80" stretch="1" />
+    <match_8 x="362.5" y="238.7" width="80" height="80" stretch="1" />
+    <match_9 x="435.2" y="238.7" width="80" height="80" stretch="1" />
+    <match_10 x="507.9" y="238.7" width="80" height="80" stretch="1" />
+    <match_11 x="580.6" y="238.7" width="80" height="80" stretch="1" />
+    <match_12 x="653.3" y="238.7" width="80" height="80" stretch="1" />
+    <match_13 x="289.8" y="308.9" width="80" height="80" stretch="1" />
+    <match_14 x="362.5" y="308.9" width="80" height="80" stretch="1" />
+    <match_15 x="435.2" y="308.9" width="80" height="80" stretch="1" />
+    <match_16 x="507.9" y="308.9" width="80" height="80" stretch="1" />
+    <match_17 x="580.6" y="308.9" width="80" height="80" stretch="1" />
+    <match_18 x="653.3" y="308.9" width="80" height="80" stretch="1" />
+    <match_19 x="289.8" y="379.1" width="80" height="80" stretch="1" />
+    <match_20 x="362.5" y="379.1" width="80" height="80" stretch="1" />
+    <match_21 x="435.2" y="379.1" width="80" height="80" stretch="1" />
+    <match_22 x="507.9" y="379.1" width="80" height="80" stretch="1" />
+    <match_23 x="580.6" y="379.1" width="80" height="80" stretch="1" />
+    <match_24 x="653.3" y="379.1" width="80" height="80" stretch="1" />
+    <match_25 x="289.8" y="449.3" width="80" height="80" stretch="1" />
+    <match_26 x="362.5" y="449.3" width="80" height="80" stretch="1" />
+    <match_27 x="435.2" y="449.3" width="80" height="80" stretch="1" />
+    <match_28 x="507.9" y="449.3" width="80" height="80" stretch="1" />
+    <match_29 x="580.6" y="449.3" width="80" height="80" stretch="1" />
+    <match_30 x="653.3" y="449.3" width="80" height="80" stretch="1" />
+    <special_fx x="405.5" y="205" width="214" height="214" stretch="1" />
+</w>
+

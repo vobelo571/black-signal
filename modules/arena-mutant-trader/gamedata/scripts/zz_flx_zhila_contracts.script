@@ -1,0 +1,753 @@
+-- Zhila's field contracts. Native PDA tasks, ALife squads and inventory items.
+-- All persistent values are plain tables or the engine's serializable CTime.
+local M = {version=2}
+local last_tick, next_tick = nil, 0
+local remote_id, remote_scan_at = nil, 0
+local COOLDOWN = 86400
+local RARE_COOLDOWN = 259200
+local NPC = "flx_arena_zhila"
+local PREFIX = "flx_zhila_contract_"
+local KIT = "flx_zhila_field_receiver"
+local SAMPLE = "flx_zhila_sealed_sample"
+local CARGO = "flx_zhila_hunters_case"
+local TAG = "flx_zhila_mutant_tag"
+local NOTE = "flx_zhila_hunter_pda"
+local RARE_CARGO = "flx_zhila_rare_case"
+local HUNTER = "flx_zhila_lost_hunter"
+
+definitions = {
+    day = {
+        hours = "day", reward = 11000, lifetime = 259200,
+        squad = "flx_zhila_sick_boars", work = 35,
+        sites = {"gar_smart_terrain_1_5", "agr_smart_terrain_2_2", "agr_smart_terrain_5_2", "val_smart_terrain_5_7"},
+    },
+    night = {
+        hours = "night", reward = 22000, lifetime = 345600,
+        squad = "flx_zhila_tagged_chimera",
+        sites = {"mil_smart_terrain_4_3", "red_smart_terrain_5_6", "red_smart_terrain_6_6"},
+    },
+    forest = {
+        hours = "any", reward = 22000, lifetime = 43200,
+        squad = "flx_zhila_forest_hunters",
+        sites = {"red_smart_terrain_5_5", "red_smart_terrain_5_6", "red_smart_terrain_6_6", "red_smart_terrain_monsters_3"},
+    },
+    rare = {
+        hours = "any", reward = 45000, lifetime = 345600, delivery = 43200,
+        squad = "flx_zhila_rare_hunters",
+        sites = {"red_smart_terrain_5_5", "red_smart_terrain_5_6", "red_smart_terrain_6_6", "red_smart_terrain_monsters_3"},
+    },
+}
+
+local function current(kind) return kind == "rare" and M.rare or kind ~= "rare" and M.active end
+local function by_id(id)
+    if M.active and M.active.id == id then return M.active end
+    if M.rare and M.rare.id == id then return M.rare end
+end
+local function clear_active(a)
+    if a.kind == "rare" then M.rare = nil else M.active = nil end
+end
+local function case_section(a) return a.kind == "rare" and RARE_CARGO or CARGO end
+local function overdue(a)
+    local now = game.get_game_time()
+    if a.kind == "rare" and a.coords_time then return now:diffSec(a.coords_time) >= definitions.rare.delivery end
+    return now:diffSec(a.started) >= definitions[a.kind].lifetime
+end
+
+local function msg(id, ...)
+    local text = game.translate_string("flx_zhila_" .. id)
+    if select("#", ...) > 0 then text = string.format(text, ...) end
+    if db.actor then news_manager.send_tip(db.actor, text, nil, nil, 6500) end
+end
+
+local function se(id, section)
+    local obj = id and alife():object(id)
+    if obj and (not section or obj:section_name() == section) then return obj end
+end
+
+local function npc(first, second)
+    for _, obj in pairs({first, second}) do
+        if obj and obj.section and obj:section() == NPC then return obj end
+    end
+    local obj = get_speaker and get_speaker(true)
+    if obj and obj:section() == NPC then return obj end
+end
+
+local function actor_owns(id, section)
+    local obj = se(id, section)
+    return obj and db.actor and obj.parent_id == db.actor:id() or false
+end
+
+local function dist2(p, q)
+    return (p.x-q.x)^2 + (p.z-q.z)^2
+end
+
+local function here(a)
+    return level.name() == a.level
+end
+
+local function in_window(kind)
+    local h = level.get_time_hours()
+    local window = definitions[kind].hours
+    return window == "any" or (window == "day" and h >= 6 and h < 20)
+        or (window == "night" and (h >= 22 or h < 5))
+end
+
+local function weather_safe()
+    return not (xr_conditions.surge_started and xr_conditions.surge_started())
+end
+
+local function smart_level(smart)
+    return alife():level_name(game_graph():vertex(smart.m_game_vertex_id):level_id())
+end
+
+local function smart_ok(name)
+    local smart = SIMBOARD and SIMBOARD.smarts_by_names[name]
+    if not (smart and smart.position and smart.m_level_vertex_id and smart.m_game_vertex_id) then return end
+    if not se(smart.id) then return end
+    -- Do not add a contract pack to a camp currently occupied by human squads.
+    local entry = SIMBOARD.smarts[smart.id]
+    for id in pairs(entry and entry.squads or {}) do
+        local squad = se(id)
+        if squad and squad.player_id and not string.find(squad.player_id, "monster", 1, true) then return end
+    end
+    return smart
+end
+
+local function candidates(kind)
+    local result = {}
+    for _, name in ipairs(definitions[kind].sites) do
+        if smart_ok(name) then result[#result+1] = name end
+    end
+    return result
+end
+
+local function cooldown_ready(kind)
+    local taken = kind == "rare" and M.last_rare or kind ~= "rare" and M.last_taken
+    return not taken or game.get_game_time():diffSec(taken) >= (kind == "rare" and RARE_COOLDOWN or COOLDOWN)
+end
+
+local function native_record(kind)
+    return task_manager.get_task_manager().task_info[PREFIX..kind]
+end
+
+local function offerable(kind)
+    if not db.actor or current(kind) or not definitions[kind] or not cooldown_ready(kind) or not in_window(kind) then return false end
+    if native_record(kind) then return false end
+    return #candidates(kind) >= (kind == "rare" and 2 or 1)
+end
+
+function can_day(a,b) return npc(a,b) ~= nil and offerable("day") end
+function can_night(a,b) return npc(a,b) ~= nil and offerable("night") end
+function can_forest(a,b) return npc(a,b) ~= nil and offerable("forest") end
+function can_rare(a,b) return npc(a,b) ~= nil and offerable("rare") end
+function has_rare(a,b) return npc(a,b) ~= nil and M.rare ~= nil end
+function has_no_rare(a,b) return npc(a,b) ~= nil and M.rare == nil end
+function rare_resting(a,b) return has_no_rare(a,b) and not cooldown_ready("rare") end
+function rare_no_offer(a,b) return has_no_rare(a,b) and cooldown_ready("rare") and not offerable("rare") end
+function has_active(a,b) return npc(a,b) ~= nil and M.active ~= nil end
+function has_no_active(a,b) return npc(a,b) ~= nil and not M.active end
+function resting(a,b) return has_no_active(a,b) and not cooldown_ready() end
+function no_offer(a,b)
+    return has_no_active(a,b) and cooldown_ready() and not (offerable("day") or offerable("night") or offerable("forest"))
+end
+
+local function remove_item(id, section)
+    local obj = se(id, section)
+    if obj then alife_release(obj) end
+end
+
+local function squad_object(a)
+    return se(a.squad_id, definitions[a.kind].squad)
+end
+
+local function protect(a)
+    if a.cleaned or a.failed then return end
+    local sq = squad_object(a)
+    if sq and sim_offline_combat and sim_offline_combat.task_squads then
+        sim_offline_combat.task_squads[sq.id] = true
+    end
+end
+
+local function cleanup(a)
+    if not a or a.cleaned then return end
+    a.cleaned = true
+    remove_item(a.kit_id, KIT)
+    remove_item(a.sample_id, SAMPLE)
+    remove_item(a.case_id, case_section(a))
+    remove_item(a.tag_id,TAG)
+    remove_item(a.note_id,NOTE)
+    if se(a.body_id,HUNTER) then
+        M.bodies = M.bodies or {}
+        M.bodies[#M.bodies+1] = {id=a.body_id,level=a.body_level}
+    end
+    local sq = squad_object(a)
+    if sq then
+        if sim_offline_combat and sim_offline_combat.task_squads then sim_offline_combat.task_squads[sq.id] = nil end
+        sq.scripted_target, sq.rush_to_target = a.spawn_smart, false
+        sq.current_action = nil
+        -- Cancelling through the PDA must not make nearby attackers disappear.
+        M.retired = M.retired or {}
+        M.retired[#M.retired+1] = {
+            id=sq.id, section=definitions[a.kind].squad, level=a.level,
+        }
+    end
+end
+
+local function cleanup_retired()
+    for i=#(M.bodies or {}),1,-1 do
+        local entry=M.bodies[i]
+        local body=se(entry.id,HUNTER)
+        if not body or level.name() ~= entry.level or dist2(db.actor:position(),body.position) > 150^2 then
+            if body then alife_release(body) end
+            table.remove(M.bodies,i)
+        end
+    end
+    for i=#(M.retired or {}),1,-1 do
+        local entry = M.retired[i]
+        local sq = se(entry.id,entry.section)
+        local near = false
+        if sq and level.name() == entry.level then
+            for member in sq:squad_members() do
+                local obj = se(member.id)
+                if obj and dist2(db.actor:position(),obj.position) < 150^2 then near=true;break end
+            end
+        end
+        if not near then
+            if sq then
+                if sim_offline_combat and sim_offline_combat.task_squads then sim_offline_combat.task_squads[sq.id]=nil end
+                SIMBOARD:remove_squad(sq)
+            end
+            table.remove(M.retired,i)
+        end
+    end
+end
+
+local function spawn_pack(a, name)
+    local sq = utils_obj.create_squad(definitions[a.kind].squad, name)
+    if not sq then return end
+    a.squad_id = sq.id
+    a.spawn_smart = name
+    a.members = {}
+    for member in sq:squad_members() do
+        local obj = se(member.id)
+        if obj then
+            a.members[#a.members+1] = {id=member.id, section=obj:section_name()}
+        end
+    end
+    protect(a)
+    return #a.members > 0
+end
+
+local function living_members(a)
+    local result = {}
+    for _, member in ipairs(a.members or {}) do
+        local obj = se(member.id, member.section)
+        -- Corpses removed by the engine count as dead. Reused unrelated IDs do not count.
+        if obj and obj.group_id == a.squad_id and obj:alive() then result[#result+1] = obj end
+    end
+    return result
+end
+
+local function create_item(section)
+    return alife_create_item(section, db.actor)
+end
+
+local function quote(kind)
+    return math.floor(definitions[kind].reward * (game_difficulties.get_eco_factor("rewards") or 1) + .5)
+end
+
+local function accept(kind, first, second, remote)
+    local giver = remote and first or npc(first, second)
+    if not giver or not offerable(kind) then return end
+    local id = PREFIX..kind
+    if not task_manager.task_ini:section_exist(id) then msg("unavailable");return end
+    local pool = candidates(kind)
+    local name = pool[math.random(#pool)]
+    local smart = smart_ok(name)
+    if not smart then return end
+    local a = {
+        id=id, kind=kind, giver_id=giver:id(), smart=name, level=smart_level(smart),
+        pos={x=smart.position.x,y=smart.position.y,z=smart.position.z},
+        started=game.get_game_time(), stage=0, progress=0, reward=quote(kind),
+        remote=remote or nil,
+    }
+    if kind == "rare" then M.rare = a else M.active = a end
+    local ok, err = pcall(function()
+        if kind == "rare" then
+            local other={}
+            for _,site in ipairs(pool) do if site ~= name then other[#other+1]=site end end
+            local body_smart=smart_ok(other[math.random(#other)])
+            assert(body_smart,"hunter site unavailable")
+            local body=alife():create(HUNTER,body_smart.position,body_smart.m_level_vertex_id,body_smart.m_game_vertex_id)
+            assert(body,"hunter creation failed")
+            a.body_id,a.body_level=body.id,smart_level(body_smart)
+            local note=alife_create_item(NOTE,body)
+            assert(note,"hunter PDA creation failed")
+            a.note_id=note.id
+            body:kill()
+            assert(spawn_pack(a,name),"rare pack creation failed")
+        elseif kind == "forest" then
+            local point = vector():set(a.pos.x,a.pos.y+.15,a.pos.z)
+            local item = alife():create(CARGO, point, smart.m_level_vertex_id, smart.m_game_vertex_id)
+            assert(item, "case creation failed")
+            a.case_id = item.id
+            -- The den is occupied before the player arrives. No mutants materialize
+            -- behind the player when the crate is picked up.
+            assert(spawn_pack(a, name), "forest pack creation failed")
+        elseif kind == "day" then
+            local kit = create_item(KIT)
+            assert(kit, "receiver creation failed")
+            a.kit_id = kit.id
+            assert(spawn_pack(a, name), "pack creation failed")
+        else
+            assert(spawn_pack(a,name),"tagged beast creation failed")
+        end
+        task_manager.get_task_manager():give_task(id, giver:id())
+        assert(native_record(kind), "native task creation failed")
+    end)
+    if not ok then
+        printf("[Zhila Contracts] Could not issue %s: %s", id, tostring(err))
+        cleanup(a)
+        clear_active(a)
+        local manager = task_manager.get_task_manager()
+        local record = manager.task_info[id]
+        if record then
+            if record.t then manager:set_task_failed(id) else manager.task_info[id] = nil end
+        end
+        msg("unavailable")
+        return
+    end
+    if kind == "rare" then M.last_rare=game.get_game_time() else M.last_taken=game.get_game_time() end
+    last_tick = nil
+    printf("[Zhila Contracts] Accepted %s at %s, reward=%s",id,name,a.reward)
+    M.contact_id = a.giver_id
+    msg("issued",game.translate_string(a.level),a.reward)
+    return true
+end
+
+function accept_day(a,b) return accept("day",a,b) end
+function accept_night(a,b) return accept("night",a,b) end
+function accept_forest(a,b) return accept("forest",a,b) end
+function accept_rare(a,b) return accept("rare",a,b) end
+
+local function ready(a)
+    if not a or a.claimed or a.failed or a.stage ~= 3 or overdue(a) then return false end
+    if a.kind == "day" then return actor_owns(a.sample_id,SAMPLE) end
+    if a.kind == "night" then return a.legacy_scan and actor_owns(a.kit_id,KIT) or actor_owns(a.tag_id,TAG) end
+    return actor_owns(a.case_id,case_section(a))
+end
+
+function can_finish(first, second)
+    local giver = npc(first,second)
+    return giver ~= nil and M.active and giver:id() == M.active.giver_id and ready(M.active) or false
+end
+function not_finished(a,b) return has_active(a,b) and not can_finish(a,b) end
+function can_cancel(a,b) return has_active(a,b) and not M.active.claimed end
+function can_finish_rare(a,b)
+    local giver=npc(a,b)
+    return giver ~= nil and M.rare and giver:id()==M.rare.giver_id and ready(M.rare) or false
+end
+function rare_not_finished(a,b) return has_rare(a,b) and not can_finish_rare(a,b) end
+function can_cancel_rare(a,b) return has_rare(a,b) and not M.rare.claimed end
+
+function finish(first, second)
+    if not can_finish(first,second) then return end
+    M.active.claimed = true -- payment is committed once by the native completion callback
+    task_manager.get_task_manager():set_task_completed(M.active.id)
+end
+
+function cancel(first, second)
+    if not can_cancel(first,second) then return end
+    task_manager.get_task_manager():set_task_cancelled(M.active.id)
+end
+function finish_rare(a,b)
+    if not can_finish_rare(a,b) then return end
+    M.rare.claimed=true
+    task_manager.get_task_manager():set_task_completed(M.rare.id)
+end
+function cancel_rare(a,b)
+    if can_cancel_rare(a,b) then task_manager.get_task_manager():set_task_cancelled(M.rare.id) end
+end
+
+local function finish_effect(_, _, params)
+    local a = params and by_id(params[1])
+    if not (a and params and a.id == params[1] and a.claimed and not a.rewarded) then return end
+    a.rewarded = true
+    -- Reward difficulty was applied exactly once when the price was agreed.
+    dialogs.relocate_money(db.actor,a.reward,"in")
+    cleanup(a)
+    clear_active(a)
+    printf("[Zhila Contracts] Completed %s",params[1])
+end
+
+local function failed_effect(_, _, params)
+    local a = params and by_id(params[1])
+    if not (a and params and a.id == params[1]) then return end
+    if not a.penalized then
+        a.penalized=true
+        -- Native GAMMA effect applies the player's goodwill difficulty multiplier.
+        xr_effects.fail_task_dec_goodwill(db.actor,nil,{"25","stalker"})
+    end
+    cleanup(a)
+    clear_active(a)
+    printf("[Zhila Contracts] Closed %s",params[1])
+end
+
+xr_effects.flx_zhila_contract_complete = finish_effect
+xr_effects.flx_zhila_contract_fail = failed_effect
+
+local function fail(a, why)
+    if a.failed or a.claimed then return end
+    a.failed = true
+    cleanup(a) -- Expired cargo disappears immediately, including cargo in storage.
+    task_manager.get_task_manager():set_task_failed(a.id)
+    msg(why or "failed")
+end
+
+local function set_stage(a, stage)
+    a.stage = stage
+    local tsk = native_record(a.kind)
+    if tsk then tsk.stage = stage end
+    if stage == 3 then a.armed = nil; msg("return") end
+end
+
+function hunter_pda_menu(obj)
+    local a=M.rare
+    if a and not a.failed and not a.claimed and a.stage<=1 and not overdue(a)
+        and obj and obj:id()==a.note_id and actor_owns(a.note_id,NOTE) then
+        return game.translate_string("flx_zhila_read_pda")
+    end
+end
+function hunter_pda_use(obj)
+    if not hunter_pda_menu(obj) then return end
+    local a=M.rare
+    local smart=smart_ok(a.smart)
+    -- A camp may have changed hands during the search. Do not put cargo in a new human camp.
+    if not smart then fail(a,"cache_lost");return end
+    local item=alife():create(RARE_CARGO,vector():set(a.pos.x,a.pos.y+.15,a.pos.z),smart.m_level_vertex_id,smart.m_game_vertex_id)
+    if not item then msg("unavailable");return end
+    a.case_id=item.id
+    a.coords_time=game.get_game_time()
+    set_stage(a,2)
+    msg("coordinates")
+end
+
+local function recover_tag(a,body)
+    if a.tag_id or a.failed or a.claimed or a.legacy_scan then return end
+    if not in_window("night") then fail(a,"beast_day");return end
+    if not body then fail(a,"tag_lost");return end
+    local p=body.position
+    local item=alife():create(TAG,vector():set(p.x,p.y+.2,p.z),body.m_level_vertex_id,body.m_game_vertex_id)
+    if not item then fail(a,"tag_lost");return end
+    a.tag_id=item.id
+    set_stage(a,1)
+    msg("tag_dropped")
+end
+function monster_on_death(victim)
+    local a=M.active
+    if not a or a.kind~="night" or a.stage~=0 or overdue(a) then return end
+    for _,member in ipairs(a.members) do
+        if victim:id()==member.id and victim:section()==member.section then
+            recover_tag(a,se(member.id,member.section))
+            return
+        end
+    end
+end
+
+function receiver_menu(obj)
+    local a = M.active
+    if a and a.kind == "day" and not a.failed and not a.claimed and a.stage < 3
+        and obj and obj:id() == a.kit_id then
+        return game.translate_string("flx_zhila_receiver_use")
+    end
+end
+
+function receiver_use(obj)
+    local a = M.active
+    if not receiver_menu(obj) or not actor_owns(a.kit_id,KIT) then return end
+    if not here(a) then msg("wrong_place");return end
+    if not in_window(a.kind) then msg(a.kind == "day" and "need_day" or "need_night");return end
+    if not weather_safe() then msg("storm");return end
+    if a.kind == "day" and (a.stage ~= 1 or dist2(db.actor:position(),a.pos) > 12^2) then msg("clear_first");return end
+    a.armed = true
+    a.progress = 0
+    a.last_notice = 0
+    if a.kind == "night" then set_stage(a,1) end
+    msg(a.kind == "day" and "sampling" or "recording")
+end
+
+local function fieldwork(a, dt, valid)
+    if not a.armed then return false end
+    if not valid then
+        if a.progress > 0 then msg("interrupted") end
+        a.progress = 0
+        a.last_notice = 0
+        return false
+    end
+    a.progress = a.progress + dt
+    local seconds = math.floor(a.progress/10)*10
+    if seconds > (a.last_notice or 0) then
+        a.last_notice = seconds
+        msg("progress",math.min(100,math.floor(a.progress/definitions[a.kind].work*100)))
+    end
+    return a.progress >= definitions[a.kind].work
+end
+
+local function hunt_target(a)
+    local sq = squad_object(a)
+    if not sq then return end
+    -- Keep the hunting party in its own level; it must not follow the player into Rostok.
+    local hunting=a.kind=="rare" and a.pursuit or a.kind=="forest" and a.stage==1
+    local target = here(a) and hunting and "actor" or a.spawn_smart
+    if sq.scripted_target ~= target then
+        sq.scripted_target = target
+        sq.rush_to_target = target == "actor"
+        sq.current_action = nil
+    end
+end
+
+local function update(a, dt)
+    if a.failed or a.claimed then return end
+    local now = game.get_game_time()
+    if overdue(a) then fail(a,"expired");return end
+    local giver = se(a.giver_id,NPC)
+    if not giver or not giver:alive() then fail(a,"giver_lost");return end
+    protect(a)
+    if a.kind == "day" then
+        if not actor_owns(a.kit_id,KIT) and a.stage < 3 then fail(a,"receiver_lost");return end
+        if a.stage == 0 and #living_members(a) == 0 then set_stage(a,1);msg("pack_cleared") end
+        local valid = here(a) and a.stage == 1 and in_window("day") and weather_safe()
+            and dist2(db.actor:position(),a.pos) <= 12^2
+        if fieldwork(a,dt,valid) then
+            local item = create_item(SAMPLE)
+            if item then a.sample_id=item.id;set_stage(a,3) end
+        end
+        if a.stage == 3 and not se(a.sample_id,SAMPLE) then fail(a,"sample_lost") end
+    elseif a.kind == "night" then
+        if a.legacy_scan then
+            if not se(a.kit_id,KIT) then fail(a,"receiver_lost") end
+            return
+        end
+        if a.stage==0 and #living_members(a)==0 then
+            recover_tag(a,se(a.members[1].id,a.members[1].section))
+        end
+        if a.failed then return end
+        if a.tag_id and not se(a.tag_id,TAG) then fail(a,"tag_lost");return end
+        if a.tag_id and actor_owns(a.tag_id,TAG) and a.stage~=3 then set_stage(a,3) end
+    elseif a.kind == "rare" then
+        if a.stage<=1 then
+            if not se(a.note_id,NOTE) then fail(a,"note_lost");return end
+            if actor_owns(a.note_id,NOTE) and a.stage==0 then set_stage(a,1) end
+        else
+            if not se(a.case_id,RARE_CARGO) then fail(a,"cargo_lost");return end
+            if actor_owns(a.case_id,RARE_CARGO) and a.stage==2 then
+                a.pursuit=true
+                set_stage(a,3)
+                msg("rare_cargo_taken")
+            end
+            if a.pursuit and (not here(a) or dist2(db.actor:position(),a.pos)>140^2) then a.pursuit=nil end
+        end
+        hunt_target(a)
+    else
+        if not se(a.case_id,CARGO) then fail(a,"cargo_lost");return end
+        local owned = actor_owns(a.case_id,CARGO)
+        if a.stage == 0 and owned then
+            a.picked = now
+            a.hunt_delay = 0
+            set_stage(a,1)
+            msg("cargo_taken")
+        end
+        if a.stage == 1 then
+            a.hunt_delay = (a.hunt_delay or 0) + dt
+            if not a.ambush_done and here(a) and owned and a.hunt_delay >= 8 then
+                a.ambush_done=true
+                if #living_members(a) > 0 then msg("ambush") end
+            end
+            if owned and (not here(a) or dist2(db.actor:position(),a.pos) > 140^2) then set_stage(a,3) end
+        end
+        hunt_target(a)
+    end
+end
+
+function actor_on_update()
+    if not db.actor then return end
+    if device():is_paused() then
+        last_tick, next_tick = nil,0
+        return
+    end
+    local now = time_global()
+    if now < next_tick then return end
+    next_tick = now + 500
+    local dt = last_tick and math.min(1,math.max(0,(now-last_tick)/1000)) or 0
+    last_tick = now
+    local work_dt = actor_menu.is_hud_free() and dt or 0
+    if M.active then update(M.active,work_dt) end
+    if M.rare then update(M.rare,work_dt) end
+    cleanup_retired()
+end
+
+function actor_on_first_update()
+    last_tick, next_tick = nil, 0
+    if M.active then
+        M.active.armed, M.active.progress, M.active.last_notice = nil,0,0
+        protect(M.active)
+    end
+    if M.rare then protect(M.rare) end
+end
+
+function save_state(data)
+    data.flx_zhila_contracts = M
+end
+function load_state(data)
+    M = data.flx_zhila_contracts or {version=2}
+    if M.version~=2 then
+        local a=M.active
+        if a and a.kind=="forest" then a.started=game.get_game_time() end
+        if a and a.kind=="night" then
+            if a.stage==3 then a.legacy_scan=true else remove_item(a.kit_id,KIT);a.kit_id=nil;a.stage=0 end
+        end
+        M.version=2
+    end
+    remote_id, remote_scan_at = nil, 0
+    last_tick, next_tick = nil, 0
+end
+
+function task_functor.flx_zhila_contract_descr(id,field,p,tsk)
+    local a = by_id(id)
+    if not a or a.id ~= id then return "flx_zhila_missing_contract" end
+    local stage = "flx_zhila_"..a.kind.."_stage_"..a.stage
+    return game.translate_string(stage)
+end
+
+function task_functor.flx_zhila_contract_target(id,field,p,tsk)
+    local a = by_id(id)
+    if not a or a.id ~= id then return end
+    if a.stage == 3 then return se(a.giver_id,NPC) and a.giver_id end
+    if a.kind=="rare" and a.stage<=1 then
+        local note=se(a.note_id,NOTE)
+        if note and note.parent_id~=db.actor:id() then return note.parent_id==65535 and note.id or note.parent_id end
+        return db.actor:id()
+    end
+    if a.kind == "forest" or a.kind=="rare" then
+        local item = se(a.case_id,case_section(a))
+        if item and item.parent_id ~= db.actor:id() then return item.parent_id == 65535 and item.id or item.parent_id end
+        local smart = SIMBOARD and SIMBOARD.smarts_by_names[a.smart]
+        return smart and smart.id
+    end
+    if a.kind=="night" and a.tag_id then
+        local tag=se(a.tag_id,TAG)
+        return tag and (tag.parent_id==65535 and tag.id or tag.parent_id)
+    end
+    if a.kind == "night" or a.stage == 0 then
+        local alive = living_members(a)
+        if alive[1] then return alive[1].id end
+    end
+    local smart = SIMBOARD and SIMBOARD.smarts_by_names[a.smart]
+    return smart and smart.id
+end
+
+function task_status_functor.flx_zhila_contract_status(tsk,id)
+    local a = by_id(id)
+    if not a or a.id ~= id then return "fail" end
+    tsk.stage = a.stage
+    if a.failed then return "fail" end
+    if a.claimed then return "complete" end
+end
+
+function status_text()
+    local a = M.active
+    if not a then return game.translate_string("flx_zhila_no_active_text") end
+    return task_functor.flx_zhila_contract_descr(a.id)
+end
+
+function cooldown_text()
+    local remaining = M.last_taken and math.max(0,COOLDOWN-game.get_game_time():diffSec(M.last_taken)) or 0
+    return string.format(game.translate_string("flx_zhila_cooldown_text"),math.ceil(remaining/3600))
+end
+function rare_cooldown_text()
+    local remaining=M.last_rare and math.max(0,RARE_COOLDOWN-game.get_game_time():diffSec(M.last_rare)) or 0
+    return string.format(game.translate_string("flx_zhila_rare_cooldown_text"),math.ceil(remaining/3600))
+end
+
+function offer_day()
+    return string.format(game.translate_string("flx_zhila_day_offer"),quote("day"))
+end
+function offer_night()
+    return string.format(game.translate_string("flx_zhila_night_offer"),quote("night"))
+end
+function offer_forest()
+    return string.format(game.translate_string("flx_zhila_forest_offer"),quote("forest"))
+end
+function offer_rare() return string.format(game.translate_string("flx_zhila_rare_offer"),quote("rare")) end
+
+-- Remote orders share the same acceptance path, native records and cooldowns.
+local function remote_giver()
+    local obj=se(M.contact_id,NPC) or se(remote_id,NPC)
+    if obj then return obj end
+    if time_global()<remote_scan_at then return end
+    remote_scan_at=time_global()+10000
+    for i=0,65534 do
+        obj=se(i,NPC)
+        if obj then remote_id=i;return obj end
+    end
+end
+
+local function linked_giver()
+    if not db.actor then return end
+    local giver=remote_giver()
+    if not giver or not giver:alive() then return end
+    local client=level.object_by_id(giver.id)
+    if client and client:relation(db.actor)==game_object.enemy then return end
+    if xr_conditions.is_factions_enemies and
+        xr_conditions.is_factions_enemies(nil,nil,{character_community(db.actor),"stalker"}) then return end
+    return giver
+end
+
+function remote_linked() return linked_giver()~=nil end
+function remote_giver_id() local giver=linked_giver();return giver and giver.id end
+function remote_reward(kind) return definitions[kind] and quote(kind) end
+local function in_board_range(giver)
+    if not giver or not db.actor then return false end
+    local board=ui_pda_taskboard_tab
+    local radius=board and board.config and tonumber(board.config.scanning_range)
+    if not radius or radius<0 or radius~=radius or radius==math.huge then return false end
+    -- Online objects belong to the current level, just as in the board's native scan.
+    local client=level.object_by_id(giver.id)
+    return client~=nil and client:alive()
+        and db.actor:position():distance_to(client:position())<=radius or false
+end
+
+function remote_can(kind) return in_board_range(linked_giver()) and offerable(kind) end
+function remote_accept(kind)
+    -- Recheck the live search radius too: an old card cannot be accepted after leaving it.
+    local giver=linked_giver()
+    if not in_board_range(giver) or not definitions[kind] or not offerable(kind) then return false end
+    local proxy={id=function()return giver.id end}
+    return accept(kind,proxy,nil,true) or false
+end
+
+function remote_text(kind)
+    if not definitions[kind] then return "" end
+    if not linked_giver() then return game.translate_string("flx_zhila_radio_no_contact") end
+    local a=current(kind)
+    if a then return task_functor.flx_zhila_contract_descr(a.id) end
+    if not cooldown_ready(kind) then return kind=="rare" and rare_cooldown_text() or cooldown_text() end
+    if not in_window(kind) then return game.translate_string("flx_zhila_radio_"..kind.."_hours") end
+    if not offerable(kind) then return game.translate_string("flx_zhila_no_offer") end
+    local text=string.format(game.translate_string("flx_zhila_"..kind.."_offer"),quote(kind))
+    if kind=="day" then text=text.."\n\n"..game.translate_string("flx_zhila_radio_receiver") end
+    return text
+end
+
+local function remember_contact(id)
+    if se(id,NPC) then M.contact_id=id end
+end
+
+function on_game_start()
+    RegisterScriptCallback("save_state",save_state)
+    RegisterScriptCallback("load_state",load_state)
+    RegisterScriptCallback("actor_on_first_update",actor_on_first_update)
+    RegisterScriptCallback("actor_on_update",actor_on_update)
+    RegisterScriptCallback("monster_on_death_callback",monster_on_death)
+    RegisterScriptCallback("actor_on_leave_dialog",remember_contact)
+end

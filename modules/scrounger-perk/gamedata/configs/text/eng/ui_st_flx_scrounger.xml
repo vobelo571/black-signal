@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+  <string id="st_player_skills_scrounger"><text>Scrounger</text></string>
+  <string id="st_player_skills_hint_scrounger"><text>Find weapon and outfit parts in better condition. Each level: +0.5 percentage points, up to +15. Item pools and toolkit rarity stay unchanged.\n\nExperience: a new find on the ground, in a stash or on a corpse gives 10; a part gives 20. Repeat pickups, purchases and transfers from living characters give no experience.\n\n</text></string>
+  <string id="st_skills_stats_scrounger_quality_bonus"><text>\nCondition of found parts: +$stat percentage points</text></string>
+  <string id="st_new_level_scrounger"><text>Scrounger improved: found parts will be in better condition.</text></string>
+</string_table>

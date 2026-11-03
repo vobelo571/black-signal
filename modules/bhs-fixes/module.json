@@ -1,0 +1,15 @@
+{
+  "id": "bhs-fixes",
+  "title": "BHS Fixes",
+  "group": "Исправления",
+  "version": "1.0.0",
+  "description": "Сохранение состояния конечностей, лечение у врачей и восстановление BHS при загрузке.",
+  "requires": [
+    "gamma",
+    "bhs"
+  ],
+  "notes": "Совместим с отдыхом и лечением у костра.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "1006- BHS Fixes by flx"
+}

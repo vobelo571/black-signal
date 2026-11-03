@@ -1,0 +1,68 @@
+-- Restored from Fireteam AI humanity module, July 10-11 2026.
+-- Standalone sound layer: no combat planner or body-state changes.
+local radius = 35
+local records = {}
+local paths = {
+    "material\\human\\step\\default1",
+    "material\\human\\step\\default2",
+    "material\\human\\step\\default3",
+    "material\\human\\step\\default4",
+}
+
+local function reset()
+    records = {}
+end
+
+local function forget(npc)
+    if npc then records[npc:id()] = nil end
+end
+
+local function update(npc)
+    local actor = db and db.actor
+    if not (actor and npc and npc:alive()) then return end
+    local id = npc:id()
+    if npc:relation(actor) < game_object.enemy then
+        records[id] = nil
+        return
+    end
+    local pos = npc:position()
+    if pos:distance_to(actor:position()) > radius then
+        records[id] = nil
+        return
+    end
+    local now = time_global()
+    local rec = records[id]
+    if not rec then
+        records[id] = { pos = vector():set(pos), time = now, last_step = now, delay = 650 }
+        return
+    end
+    local dt = now - rec.time
+    if dt >= 0 and dt < 100 then return end
+    local speed = 0
+    local distance = rec.pos:distance_to(pos)
+    if dt >= 100 and dt < 5000 then speed = distance / (dt / 1000) end
+    rec.pos = vector():set(pos)
+    rec.time = now
+    -- Discard clock resets, loading gaps, and teleports.
+    if dt < 0 or dt >= 5000 or speed > 12 then
+        rec.last_step = now
+        return
+    end
+    if speed < 0.3 or now - rec.last_step < rec.delay then return end
+    local ok, snd = pcall(function() return sound_object(paths[math.random(1, #paths)]) end)
+    if not (ok and snd) then return end
+    local played = pcall(function() snd:play_at_pos(npc, pos, 0, sound_object.s3d) end)
+    if played then
+        rec.sound = snd
+        rec.last_step = now
+        rec.delay = speed > 2.7 and math.random(380, 500) or math.random(560, 760)
+    end
+end
+
+function on_game_start()
+    RegisterScriptCallback("npc_on_update", update)
+    RegisterScriptCallback("npc_on_net_destroy", forget)
+    RegisterScriptCallback("npc_on_death_callback", forget)
+    RegisterScriptCallback("actor_on_first_update", reset)
+    RegisterScriptCallback("on_before_level_changing", reset)
+end

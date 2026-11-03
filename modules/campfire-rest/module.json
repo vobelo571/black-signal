@@ -1,0 +1,19 @@
+{
+  "id": "campfire-rest",
+  "title": "Отдых у костра",
+  "group": "Мир и баланс",
+  "version": "1.0.0",
+  "description": "Посадка у костра, плавная камера и интеграция лечения.",
+  "requires": [
+    "gamma",
+    "lnct"
+  ],
+  "notes": "Ctrl+V; MCM для настроек необязателен. Включает override LNCT Campfire Healing.",
+  "default": false,
+  "author": "@Flixmo",
+  "source_folder": "Chiki-Briki Campfire Rest",
+  "optional": [
+    "mcm",
+    "bhs"
+  ]
+}

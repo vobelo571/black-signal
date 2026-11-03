@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="st_inv_cache_inventory">
+        <text>In inventory</text>
+    </string>
+    <string id="st_inv_cache_stashes">
+        <text>In stashes</text>
+    </string>
+	<string id="st_pda_caption_turn_in">
+        <text>Turn in tasks</text>
+    </string>
+	<string id="st_pda_caption_cancel">
+        <text>Cancel task</text>
+    </string>
+    <string id="st_pda_caption_guide_task">
+        <text>Escort</text>
+    </string>
+    <string id="st_taskboard_guide_title">
+        <text>Escort an NPC</text>
+    </string>
+    <string id="st_taskboard_guide_details">
+        <text>Destination: %s, %s\nTime limit: %s h.</text>
+    </string>
+    <string id="st_pda_confirm_turn_in_task">
+        <text>Are you sure you want to turn in the task to %s?</text>
+    </string>
+	<string id="st_pda_confirm_cancel_task">
+        <text>Are you sure you want to cancel the task from %s?</text>
+    </string>
+    <string id="st_tb_task_count"><text>Tasks: %s</text></string>
+    <string id="st_tb_show_more"><text>Show %s more</text></string>
+    <string id="st_tb_collapse"><text>Collapse list</text></string>
+    <string id="st_tb_accept"><text>Accept task</text></string>
+    <string id="st_tb_cancel"><text>Cancel task</text></string>
+    <string id="st_tb_turn_in"><text>Turn in task</text></string>
+    <string id="st_tb_unavailable"><text>Finish the current task from this NPC first</text></string>
+    <string id="st_tb_faulty"><text>Task data unavailable</text></string>
+    <string id="st_tb_task"><text>Task</text></string>
+    <string id="st_tb_inventory_progress"><text>In inventory: %s / %s</text></string>
+    <string id="st_tb_stash_progress"><text>In stashes: %s / %s</text></string>
+</string_table>
