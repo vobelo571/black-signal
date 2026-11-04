@@ -30,7 +30,7 @@
 | Калибр: снабженец Янтаря | [Modded Exes / DLTX](https://github.com/themrdemonized/xray-monolith/releases), [Hideout Furniture](https://www.moddb.com/mods/stalker-anomaly/addons/hideout-furniture-hf), [Hideout Furniture Expansion](https://www.moddb.com/mods/stalker-anomaly/addons/hideout-furniture-expansion), [Even More Hideout Furniture](https://www.moddb.com/mods/stalker-anomaly/addons/even-more-hideout-furniture) |
 | Фикс веса артефактов | [Modded Exes / DLTX](https://github.com/themrdemonized/xray-monolith/releases) |
 | Ориентир: проводник Янтаря | [Modded Exes / DLTX](https://github.com/themrdemonized/xray-monolith/releases), [Hideout Furniture](https://www.moddb.com/mods/stalker-anomaly/addons/hideout-furniture-hf), [Hideout Furniture Expansion](https://www.moddb.com/mods/stalker-anomaly/addons/hideout-furniture-expansion), [Even More Hideout Furniture](https://www.moddb.com/mods/stalker-anomaly/addons/even-more-hideout-furniture) |
-| Арсенал NPC | Только GAMMA |
+| Арсенал NPC | [Modded Exes / DLTX](https://github.com/themrdemonized/xray-monolith/releases) |
 | Колесо еды и медикаментов | [Quick Action Wheel](https://www.moddb.com/mods/stalker-anomaly/addons/quick-action-wheel) |
 | Звания и научные должности | Только GAMMA |
 | Навык «Падальщик» | [Anomaly Skill System](https://www.moddb.com/mods/stalker-anomaly/addons/anomaly-skill-system) |

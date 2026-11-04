@@ -1,0 +1,230 @@
+-- FLX NPC Arsenal 1.2.6. Shared engine-config validator, also run offline in Lua 5.1.
+-- Sources and conditional requirements: tools/audit_weapon_configs.py report.
+-- No hard r_string/r_float calls: a bad addon must never crash the preflight.
+local function words(s)
+    local t = {}
+    for v in string.gmatch(s or "", "[^,%s]+") do t[#t+1] = v end
+    return t
+end
+
+local weapon_rules = {
+    string="class visual hud inv_name inv_name_short ammo_class",
+    hit_type="hit_type",
+    present="description",
+    section="immunities_sect",
+    integer="slot animation_slot ammo_elapsed ammo_mag_size hand_dependence inv_grid_x inv_grid_y inv_grid_width inv_grid_height",
+    nonnegative="inv_weight cost min_radius max_radius condition_shot_dec fire_dispersion_base",
+    positive="rpm bullet_speed fire_distance",
+    number="control_inertion_factor cam_relax_speed cam_max_angle cam_max_angle_horz cam_step_angle_horz cam_dispersion PDM_disp_base PDM_disp_vel_factor PDM_disp_accel_factor PDM_disp_crouch PDM_disp_crouch_no_acc fire_dispersion_condition_factor misfire_start_condition misfire_end_prob hit_impulse zoom_rotate_time",
+    bool="default_to_ruck sprint_allowed zoom_enabled use_first_bullet",
+    vec3="fire_point position orientation",
+    floatlist="hit_power hit_power_critical",
+    status="scope_status silencer_status grenade_launcher_status",
+}
+local hud_rules = {
+    string="item_visual",
+    integer="attach_place_idx",
+    vec3="item_position item_orientation hands_position hands_orientation hands_position_16x9 hands_orientation_16x9",
+}
+local ammo_rules = {
+    number="k_dist k_disp k_hit k_impulse k_ap impair",
+    positive="wm_size",
+    integer="buck_shot box_size",
+    bool="tracer explosive",
+    string="inv_name_short",
+    nonnegative="inv_weight cost",
+}
+local immunity_rules = {
+    number="burn_immunity strike_immunity shock_immunity wound_immunity radiation_immunity telepatic_immunity chemical_burn_immunity explosion_immunity fire_wound_immunity",
+}
+local light_rules = {vec3="light_color",number="light_range light_var_color light_var_range light_time"}
+local grenade_classes = {WP_AK74=true, WP_GROZA=true}
+local rocket_classes = {WP_RG6=true, WP_RPG7=true}
+local hit_types = {burn=true,light_burn=true,shock=true,strike=true,wound=true,
+    radiation=true,telepatic=true,fire_wound=true,chemical_burn=true,explosion=true,wound_2=true}
+
+local function numeric(value)
+    -- Existing configs use C float literals, e.g. control_inertion_factor=1.0f.
+    local n = value and tonumber((string.gsub(value, "[fF]$", "")))
+    -- atoi/atof also accept a leading scalar followed by legacy suffix text,
+    -- e.g. the shipped RPG engine_impulse_up=133,906 is read as 133.
+    if not n and value then n = tonumber(string.match(value,"^%s*([+-]?%d*%.?%d+)")) end
+    if n and n == n and n ~= math.huge and n ~= -math.huge then return n end
+end
+
+local function boolean(value)
+    value = value and string.lower(value)
+    if value == "true" or value == "on" or value == "yes" or value == "1" then return true end
+    if value == "false" or value == "off" or value == "no" or value == "0" then return false end
+end
+
+function schema()
+    return {weapon=weapon_rules, hud=hud_rules, ammo=ammo_rules, immunity=immunity_rules, light=light_rules}
+end
+
+function validate(ini, section, collect_all)
+    local errors, checked, visited, sounds_seen = {}, 0, {}, {}
+    local function read(sec, key)
+        return sec and ini:section_exist(sec) and ini:r_string_ex(sec, key) or nil
+    end
+    local function fail(sec, key, message)
+        errors[#errors+1] = {section=sec, key=key, problem=message}
+    end
+    local function field(sec, key, kind)
+        checked = checked + 1
+        local value = read(sec, key)
+        local valid = value ~= nil and value ~= ""
+        local n = numeric(value)
+        if kind == "present" then valid = ini:section_exist(sec) and ini:line_exist(sec,key)
+        elseif kind == "number" then valid = n ~= nil
+        elseif kind == "nonnegative" then valid = n and n >= 0
+        elseif kind == "positive" then valid = n and n > 0
+        elseif kind == "integer" then valid = n ~= nil -- r_s32 uses atoi; fractional icon offsets are valid legacy configs
+        elseif kind == "status" then valid = n == 0 or n == 1 or n == 2
+        elseif kind == "bool" then valid = boolean(value) ~= nil
+        elseif kind == "hit_type" then valid = value and hit_types[string.lower(value)]
+        elseif kind == "section" then valid = valid and ini:section_exist(value)
+        elseif kind == "vec3" or kind == "floatlist" then
+            local items = words(value)
+            valid = kind == "vec3" and #items == 3 or kind == "floatlist" and #items >= 1 and #items <= 4
+            for _, item in ipairs(items) do if not numeric(item) then valid = false end end
+        end
+        if not valid then fail(sec,key,"missing or invalid " .. kind) end
+        return value, valid
+    end
+    local function group(sec, rules)
+        for kind, keys in pairs(rules) do
+            for _, key in ipairs(words(keys)) do field(sec,key,kind) end
+        end
+    end
+    local function optional(sec, key, kind)
+        if ini:line_exist(sec,key) then field(sec,key,kind) end
+    end
+    local function inventory(sec)
+        group(sec,{section="immunities_sect",string="inv_name inv_name_short",present="description",nonnegative="inv_weight cost",integer="slot"})
+        for _, key in ipairs(words("belt can_trade can_take quest_item use_condition highlight_equipped")) do optional(sec,key,"bool") end
+        local imm = read(sec,"immunities_sect")
+        if imm and ini:section_exist(imm) then group(imm,immunity_rules) end
+    end
+    local function rocket(sec)
+        if not sec or not ini:section_exist(sec) then return end
+        inventory(sec)
+        group(sec,{bool="engine_present lights_enabled",
+            number="blast blast_r blast_impulse frags_r frag_hit frag_hit_impulse up_throw_factor light_range light_time fragment_speed explode_duration force_explode_time",
+            integer="frags",positive="wm_size",hit_type="hit_type_blast hit_type_frag",string="explode_particles",vec3="light_color"})
+        if boolean(read(sec,"engine_present")) then
+            group(sec,{integer="engine_work_time",number="engine_impulse engine_impulse_up"})
+        end
+        if boolean(read(sec,"lights_enabled")) then group(sec,{vec3="trail_light_color",number="trail_light_range"}) end
+        if not read(sec,"explode_effector_sect_name") then field("explode_effector","effect_sect_name","string") end
+    end
+    local function sound(sec, key, depth)
+        local value = read(sec,key)
+        if not ini:line_exist(sec,key) then return end -- engine permits absent sound aliases
+        if depth > 8 then fail(sec,key,"cyclic sound layers"); return end
+        field(sec,key,"string")
+        local target = value and string.match(value,"^%s*([^,%s]+)")
+        if target and ini:section_exist(target) and not sounds_seen[target] then
+            sounds_seen[target] = true
+            local n = 1
+            while ini:line_exist(target,"snd_"..n.."_layer") do
+                sound(target,"snd_"..n.."_layer",depth+1)
+                n = n + 1
+            end
+            if n == 1 then fail(sec,key,"sound layer section has no snd_1_layer") end
+        end
+    end
+    local function ammunition(sec, needs_fake)
+        if visited[sec] then return end
+        visited[sec] = true
+        if not ini:section_exist(sec) then fail(sec,"section","missing ammunition section"); return end
+        group(sec,ammo_rules)
+        inventory(sec)
+        if not read(sec,"k_air_resistance") then field("bullet_manager","air_resistance_k","number")
+        else field(sec,"k_air_resistance","number") end
+        for _, key in ipairs(words("allow_ricochet magnetic_beam_shot 4to1_tracer can_be_unlimited")) do optional(sec,key,"bool") end
+        if needs_fake then local fake = field(sec,"fake_grenade_name","section"); rocket(fake) end
+    end
+    if not ini:section_exist(section) then return false, "missing section "..section, checked, errors end
+    group(section,weapon_rules)
+    for _, key in ipairs(words("light_disabled cycle_down single_handed auto_spawn_ammo belt can_trade can_take quest_item use_condition highlight_equipped can_be_lowered modular_attachments scope_dynamic_zoom scope_dynamic_zoom_alt scope_dynamic_zoom_gl silenced_tracers tracers use_alt_aim_hud tri_state_reload bas_state_reload")) do optional(section,key,"bool") end
+    if boolean(read(section,"use_first_bullet")) then
+        group(section,{number="first_bullet_dispertion first_bullet_velocity_limit",integer="first_bullet_timeout"})
+    end
+    local cls = read(section,"class")
+    local imm = read(section,"immunities_sect")
+    if imm and ini:section_exist(imm) then group(imm,immunity_rules) end
+    local hud = read(section,"hud")
+    if hud and ini:section_exist(hud) then
+        group(hud,hud_rules)
+        for _, key in ipairs(words("zoom_hide_crosshair rpm_anim_fix item_attached lh_lead_gun shooting_hud_effect strafe_aim_enabled strafe_enabled")) do optional(hud,key,"bool") end
+        for _, pair in ipairs({{"fire_bone","fire_point"},{"fire_bone2","fire_point2"},{"shell_bone","shell_point"}}) do
+            if ini:line_exist(hud,pair[1]) then field(hud,pair[2],"vec3") end
+        end
+    else fail(section,"hud","missing HUD section") end
+    if boolean(read(section,"light_disabled")) ~= true then
+        group(section,light_rules)
+        if (tonumber(read(section,"silencer_status")) or 0) > 0 then
+            for kind, keys in pairs(light_rules) do
+                for _, key in ipairs(words(keys)) do field(section,"silencer_"..key,kind) end
+            end
+        end
+    end
+    for _, prefix in ipairs({"", "zoom_"}) do
+        for _, key in ipairs(words("cam_relax_speed cam_relax_speed_ai cam_max_angle cam_max_angle_horz cam_step_angle_horz cam_dispersion cam_dispersion_inc cam_dispersion_frac")) do
+            optional(section,prefix..key,"number")
+        end
+    end
+    for _, key in ipairs(words("fire_point2 strap_position strap_orientation")) do optional(section,key,"vec3") end
+    if tonumber(read(section,"silencer_status")) == 2 then
+        group(section,{section="silencer_name",integer="silencer_x silencer_y"})
+        local sil = read(section,"silencer_name")
+        if sil and ini:section_exist(sil) then inventory(sil) end
+    end
+    if tonumber(read(section,"grenade_launcher_status")) == 2 then
+        group(section,{section="grenade_launcher_name",integer="grenade_launcher_x grenade_launcher_y"})
+        local gl = read(section,"grenade_launcher_name")
+        if gl and ini:section_exist(gl) then inventory(gl); field(gl,"grenade_vel","positive") end
+    end
+    if grenade_classes[cls] then
+        group(section,{nonnegative="launch_speed",present="grenade_class grenade_flame_particles"})
+        if tonumber(read(section,"grenade_launcher_status")) == 1 then field(section,"grenade_vel","positive") end
+        for _, sec in ipairs(words(read(section,"grenade_class"))) do ammunition(sec,true) end
+    end
+    if rocket_classes[cls] then field(section,"launch_speed","positive") end
+    if cls == "WP_RPG7" then
+        group(section,{positive="max_zoom_factor",section="rocket_class"}); rocket(read(section,"rocket_class"))
+    end
+    for _, sec in ipairs(words(read(section,"ammo_class"))) do ammunition(sec,cls=="WP_RG6") end
+    if tonumber(read(section,"scope_status")) == 2 then
+        local scope_sections
+        if boolean(read(section,"modular_attachments")) then
+            local sg = field(section,"modular_scope_group","section")
+            if sg and ini:section_exist(sg) then scope_sections = field(sg,"scopes","string") end
+        else scope_sections = read(section,"scopes_sect") or section end
+        for _, sc in ipairs(words(scope_sections)) do
+            if ini:section_exist(sc) then
+                local target = sc
+                if boolean(read(section,"modular_attachments")) then inventory(sc)
+                else
+                    group(sc,{section="scope_name",integer="scope_x scope_y"})
+                    local name = read(sc,"scope_name")
+                    target = name
+                    if name and ini:section_exist(name) then inventory(name) end
+                end
+                if target and ini:section_exist(target) then group(target,{number="scope_zoom_factor",present="scope_texture"}) end
+            else fail(section,"scope","missing scope section "..sc) end
+        end
+    end
+    -- Layered aliases are sections, ordinary aliases are resource paths.
+    for _, sec in ipairs({section}) do
+        local count = ini:line_count(sec)
+        for i=0,count-1 do
+            local _,key = ini:r_line_ex(sec,i,"","")
+            if key and string.sub(key,1,4)=="snd_" then sound(sec,key,0) end
+        end
+    end
+    local first = errors[1]
+    return first == nil, first and (first.section .. ":" .. first.key .. " " .. first.problem) or nil,
+        checked, collect_all and errors or nil
+end

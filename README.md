@@ -1,3 +1,5 @@
+![BLACK SIGNAL — by @Flixmo](assets/black-signal-banner.png)
+
 # BLACK SIGNAL — by @Flixmo
 
 28 модов для **S.T.A.L.K.E.R. G.A.M.M.A.** Скачайте весь пак с выбором компонентов или любой мод отдельно.
@@ -19,7 +21,7 @@
 | [Калибр: снабженец Янтаря](modules/yantar-hunter/README.md) | Торговец противомутантными боеприпасами с пятью ступенями репутации фракции Ученые. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-yantar-hunter-1.0.0.zip) |
 | [Фикс веса артефактов](modules/artefact-weight-fix/README.md) | Выравнивает вес артефактов. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-artefact-weight-fix-1.0.0.zip) |
 | [Ориентир: проводник Янтаря](modules/yantar-guide/README.md) | Постоянный проводник с восемью платными маршрутами расположенный на Янтаре, фракции Ученые. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-yantar-guide-1.0.1.zip) |
-| [Арсенал NPC](modules/npc-arsenal/README.md) | Вооружение NPC по рангу, броне и фракции. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-npc-arsenal-1.1.1.zip) |
+| [Арсенал NPC](modules/npc-arsenal/README.md) | Оружие обычных NPC по рангу; повторная выдача потерянного оружия. Квестовые и уникальные персонажи сохраняют комплекты. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-npc-arsenal-1.3.0.zip) |
 | [Колесо еды и медикаментов](modules/qaw-food-meds/README.md) | Автозаполнение колесо едой и медициной автоматически. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-qaw-food-meds-1.0.0.0.zip) |
 | [Звания и научные должности](modules/career-ranks/README.md) | Карьерные приставки для Долга, Военных и Учёных. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-career-ranks-1.0.0.zip) |
 | [Полезные эффекты навыков](modules/skill-perks/README.md) | Пассивные эффекты и множители опыта по уровням навыков. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-skill-perks-0.1.1.zip) |
@@ -29,7 +31,7 @@
 | [RF-Частота+](modules/rf-frequency-plus/README.md) | Активные частоты заданий и районы поиска в подсказке ресивера. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-rf-frequency-plus-1.0.2.zip) |
 | [Слышимые шаги врагов](modules/audible-footsteps/README.md) | Пространственный звук движущихся врагов. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-audible-footsteps-1.0.0.zip) |
 | [Merramun: ноутбук-казино](modules/merramun-casino/README.md) | Слот Marramun перенесенный из игры Welcome to the Game III . | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-merramun-casino-0.3.0-laptop.zip) |
-| [Ycatan_: фотография](modules/nasoska-photo/README.md) | Отдельная замена фотографии и её иконки. spec. for @Ycatan_ |Twitch| | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-nasoska-photo-1.0.zip) |
+| [Ycatan_: фотография](modules/nasoska-photo/README.md) | Отдельная замена фотографии и её иконки. spec. for @Ycatan_ \|Twitch\| | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-nasoska-photo-1.0.zip) |
 | [Личное радио КПК](modules/personal-radio/README.md) | Личный плейлист, сохранение трека после перехода(играет сначала), импортёр музыки. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-personal-radio-1.0.0.zip) |
 | [Лазеры: исправление шейдеров](modules/laser-fix/README.md) | Лазеры: исправление шейдеров. | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-laser-fix-1.0.0.zip) |
 | [Ракурс и 1П76: исправление сеток](modules/reticle-fix/README.md) |Исправление прицелов: Ракурс и 1П76 | [ZIP](https://github.com/vobelo571/black-signal/releases/download/v0.1.0/BLACK-SIGNAL-reticle-fix-1.0.0.zip) |

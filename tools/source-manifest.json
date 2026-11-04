@@ -3269,34 +3269,6 @@
     "bytes": 7456
   },
   {
-    "module": "npc-arsenal",
-    "source_folder": "1015- FLX NPC Arsenal",
-    "path": "gamedata/configs/plugins/flx_npc_arsenal.ltx",
-    "sha256": "fbd5ec444b5fa96418d04139d8a5857b8da02116b4d5be7381f64af6b5b3bdf0",
-    "bytes": 1634
-  },
-  {
-    "module": "npc-arsenal",
-    "source_folder": "1015- FLX NPC Arsenal",
-    "path": "gamedata/scripts/flx_npc_arsenal.script",
-    "sha256": "7093239c2f8501d380a5f061d4e0b38a4405f40b173f1e2ee82d9bf955395928",
-    "bytes": 16900
-  },
-  {
-    "module": "npc-arsenal",
-    "source_folder": "1015- FLX NPC Arsenal",
-    "path": "gamedata/scripts/xrs_rnd_npc_loadout.script",
-    "sha256": "7704330742ae667a3e6ff449bfc2d657d98dd57f0b325d8885db5b524a579c73",
-    "bytes": 14142
-  },
-  {
-    "module": "npc-arsenal",
-    "source_folder": "1015- FLX NPC Arsenal",
-    "path": "gamedata/scripts/zzz_flx_npc_arsenal_migration.script",
-    "sha256": "196db46fbceefe5501636f08b9e3ab691e93ae9d215596848eae7a5e39bcbe1b",
-    "bytes": 11053
-  },
-  {
     "module": "qaw-food-meds",
     "source_folder": "999- FLX QAW Auto Food Meds",
     "path": "gamedata/scripts/haru_quick_action_wheel_mcm.script",
@@ -6095,5 +6067,194 @@
     "path": "gamedata/configs/mod_system_z_markswitch_sights.ltx",
     "sha256": "5484e222f6ae7c64702538491ed10cbf47c2fa279c18074ce50d8b3e9c074caa",
     "bytes": 1149
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/configs/mod_system_zzzzzzzzzzzz_flx_npc_arsenal_animation_fix.ltx",
+    "sha256": "c8d9314f395c1e1d017a904efa4ce1656ab46c7421a4aad536d93c43957e80a9",
+    "bytes": 685
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/configs/mod_system_zzzzzzzzzzzz_flx_npc_arsenal_hud_fix.ltx",
+    "sha256": "8fd68dd34a37650d88ff018c84f12facfa7de00aeeeeb08801ac8062a67c0e4a",
+    "bytes": 521
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/configs/mod_system_zzzzzzzzzzzz_flx_npc_arsenal_icon_fix.ltx",
+    "sha256": "4e07fee09eddbaad93b82d608bdf283cc2c29e3db06f18ab8e36fbe7962a3238",
+    "bytes": 381
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/configs/mod_system_zzzzzzzzzzzz_flx_npc_arsenal_weapon_fix.ltx",
+    "sha256": "a67a3425895af160d112a08b7bec0fe4b4ef13c417dfccf77dec3819689760f6",
+    "bytes": 1341
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/configs/plugins/flx_npc_arsenal.ltx",
+    "sha256": "715243a714ddb7ffd65e612900328015d977429ea777dbf3297528f5946ed8ef",
+    "bytes": 1812
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/configs/plugins/flx_npc_arsenal_weapons.ltx",
+    "sha256": "5bf80dd4b3bafbc8ce784be5ef077856cc8184161d9217b94b47f2bd94a877bc",
+    "bytes": 11908
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_ac10632_hud.ogf",
+    "sha256": "60afcf53c1c1701f26d0327cc2705277f85beb1079c300c29557143fcdd6b842",
+    "bytes": 3203599
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_acog_hud.ogf",
+    "sha256": "700ca1a90e0b803874ec829196ad933ce2e25db40cfd5ad1913657e1fdf9f051",
+    "bytes": 3657812
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_aimpoint_hud.ogf",
+    "sha256": "59667005087965093e23087f27b203ae5efe8ee8e01c9a227dc24f19f30febce",
+    "bytes": 3820742
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_c-more_hud.ogf",
+    "sha256": "b3453d039ee7b09304acc70b614a1ed8faca67709790ffe528111ca0f16b3353",
+    "bytes": 3217301
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_compm4s_hud.ogf",
+    "sha256": "fc5bb9efac212baffc4687e2ce72712be3410c729a9eb1429c7ae5473c633fa9",
+    "bytes": 3404857
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_e0t2_hud.ogf",
+    "sha256": "ccf63f4199b8a963d5ba6f0f176692197488c245f4d56d1471343bcf845840e0",
+    "bytes": 3948289
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_ekp8_18_hud.ogf",
+    "sha256": "7e371ea09003dfb6273c8b3c76b4b3de36e04cd57b93d481a827eebb9c70d694",
+    "bytes": 3224655
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_eot_hud.ogf",
+    "sha256": "6ee7463bc95e566ce42f4879af01db18d6baa98649df1678f395263972465f22",
+    "bytes": 3142070
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_hud.ogf",
+    "sha256": "cb21a14824d9ea4ce746e1e0c82d64e4d5888e075800f1a151205840d2dac677",
+    "bytes": 2997897
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_leupold_hud.ogf",
+    "sha256": "b332e161ce00871ded6bace3ee804e680c759363419275544fc181d1b8fd5f3a",
+    "bytes": 3732327
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_marchf_hud.ogf",
+    "sha256": "7bf746e16dae042843dd6121fac8aa5b0d2186e68bf68e91ebd03a1a528653bb",
+    "bytes": 3474992
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_mepro_hud.ogf",
+    "sha256": "4f644ce0b000a30688df6f254b4d742e5c0fe8cea5b8e23132fbb6825bda11f6",
+    "bytes": 3244076
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_point_aimpro_hud.ogf",
+    "sha256": "a9d1b199be64add5d1381b19e74128be110c3834eff5830a31e199a486b54c0d",
+    "bytes": 3593637
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_specter_hud.ogf",
+    "sha256": "6bc4e990507bb1af7adfdb7b5473593dd4ee07164e73d17188fecb773779b81b",
+    "bytes": 3911766
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/dynamics/weapons/wpn_dtmdr/wpn_dtmdr_unique_cw_hud.ogf",
+    "sha256": "66187ad77209b4b2995e60912deea774024980cff3c9cd2b903db360a6b5ccb1",
+    "bytes": 4174468
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/meshes/flx_npc_arsenal/dtmdr_5a90cdb1083b.omf",
+    "sha256": "8263598264a8385e450b0ece929d3dd0208eeaee9b4eb2e10924f4234a449213",
+    "bytes": 45260
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/scripts/flx_npc_arsenal.script",
+    "sha256": "5081106895d731c4610f90f4b1b4270d5ea225a66ade0d475c16230bba2faa66",
+    "bytes": 24384
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/scripts/flx_npc_arsenal_config.script",
+    "sha256": "0ff753e7c975e43353e0d24102c6c09a6fd761dcdf081060e830cbf3b1809963",
+    "bytes": 13308
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/scripts/xrs_rnd_npc_loadout.script",
+    "sha256": "6a85fa13660ae8c35b938b201191eaa22aed2d86cb066a49d53eb5f62d2447f3",
+    "bytes": 15284
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/scripts/zzz_flx_npc_arsenal_migration.script",
+    "sha256": "23a5f4b4522318526a7b0932e911a290e44de81e014352acab9308ff1443fa03",
+    "bytes": 11621
+  },
+  {
+    "module": "npc-arsenal",
+    "source_folder": "1015- FLX NPC Arsenal",
+    "path": "gamedata/textures/ui/flx_npc_arsenal_pistols.dds",
+    "sha256": "733034cf9ea417ae7f2c636f40f9f7f78b6dda57a5efbe587f019b5338767753",
+    "bytes": 4194432
   }
 ]

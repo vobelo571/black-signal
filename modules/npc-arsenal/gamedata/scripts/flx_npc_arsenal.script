@@ -1,8 +1,10 @@
--- FLX NPC Arsenal: rank/armour gates over the live system.ltx weapon catalogue.
+-- FLX NPC Arsenal: rank rules over the live system.ltx weapon catalogue.
 -- Called by the bundled Weighted NPC Random Loadouts integration, not a second
 -- spawn callback. There is exactly one weapon creation path per slot.
 local catalogue, pools, affiliations, known_npc = {}, {}, {}, {}
-local settings, outfits, blacklist
+local by_section = {}
+local spawn_checks = {}
+local settings, blacklist
 local communities = {"stalker", "bandit", "renegade", "csky", "dolg", "army",
     "freedom", "killer", "ecolog", "monolith", "greh", "isg", "zombied"}
 local ranks_list = {"novice", "trainee", "experienced", "professional",
@@ -43,6 +45,59 @@ local function read(ini, sec, key)
     return ini and ini:section_exist(sec) and ini:r_string_ex(sec, key) or nil
 end
 
+function can_spawn(section)
+    local cached = spawn_checks[section]
+    if cached then return cached.ok, cached.reason end
+    local blocked = read(settings, "unsafe_variants", section)
+    if blocked then
+        local reason = "reviewed unsafe variant: " .. blocked
+        spawn_checks[section] = {ok=false, reason=reason}
+        return false, reason
+    end
+    local config_ok, config_reason = flx_npc_arsenal_config.validate(ini_sys, section)
+    if not config_ok then
+        spawn_checks[section] = {ok=false, reason=config_reason}
+        return false, config_reason
+    end
+    local hud = read(ini_sys, section, "hud")
+    local visual = read(ini_sys, section, "visual")
+    local item_visual = hud and read(ini_sys, hud, "item_visual")
+    local reason
+    -- CWeapon::Load reads all three fields unconditionally. Validate the final
+    -- scope/kit section as well as catalogue bases before any item is created.
+    for _, key in ipairs({"scope_status", "silencer_status", "grenade_launcher_status"}) do
+        local status = tonumber(read(ini_sys, section, key))
+        if status ~= 0 and status ~= 1 and status ~= 2 then
+            reason = "missing or invalid " .. key .. " in " .. section
+            spawn_checks[section] = {ok=false, reason=reason}
+            return false, reason
+        end
+    end
+    if not hud then reason = "missing hud reference"
+    elseif not ini_sys:section_exist(hud) then reason = "missing HUD section " .. hud
+    elseif not item_visual or item_visual == "" then reason = "missing item_visual in " .. hud
+    elseif not read(ini_sys, hud, "attach_place_idx") then reason = "missing attach_place_idx in " .. hud
+    elseif not read(ini_sys, hud, "item_position") then reason = "missing item_position in " .. hud
+    elseif not read(ini_sys, hud, "item_orientation") then reason = "missing item_orientation in " .. hud
+    elseif not read(ini_sys, hud, "hands_position") or not read(ini_sys, hud, "hands_orientation") or
+        not read(ini_sys, hud, "hands_position_16x9") or not read(ini_sys, hud, "hands_orientation_16x9") then
+        reason = "missing required hand transforms in " .. hud
+    elseif not visual or visual == "" then reason = "missing world visual"
+    elseif getFS then
+        local fs = getFS()
+        local function model_exists(path)
+            if string.lower(string.sub(path, -4)) ~= ".ogf" then path = path .. ".ogf" end
+            local found = fs:exist("$game_meshes$", path)
+            return found ~= nil and found ~= false
+        end
+        if not model_exists(item_visual) then reason = "missing HUD model " .. item_visual
+        elseif not model_exists(visual) then reason = "missing world model " .. visual end
+    end
+    local ok = reason == nil
+    spawn_checks[section] = {ok=ok, reason=reason}
+    return ok, reason
+end
+
 local function number(ini, sec, key, default)
     return tonumber(read(ini, sec, key)) or default
 end
@@ -57,10 +112,6 @@ local function tokens(s)
         result[#result+1] = item
     end
     return result
-end
-
-local function first(s)
-    return tokens(s)[1]
 end
 
 local function canonical(section)
@@ -103,10 +154,8 @@ end
 
 function meets_rank_requirement(section, rank)
     local base = canonical(section)
-    local group = read(settings, "family_overrides", base) or family(base)
-    local minimum = number(settings, "minimum_rank_by_family", group, 1)
-    minimum = number(settings, "minimum_rank_overrides", base, minimum)
-    return (rank_numbers[rank] or 3) >= minimum
+    local entry = by_section[base] or classify(base)
+    return entry and (rank_numbers[rank] or 3) >= entry.minimum_rank or false
 end
 
 function classify(section)
@@ -137,6 +186,11 @@ function classify(section)
     -- Scoped sections are spawned by the original attachment resolver.
     -- Retain named kits with their own parent_section as independent weapons.
     if canonical(section) ~= section then return nil end
+    local spawn_ok, spawn_reason = can_spawn(section)
+    if not spawn_ok then
+        printe("! [FLX NPC Arsenal] unsafe weapon skipped: %s | %s", section, spawn_reason)
+        return nil
+    end
 
     -- Anomaly labels most machine guns as w_rifle, and some packs even use
     -- pistol engine classes for them. Prefer the actual weapon family/calibre.
@@ -153,7 +207,8 @@ function classify(section)
     local tier
     local old = contains(section, "mosin") or contains(section, "sks") or
         contains(section, "svt40") or contains(section, "winchester18") or
-        contains(section, "kar98") or contains(section, "springfield")
+        contains(section, "kar98") or contains(section, "wpn_k98") or
+        contains(section, "wpn_g43") or contains(section, "springfield")
     local double = category == "shotgun" and (mag <= 2 or cls == "WP_BM16" or
         contains(section, "toz34") or contains(section, "bm16"))
     if category == "pistol" then
@@ -176,10 +231,55 @@ function classify(section)
     -- Common service weapons are viable throughout a career, while the truly
     -- primitive guns above stay in the low tiers even with a high modded price.
     if category == "rifle" and not old and cost >= 25000 then tier = math.max(3, tier) end
+    local group = read(settings, "family_overrides", section) or family(section)
+    local role = tier <= 2 and "service" or "specialist"
+    local minimum = tier == 4 and 7 or tier == 3 and 5 or tier == 2 and 3 or 1
+    if tier == 1 then role = "budget" end
+    if category == "pistol" and tier == 2 then minimum = 2 end
+    -- Metadata fallback for newly installed or runtime-only addon sections.
+    -- Service arms can equip ordinary troops, special systems cannot.
+    local tactical = contains(section, "_isg") or contains(section, "_alfa") or
+        contains(section, "_pmc") or contains(section, "_admin") or contains(section, "_tac")
+    local service = group == "ak" or group == "ar15" or group == "g36" or
+        group == "aug" or group == "sig550" or group == "fal" or group == "l85"
+    if category == "rifle" and service and not tactical and cost < 60000 and not old then
+        tier, minimum, role = 3, 3, "service"
+    end
+    if category == "smg" and (contains(ammo, "5.56x45") or contains(ammo, "5.45x39")) then
+        category, tier, minimum, role = "rifle", 3, 5, "specialist"
+    end
+    if category == "rifle" and contains(ammo, "9x39") then tier, minimum, role = 3, 5, "specialist" end
+    if category == "rifle" and contains(ammo, "12.7x55") then tier, minimum, role = 4, 7, "elite" end
+    if category == "sniper" and not old then
+        tier, minimum, role = math.max(3, tier), math.max(5, minimum), "specialist"
+    end
+    if category == "sniper" and (contains(ammo, "12.7x") or contains(ammo, "338")) then
+        tier, minimum, role = 4, 7, "elite"
+    end
+    if category == "shotgun" and contains(ammo, "23x75") then
+        tier, minimum, role = double and 2 or 3, double and 4 or 5, "specialist"
+    end
+    if category == "shotgun" and mag >= 12 and contains(read(ini_sys, section, "fire_modes"), "-1") then
+        tier, minimum, role = 4, 7, "elite"
+    end
+    if category == "lmg" and contains(ammo, "ammo_pkm") then minimum = math.max(minimum, 6) end
+    if category == "smg" and (contains(ammo, "5.7x28") or contains(ammo, "4.6x30") or
+        group == "sr2" or group == "mp9") then tier, minimum, role = 3, 5, "specialist" end
+    if tactical then minimum = math.max(minimum, contains(section, "_isg") and 7 or 5) end
+    if contains(section, "_isg") then tier, role = 4, "elite" end
+    local reviewed = tokens(read(settings, "weapon_rules", section))
+    if reviewed[1] then
+        tier, minimum, role = tonumber(reviewed[1]) or tier, tonumber(reviewed[2]) or minimum, reviewed[3] or role
+    end
     tier = math.max(1, math.min(4, number(settings, "tier_overrides", section, tier)))
+    minimum = number(settings, "minimum_rank_by_family", group, minimum)
+    minimum = number(settings, "minimum_rank_overrides", section, minimum)
+    minimum = math.max(1, math.min(8, minimum))
+    if tier == 4 then minimum, role = math.max(7, minimum), "elite" end
     return {sec=section, category=category, tier=tier, cost=cost,
+        spawn_section=read(settings, "spawn_aliases", section) or section,
         origin=read(settings, "origin_overrides", section) or origin(section, ammo),
-        family=read(settings, "family_overrides", section) or family(section),
+        family=group, minimum_rank=minimum, role=role, rule_source=reviewed[1] and "reviewed" or "automatic",
         primitive=old or double, double=double, ammo_index=ammo_index}
 end
 
@@ -216,59 +316,91 @@ end
 
 function initialize(ini)
     catalogue, pools, affiliations, known_npc = {}, {}, {}, {}
+    by_section = {}
+    spawn_checks = {}
     settings = ini_file("plugins\\flx_npc_arsenal.ltx")
-    outfits = ini_file("items\\settings\\death_outfits.ltx")
     blacklist = ini_file("plugins\\spawner_blacklist.ltx")
     learn_affiliations(ini)
     ini_sys:section_for_each(function(section)
         local entry = classify(section)
-        if entry then catalogue[#catalogue+1] = entry end
+        if entry then catalogue[#catalogue+1] = entry; by_section[section] = entry end
     end)
     table.sort(catalogue, function(a,b) return a.sec < b.sec end)
-    printf("[FLX NPC Arsenal] v1.1.1: %s base weapons/kits from live system.ltx", #catalogue)
+    printf("[FLX NPC Arsenal] v1.3.0: %s base weapons/kits from live system.ltx", #catalogue)
+    audit_catalogue()
 end
 
-function armour_level(visual)
-    local v = string.lower(visual or "")
-    v = string.gsub(v, "/", "\\")
-    local name = string.match(v, "([^\\]+)$") or v
-    name = string.gsub(name, "%.ogf$", "")
-    local outfit = first(read(outfits, "outfit_by_visual", name))
-    local kind = outfit and read(ini_sys, outfit, "kind") or ""
-    local hint = v .. " " .. (outfit or "") .. " " .. kind
-    if contains(hint, "nosorog") or contains(hint, "exo") then return 3 end
-    if contains(hint, "seva") or contains(hint, "o_heavy") or
-        contains(hint, "heavy_outfit") or contains(hint, "skat") or
-        contains(hint, "ps5") or contains(hint, "o_scientific") then return 2 end
-    return 1
+-- Kept for callers using the old API. Visuals no longer affect loadouts.
+function armour_level(visual) return 1 end
+
+function is_generic(section, profile)
+    return string.match(section or "", "^sim_default_[%w_]+_%d+$") ~= nil and
+        (string.match(profile or section or "", "^sim_default_[%w_]+_%d+$") ~= nil or
+         string.match(profile or "", "^dick_sim_default_[%w_]+_%d+$") ~= nil)
 end
 
-local function limits(rank, armour, slot_type)
+local function limits(rank, slot_type)
     local level = rank_tiers[rank] or 2
     local low = level == 4 and 3 or level == 3 and 2 or 1
     local high = level == 1 and 2 or level == 2 and 3 or 4
-    if slot_type == "secondary" then
-        return level >= 3 and 2 or 1, math.min(4, high), level
-    end
-    if armour == 3 then low, high = 3, 4
-    elseif armour == 2 then low, high = math.max(2, low), math.max(3, high) end
+    if slot_type == "secondary" then low = level >= 3 and 2 or 1 end
     return low, high, level
 end
 
 function eligible(entry, comm, rank, armour, slot_type)
-    if not meets_rank_requirement(entry.sec, rank) then return false end
-    local low, high, level = limits(rank, armour, slot_type)
+    if (rank_numbers[rank] or 3) < entry.minimum_rank then return false end
+    local low, high, level = limits(rank, slot_type)
     if entry.tier < low or entry.tier > high then return false end
     if slot_type == "secondary" then return entry.category == "pistol" end
-    if level == 1 and armour == 1 and entry.cost > 40000 then return false end
-    if entry.category == "pistol" and (level > 1 or armour > 1) then return false end
-    if entry.primitive and (level >= 3 or armour >= 2) then return false end
-    if entry.category == "smg" and armour == 3 then return false end
-    if entry.category == "heavy" then
-        return level == 4 and (comm == "army" or comm == "monolith" or
-            comm == "isg" or comm == "dolg" or comm == "greh")
-    end
+    if entry.category == "pistol" then return level == 1 end
+    if entry.primitive and level >= 3 then return false end
     return true
+end
+
+function weapon_allowed(section, comm, rank, visual, slot_type)
+    if not can_spawn(section) then return false end
+    local base = canonical(section)
+    local entry = by_section[base] or classify(base)
+    return entry and eligible(entry, comm, rank, 1, slot_type) or false
+end
+
+function audit_catalogue()
+    local unreachable, empty = 0, 0
+    local reviewed, automatic = 0, 0
+    local dump = read(settings, "audit", "log_catalogue") == "true"
+    for _, weapon in ipairs(catalogue) do
+        if weapon.rule_source == "reviewed" then reviewed = reviewed + 1 else automatic = automatic + 1 end
+        local reached = false
+        for _, rank in ipairs(ranks_list) do
+            for _, comm in ipairs(communities) do
+                local slot = weapon.category == "pistol" and "secondary" or "primary"
+                if eligible(weapon, comm, rank, 1, slot) then reached = true; break end
+            end
+            if reached then break end
+        end
+        if not reached then unreachable = unreachable + 1; printe("! [FLX NPC Arsenal] unreachable weapon: %s", weapon.sec) end
+        if dump then
+            printf("[FLX NPC Arsenal RULE] %s | quality=%s | min_rank=%s | %s | %s | %s",
+                weapon.sec, weapon.tier, weapon.minimum_rank, weapon.category, weapon.role, weapon.rule_source)
+        end
+    end
+    for _, comm in ipairs(communities) do
+        for _, rank in ipairs(ranks_list) do
+            for _, slot in ipairs({"primary", "secondary"}) do
+                local found = false
+                for _, weapon in ipairs(catalogue) do
+                    if eligible(weapon, comm, rank, 1, slot) then found = true; break end
+                end
+                if not found then
+                    empty = empty + 1
+                    printe("! [FLX NPC Arsenal] empty rank pool: %s %s %s", comm, rank, slot)
+                end
+            end
+        end
+    end
+    printf("[FLX NPC Arsenal] live audit: weapons=%s unreachable=%s empty_pools=%s reviewed=%s automatic=%s",
+        #catalogue, unreachable, empty, reviewed, automatic)
+    return unreachable, empty
 end
 
 local function weighted(items)
@@ -283,12 +415,12 @@ local function weighted(items)
     return items[#items]
 end
 
-local function build_pool(comm, rank, armour, slot_type)
+local function build_pool(comm, rank, slot_type)
     local style = styles[comm] or styles.stalker
     local categories, groups = {}, {}
-    local _, _, level = limits(rank, armour, slot_type)
+    local _, _, level = limits(rank, slot_type)
     for _, weapon in ipairs(catalogue) do
-        if eligible(weapon, comm, rank, armour, slot_type) then
+        if eligible(weapon, comm, rank, 1, slot_type) then
             local cat = weapon.category
             if not groups[cat] then groups[cat] = {} end
             local fam = weapon.family
@@ -306,7 +438,7 @@ local function build_pool(comm, rank, armour, slot_type)
             end
             -- Prefer equipment near the NPC's grade, with rare outliers inside
             -- the hard bounds. Legends more often carry tier four equipment.
-            local target = rank == "legend" and 4 or math.max(level, armour)
+            local target = rank == "legend" and 4 or level
             local quality = weapon.tier == target and 2 or 1
             local weight = affinity * quality
             group.items[#group.items+1] = {weight=weight, weapon=weapon}
@@ -326,7 +458,6 @@ local function build_pool(comm, rank, armour, slot_type)
             end
             local weight = slot_type == "secondary" and 1 or (style[cat] or 1)
             if cat == "pistol" and slot_type == "primary" then weight = style.pistol or 3 end
-            if cat == "lmg" and armour == 3 then weight = weight * 1.6 end
             categories[#categories+1] = {weight=weight, items=families}
         end
     end
@@ -336,14 +467,13 @@ end
 function pick(comm, rank, visual, slot_type)
     if slot_type == "extra" then return nil end
     comm = aliases[comm] or comm
-    local armour = armour_level(visual)
-    local key = comm .. ":" .. (rank or "") .. ":" .. armour .. ":" .. slot_type
-    if not pools[key] then pools[key] = build_pool(comm, rank, armour, slot_type) end
+    local key = comm .. ":" .. (rank or "") .. ":" .. slot_type
+    if not pools[key] then pools[key] = build_pool(comm, rank, slot_type) end
     local category = weighted(pools[key])
     local group = category and weighted(category.items)
     local choice = group and weighted(group.items)
     if not choice then return nil end
-    return {sec=choice.weapon.sec, attachment="r", ammo_type=tostring(choice.weapon.ammo_index),
+    return {sec=choice.weapon.spawn_section, attachment="r", ammo_type=tostring(choice.weapon.ammo_index),
         scope_chance="d", gl_chance="d", sil_chance="d"}
 end
 

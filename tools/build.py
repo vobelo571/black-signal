@@ -33,20 +33,23 @@ def module_readme(m,deps):
         lines += ['', 'Для своей музыки запустите FLX Radio Importer.py в папке установленного мода (Python 3.10+ с Tk и FFmpeg). Треки добавляются в gamedata/sounds/radio/_playlist_5.']
     return '\n'.join(lines)+'\n'
 
-def generate_docs(pack,deps):
+def generate_docs(pack,deps,module_ids=None):
     main=['# BLACK SIGNAL — by @Flixmo', '',
         '28 модов для **S.T.A.L.K.E.R. G.A.M.M.A.** Скачайте весь пак с выбором компонентов или любой мод отдельно.', '',
         f'**[Скачать весь пак {pack["version"]}]({download(pack,full_filename(pack))})** · [Установка и зависимости](INSTALL.md) · [Release]({REPO}/releases/tag/v{pack["version"]})', '',
         '| Мод | Что делает | Скачать |', '|---|---|---|']
     for m in pack['modules']:
         main.append(f'| [{m["title"]}](modules/{m["id"]}/README.md) | {m["description"]} | [ZIP]({download(pack,filename(m))}) |')
+        if module_ids is not None and m['id'] not in module_ids: continue
         folder=ROOT/'modules'/m['id']
         (folder/'README.md').write_text(module_readme(m,deps),encoding='utf-8')
         (folder/'module.json').write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         (folder/'meta.ini').write_text(f'[General]\ngameName=stalkeranomaly\nversion={m["version"]}\nmodid=0\nnotes=BLACK SIGNAL by @Flixmo - {m["id"]}\n',encoding='utf-8')
     main += ['', '**Как установить:** скачайте ZIP, установите через MO2 и включите ниже базовых модов. В общем паке отметьте нужные компоненты. Старую копию того же мода отключите.', '',
              'Основа — Anomaly / GAMMA и моды сообщества. Исходные авторы указаны в описаниях компонентов; библиотеки скачиваются по ссылкам на странице установки.']
-    (ROOT/'README.md').write_text('\n'.join(main)+'\n',encoding='utf-8')
+    # Keep the author's hand-edited main page; generation must not reset its copy.
+    if not (ROOT/'README.md').exists():
+        (ROOT/'README.md').write_text('\n'.join(main)+'\n',encoding='utf-8')
     install=['# Установка и зависимости', '', '[← Все моды и скачивание](README.md)', '',
         'База: **Anomaly 1.5.3 / GAMMA 0.9.5**, Mod Organizer 2. В GAMMA большинство зависимостей уже установлено.', '',
         '1. Сделайте копию сохранений и закройте игру.',
@@ -71,14 +74,15 @@ def generate_docs(pack,deps):
         '- Новые предметы, NPC и замены оружия сохраняются в сейве. Для полного отката используйте сохранение до установки.',
         '- Проверены файлы, Lua, XML и архивы. Полный совместный прогон всех модулей в игре ещё не выполнен.', '',
         'Авторы и дополнительные замечания находятся в README выбранного компонента.']
-    (ROOT/'INSTALL.md').write_text('\n'.join(install)+'\n',encoding='utf-8')
+    if not (ROOT/'INSTALL.md').exists():
+        (ROOT/'INSTALL.md').write_text('\n'.join(install)+'\n',encoding='utf-8')
     notes=[f'# BLACK SIGNAL {pack["version"]} — by @Flixmo', '',
         f'**[Скачать весь пак]({download(pack,full_filename(pack))})** · [Все 28 модов отдельно]({REPO}#readme) · [Установка и библиотеки]({REPO}/blob/main/INSTALL.md)', '',
         '- Общий пак с выбором компонентов в MO2.',
         '- Каждый мод доступен отдельным ZIP.',
         '- Упрощены главная страница и инструкции.',
         '- Убраны SaveReset, CustomMods и лишняя служебная документация.', '',
-        'Игровые файлы модулей не менялись. Установка: ZIP → MO2 → включить ниже базовых модов. Старые копии тех же модов отключить.', '',
+        'Установка: ZIP → MO2 → включить ниже базовых модов. Старые копии тех же модов отключить.', '',
         'Для Anomaly 1.5.3 / GAMMA 0.9.5. Сторонние библиотеки и личная музыка не включены.']
     (ROOT/'_local').mkdir(exist_ok=True)
     (ROOT/'_local/release-notes.md').write_text('\n'.join(notes)+'\n',encoding='utf-8')
@@ -90,6 +94,8 @@ def fomod(pack,deps):
     required=ET.SubElement(root,'requiredInstallFiles')
     for name in ['README.md','INSTALL.md']:
         ET.SubElement(required,'file',source=name,destination='BLACK-SIGNAL/'+name,priority='0')
+    if (ROOT/'assets').is_dir():
+        ET.SubElement(required,'folder',source='assets',destination='BLACK-SIGNAL/assets',priority='0')
     steps=ET.SubElement(root,'installSteps',order='Explicit'); groups=collections.defaultdict(list)
     for m in pack['modules']: groups[m['group']].append(m)
     for group,mods in groups.items():
@@ -123,12 +129,16 @@ def zip_entries(path,entries):
 def tree(folder,prefix=''):
     return {prefix+f.relative_to(folder).as_posix():f for f in folder.rglob('*') if f.is_file() and '__pycache__' not in f.parts}
 
-def build(out):
-    pack,deps=load(); generate_docs(pack,deps); out.mkdir(parents=True,exist_ok=True)
+def build(out,module_ids=None):
+    pack,deps=load()
+    if module_ids is not None and set(module_ids)-{m['id'] for m in pack['modules']}: raise ValueError('Unknown selected module')
+    generate_docs(pack,deps,module_ids); out.mkdir(parents=True,exist_ok=True)
     for m in pack['modules']:
+        if module_ids is not None and m['id'] not in module_ids: continue
         entries=tree(ROOT/'modules'/m['id']); entries['INSTALL.md']=ROOT/'INSTALL.md'
         zip_entries(out/filename(m),entries)
     entries=tree(ROOT/'modules','modules/')
+    if (ROOT/'assets').is_dir(): entries.update(tree(ROOT/'assets','assets/'))
     for name in ['README.md','INSTALL.md']: entries[name]=ROOT/name
     entries['fomod/ModuleConfig.xml']=fomod(pack,deps)
     info=ET.Element('fomod')
@@ -137,9 +147,9 @@ def build(out):
     zip_entries(out/full_filename(pack),entries)
     files=sorted(out.glob('*.zip'))
     (out/'SHA256SUMS.txt').write_text(''.join(f'{hashlib.sha256(f.read_bytes()).hexdigest()}  {f.name}\n' for f in files),encoding='ascii')
-    print(f'Built {len(files)} ZIPs: {len(pack["modules"])} separate mods and one FOMOD.')
+    print(f'Built {len(module_ids) if module_ids is not None else len(pack["modules"])} selected mod ZIPs and one FOMOD; {len(files)} ZIPs total.')
 
 if __name__=='__main__':
-    ap=argparse.ArgumentParser(); ap.add_argument('--out',type=Path,default=ROOT/'dist'); ap.add_argument('--docs-only',action='store_true'); args=ap.parse_args()
-    if args.docs_only: generate_docs(*load())
-    else: build(args.out.resolve())
+    ap=argparse.ArgumentParser(); ap.add_argument('--out',type=Path,default=ROOT/'dist'); ap.add_argument('--docs-only',action='store_true'); ap.add_argument('--module',action='append',dest='module_ids'); args=ap.parse_args()
+    if args.docs_only: generate_docs(*load(),module_ids=args.module_ids)
+    else: build(args.out.resolve(),args.module_ids)

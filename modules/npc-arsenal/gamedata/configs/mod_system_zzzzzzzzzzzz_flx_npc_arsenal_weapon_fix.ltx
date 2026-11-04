@@ -1,0 +1,35 @@
+; FLX NPC Arsenal 1.2.4
+; The active 3DSS replacement omitted the original Scout's permanent scope.
+; CWeapon::Load requires scope_status even when scopes = none.
+; Restore the original addon value without changing its 3DSS HUD or optics.
+![wpn_steyr_scout]
+scope_status = 1
+
+; 3DSS's modern VAL references a HUD that was renamed to wpn_val_ekp_hud.
+![wpn_val_modern_ekp8_02]
+hud = wpn_val_ekp_hud
+
+; Remove a trailing duplicate zero; the engine already reads the first 3 zeros.
+![wpn_sks_tac]
+orientation = 0, 0, 0
+
+; Normalize the misspelling "falce" to the engine's existing false behavior.
+![wpn_ak5c_bas]
+light_disabled = false
+![wpn_ak5c_isg]
+light_disabled = false
+
+; These 3DSS aliases contain an invisible 0x16 in the parent name (or before
+; the colon). Add their exact intended parent without changing the gun/optic.
+![wpn_ace21_leupold]:wpn_ace52_leupold
+![wpn_l85_modern_razorhd]:wpn_l85_m2_razorhd
+![wpn_mossberg590_c-more]:wpn_mossberg590_rail_c-more
+![wpn_sig550_camo_ekp8_18]:wpn_sig550_ekp8_18
+![wpn_sig550_camo_hco]:wpn_sig550_hco
+![wpn_sig550_camo_marchf]:wpn_sig550_marchf
+![wpn_sig550_sniper_ekp8_18]:wpn_sig550_ekp8_18
+![wpn_sig550_sniper_hco]:wpn_sig550_hco
+![wpn_sig550_sniper_marchf]:wpn_sig550_marchf
+![wpn_sig552_ekp8_18]:wpn_sig550_ekp8_18
+![wpn_sig552_hco]:wpn_sig550_hco
+![wpn_sig552_marchf]:wpn_sig550_marchf

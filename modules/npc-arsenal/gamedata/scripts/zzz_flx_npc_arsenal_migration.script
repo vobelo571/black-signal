@@ -1,11 +1,11 @@
--- FLX NPC Arsenal 1.1.1: one-time, save-persistent rearm of ordinary online NPCs.
+-- FLX NPC Arsenal 1.3.0: selective, save-persistent rearm of ordinary online NPCs.
 -- Uses the existing creator/attachment path. Old guns are retained until all
 -- replacement guns are observed in the owner's live inventory on a later tick.
 local KEY = "flx_npc_arsenal_migration_1" -- also written by the new-NPC spawn path
-local RULE_REVISION = 2
-local ini, loadouts
+local RULE_REVISION = 7
+local ini
 local ready_at, next_batch = math.huge, 0
-local checks, protected_ids, task_frame = {}, {}, -1
+local checks = {}
 
 local function read(sec, key)
     return ini and ini:section_exist(sec) and ini:r_string_ex(sec, key)
@@ -28,80 +28,45 @@ local function story(id)
     return value ~= nil and value ~= false and value ~= -1
 end
 
-local function add_id(value)
-    local id = tonumber(value)
-    if id and id > 0 and id < 65535 then protected_ids[id] = true end
-end
-
-local function tasks_ready()
-    local manager = task_manager and task_manager.get_task_manager()
-    if not manager or not manager.task_info then return false end
-    local now = time_global()
-    if task_frame == now then return true end
-    task_frame, protected_ids = now, {}
-    for _, task in pairs(manager.task_info) do
-        if task.status ~= "completed" and task.status ~= "fail" then
-            add_id(task.task_giver_id)
-            add_id(task.current_target)
-        end
-    end
-    if axr_task_manager then
-        for _, registry in pairs({axr_task_manager.bounties_by_id or {}, axr_task_manager.hostages_by_id or {}}) do
-            -- Anomaly uses both task_id->npc and npc->smart tables here.
-            for key, value in pairs(registry) do add_id(key); add_id(value) end
-        end
-    end
-    return true
-end
-
-local function squad_protected(squad)
-    if story(squad.id) or protected_ids[squad.id] then return true end
-    if sim_offline_combat and sim_offline_combat.task_squads and
-        sim_offline_combat.task_squads[squad.id] then return true end
-    if axr_companions and axr_companions.companion_squads and
-        axr_companions.companion_squads[squad.id] then return true end
-    if squad.scripted_target and squad.scripted_target ~= "" then return true end
-    if squad.squad_members then
-        for member in squad:squad_members() do
-            if story(member.id) or protected_ids[member.id] then return true end
-        end
-    end
-    return false
-end
-
 function protected_reason(npc, se_npc)
     if not npc or not se_npc or not IsStalker(npc) or not npc:alive() then return "not_living_stalker" end
-    local id, sec = npc:id(), se_npc:section_name()
-    -- Explicit whitelist: do not infer that a named profile is generic merely
-    -- because it lacks a story_id (many addon quest characters have no story_id).
-    if not string.match(sec or "", "^sim_default_[%w_]+_%d+$") then return "named_section" end
-    local profile = npc:profile_name() or ""
-    if not string.match(profile, "^sim_default_[%w_]+_%d+$") and
-        not string.match(profile, "^dick_sim_default_[%w_]+_%d+$") then return "named_profile" end
+    local id, section = npc:id(), se_npc:section_name()
+    if not flx_npc_arsenal.is_generic(section, npc:profile_name()) then return "unique_npc" end
     if story(id) then return "story_npc" end
-    if read("migration_exclude", sec) then return "manual_exclusion" end
-    if loadouts:r_string_ex("skip_npcs", sec) or loadouts:r_string_ex("loadouts_per_name", sec) then return "special_loadout" end
-    if not tasks_ready() then return "tasks_not_ready" end
-    if protected_ids[id] then return "active_quest" end
-    if axr_companions and axr_companions.non_task_companions and
-        axr_companions.non_task_companions[id] then return "companion" end
-    local squad = se_npc.group_id and se_npc.group_id < 65535 and alife_object(se_npc.group_id)
-    if squad then
-        if squad_protected(squad) then return "protected_squad" end
-        if loadouts:r_string_ex("loadouts_per_squad", squad:section_name()) then return "special_squad" end
+    if read("migration_exclude", section) then return "manual_exclusion" end
+    -- Only this NPC's actual quest role matters. An ordinary squadmate or
+    -- random bounty target is still an ordinary NPC and follows the rank rule.
+    local bounties = axr_task_manager and axr_task_manager.bounties_by_id or {}
+    local hostages = axr_task_manager and axr_task_manager.hostages_by_id or {}
+    if hostages[id] then return "hostage" end
+    local manager = task_manager and task_manager.get_task_manager()
+    for task_id, task in pairs(manager and manager.task_info or {}) do
+        if task.status ~= "completed" and task.status ~= "fail" then
+            if tonumber(task.task_giver_id) == id then return "quest_giver" end
+            if tonumber(task.current_target) == id and tonumber(bounties[task_id]) ~= id then
+                return "quest_target"
+            end
+        end
     end
     if utils_item.has_quest_item(npc) then return "quest_inventory" end
-    local protected_item = false
+    local quest_item = false
     npc:iterate_inventory(function(owner, item)
-        if story(item:id()) or se_load_var(item:id(), npc:name(), "strapped_item") then
-            protected_item = true
-        end
+        if story(item:id()) then quest_item = true end
     end)
-    if protected_item then return "story_or_player_item" end
+    if quest_item then return "story_item" end
 end
 
-local function busy(npc)
-    return npc:best_enemy() ~= nil or npc:is_talking() or xr_wounded.is_wounded(npc)
+local function busy(npc, pending)
+    if npc:is_talking() or xr_wounded.is_wounded(npc) then return true end
+    if npc:best_enemy() == nil then return false end
+    -- A combatant with no gun cannot wait for combat to end to be restored.
+    -- Permit an additive transaction only; never swap/remove existing guns here.
+    if pending and pending.old and #pending.old == 0 then return false end
+    local armed = false
+    npc:iterate_inventory(function(owner,item)
+        if firearm_slot(item:section()) then armed = true end
+    end)
+    return armed
 end
 
 local function descriptor(item)
@@ -115,31 +80,74 @@ local function owned(desc, id)
     end
 end
 
-local function rollback(npc, transaction)
+local function rollback_by_id(id, name, transaction)
     for _, desc in ipairs(transaction.new) do
-        local item = owned(desc, npc:id())
+        local item = owned(desc, id)
         if item then alife_release(item) end
     end
-    se_save_var(npc:id(), npc:name(), KEY, nil)
+    se_save_var(id, name, KEY, nil)
+end
+
+local function rollback(npc, transaction)
+    rollback_by_id(npc:id(), npc:name(), transaction)
+end
+
+local function finish_dead_cleanup(id, name)
+    local owner = alife_object(id)
+    if not owner or owner:name() ~= name then return true end
+    local state = se_load_var(id, name, KEY)
+    if not (state and state.name == name and state.new and not state.done and state.cleanup_after_death) then
+        return true
+    end
+    rollback_by_id(id, name, state)
+    printf("[FLX NPC Arsenal] deferred death cleanup complete | npc=%s:%s", name, id)
+    return true
+end
+
+local function queue_dead_cleanup(npc)
+    local id, name = npc:id(), npc:name()
+    local state = se_load_var(id, name, KEY)
+    if not (state and state.name == name and state.new and not state.done) then return end
+    state.cleanup_after_death = true
+    se_save_var(id, name, KEY, state)
+    -- Native death processing still owns the inventory. Do not release its
+    -- children here, and never keep a game_object in a delayed callback.
+    CreateTimeEvent("flx_npc_arsenal_dead_cleanup", id, 0.1, finish_dead_cleanup, id, name)
+    printf("[FLX NPC Arsenal] deferred death cleanup queued | npc=%s:%s", name, id)
 end
 
 local function begin_rearm(npc, se_npc)
     local comm = npc:character_community()
     local rank = ranks.get_obj_rank_name(se_npc)
     local visual = npc:get_visual_name() -- includes live FLX armour replacements
-    local old, conditions, has_sidearm = {}, {}, false
+    local old, conditions = {}, {}
+    local counts, valid = {primary=0, secondary=0}, {primary=0, secondary=0}
+    local pistol_primary = false
     npc:iterate_inventory(function(owner, item)
         local slot = firearm_slot(item:section())
         if slot then
-            old[#old+1] = descriptor(item)
-            conditions[slot] = math.max(conditions[slot] or 0, item:condition())
-            if slot == "secondary" then has_sidearm = true end
+            counts[slot] = counts[slot] + 1
+            if flx_npc_arsenal.weapon_allowed(item:section(), comm, rank, visual, slot) then
+                valid[slot] = valid[slot] + 1
+                if slot == "secondary" and flx_npc_arsenal.weapon_allowed(item:section(), comm, rank, visual, "primary") then
+                    pistol_primary = true
+                end
+            else
+                old[#old+1] = descriptor(item)
+                conditions[slot] = math.max(conditions[slot] or 0, item:condition())
+            end
         end
     end)
+    local slots = {}
+    if valid.primary == 0 and not pistol_primary then slots[#slots+1] = "primary" end
+    if counts.secondary > 0 and valid.secondary == 0 then slots[#slots+1] = "secondary" end
+    if #old == 0 and #slots == 0 then
+        se_save_var(npc:id(), npc:name(), KEY, {name=npc:name(), done=true, rule_revision=RULE_REVISION})
+        return "already_done"
+    end
     local transaction = {name=npc:name(), old=old, new={}}
     local squad = se_npc.group_id and se_npc.group_id < 65535 and alife_object(se_npc.group_id)
     local squad_name = squad and squad:section_name() or "na"
-    local slots = has_sidearm and {"primary", "secondary"} or {"primary"}
     for _, slot in ipairs(slots) do
         local entry = flx_npc_arsenal.pick(comm, rank, visual, slot)
         local weapon = entry and xrs_rnd_npc_loadout.create_item_on_npc(
@@ -149,7 +157,7 @@ local function begin_rearm(npc, se_npc)
             return "spawn_failed"
         end
         transaction.new[#transaction.new+1] = {id=weapon.id, sec=weapon:section_name(),
-            name=weapon:name(), condition=conditions[slot] or 0.75}
+            name=weapon:name(), slot=slot, condition=conditions[slot] or 0.75}
     end
     -- Server data survives saving, offline transitions and reloads mid-transaction.
     se_save_var(npc:id(), npc:name(), KEY, transaction)
@@ -177,51 +185,56 @@ local function finish_rearm(npc, transaction)
     -- All new weapons are attached and visible online. Preserve the previous
     -- condition, so migration does not turn damaged NPC equipment into free mint loot.
     for _, desc in ipairs(transaction.new) do inventory[desc.id]:set_condition(desc.condition) end
+    -- Drop live inventory references before releasing any old weapon.
+    inventory = nil
     for _, desc in ipairs(transaction.old) do
         local weapon = owned(desc, npc:id())
         if weapon then alife_release(weapon) end
     end
     se_save_var(npc:id(), npc:name(), KEY, {name=npc:name(), done=true, rule_revision=RULE_REVISION})
-    printf("[FLX NPC Arsenal] migrated existing NPC %s (%s)", npc:name(), npc:id())
+    local created = {}
+    for _, desc in ipairs(transaction.new) do created[#created+1] = desc.sec .. ":" .. desc.id end
+    printf("[FLX NPC Arsenal] migrated existing NPC %s (%s) | new=%s | removed=%s | combat=%s",
+        npc:name(), npc:id(), table.concat(created, ","), #transaction.old, tostring(npc:best_enemy() ~= nil))
     return "done"
 end
 
 function process_npc(npc, se_npc)
     if not npc or not se_npc then return "missing" end
     local state = se_load_var(npc:id(), npc:name(), KEY)
-    if state and state.name == npc:name() and state.done and state.rule_revision == RULE_REVISION then return "already_done" end
     local pending = state and state.name == npc:name() and state.new and state
-    local reason = protected_reason(npc, se_npc)
+    local reason = protected_reason(npc, se_npc, pending)
     if reason then
         if pending then rollback(npc, pending) end
         return reason
     end
-    if state and state.name == npc:name() and state.done then
-        local rank = ranks.get_obj_rank_name(se_npc)
-        local needs_update = false
-        npc:iterate_inventory(function(owner, item)
-            if firearm_slot(item:section()) and not flx_npc_arsenal.meets_rank_requirement(item:section(), rank) then
-                needs_update = true
+    if busy(npc, pending) then return "busy" end
+    if pending then
+        local rank, comm, visual = ranks.get_obj_rank_name(se_npc), npc:character_community(), npc:get_visual_name()
+        for _, desc in ipairs(pending.new) do
+            if not flx_npc_arsenal.weapon_allowed(desc.sec, comm, rank, visual, desc.slot or firearm_slot(desc.sec)) then
+                rollback(npc, pending)
+                return "rules_changed_retry"
             end
-        end)
-        if not needs_update then
-            se_save_var(npc:id(), npc:name(), KEY, {name=npc:name(), done=true, rule_revision=RULE_REVISION})
-            return "already_done"
         end
+        return finish_rearm(npc, pending)
     end
-    if busy(npc) then return "busy" end
-    if pending then return finish_rearm(npc, pending) end
     return begin_rearm(npc, se_npc)
 end
 
 function actor_on_first_update()
     ready_at = time_global() + option("startup_delay_ms", 3000)
-    next_batch, checks, protected_ids, task_frame = 0, {}, {}, -1
+    next_batch, checks = 0, {}
 end
 
 function npc_on_death(npc)
-    local state = npc and se_load_var(npc:id(), npc:name(), KEY)
-    if state and state.name == npc:name() and state.new and not state.done then rollback(npc, state) end
+    if npc then queue_dead_cleanup(npc) end
+end
+
+function npc_on_net_spawn(npc)
+    -- Time events are not saved. Recover a pending cleanup if a corpse is
+    -- loaded or comes online again after saving between death and cleanup.
+    if npc and not npc:alive() then queue_dead_cleanup(npc) end
 end
 
 function npc_on_update(npc)
@@ -230,11 +243,6 @@ function npc_on_update(npc)
     local id, name = npc:id(), npc:name()
     local check = checks[id]
     if check and check.name == name and now < check.next then return end
-    local state = se_load_var(id, name, KEY)
-    if state and state.name == name and state.done and state.rule_revision == RULE_REVISION then
-        checks[id] = {name=name, next=math.huge}
-        return
-    end
     local se_npc = alife_object(id)
     if not se_npc then return end
     local result = process_npc(npc, se_npc)
@@ -245,10 +253,10 @@ end
 
 function on_game_start()
     ini = ini_file("plugins\\flx_npc_arsenal.ltx")
-    loadouts = ini_file("items\\settings\\npc_loadouts\\npc_loadouts.ltx")
     local enabled = read("migration", "enable")
     if enabled == "false" or enabled == "0" then return end
     RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
     RegisterScriptCallback("npc_on_update", npc_on_update)
     RegisterScriptCallback("npc_on_death_callback", npc_on_death)
+    RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
 end

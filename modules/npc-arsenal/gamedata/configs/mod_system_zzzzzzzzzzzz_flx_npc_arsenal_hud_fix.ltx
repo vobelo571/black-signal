@@ -1,0 +1,12 @@
+; FLX NPC Arsenal 1.2.2
+; GIMP's PM and actor-PM upgrade HUDs inherited from a missing sk1 HUD.
+; Inherit the complete, working custom-PM upgrade HUD (not just item_visual).
+![wpn_pm_pm_upgr_kit_hud]:wpn_pm_custom_pm_upgr_kit_hud
+
+![wpn_pm_actor_pm_upgr_kit_hud]:wpn_pm_custom_pm_upgr_kit_hud
+
+; This standalone G36K HUD supplies its own model/motions/position but omitted
+; two fields read unconditionally by attachable_hud_item::load/measures::load.
+![wpn_g36k_rwap_hud]
+attach_place_idx = 0
+item_orientation = 0, 0, 0
