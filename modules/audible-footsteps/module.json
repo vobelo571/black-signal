@@ -11,5 +11,6 @@
   "notes": "Не включать вместе с полным Fireteam AI; дополнительные шаги могут суммироваться с обычными.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "Audible NPC Footsteps Plus"
+  "source_folder": "Audible NPC Footsteps Plus",
+  "credits": "FLX / Fireteam AI; звуковые сэмплы — G.A.M.M.A. Footsteps."
 }

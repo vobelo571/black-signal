@@ -10,5 +10,6 @@
   "notes": "Настройки и подробности в исходном README. Проверить на копии сохранения.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1008- FLX Stash Network"
+  "source_folder": "1008- FLX Stash Network",
+  "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
 }

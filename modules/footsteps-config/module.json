@@ -10,5 +10,6 @@
   "notes": "Исходный автор oleh5230. Старый вариант; не является восстановленной звуковой частью Fireteam.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "NPC Audible Footsteps - Flixmo"
+  "source_folder": "NPC Audible Footsteps - Flixmo",
+  "credits": "Выделение — Flixmo; исходный конфиг Oleh — oleh5230."
 }

@@ -11,5 +11,6 @@
   "notes": "Взята установленная версия. Использует изображения и звуки Welcome to the Game III; авторы оригинала сохраняются.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1001- WTTG3 Merramun PDA Slots"
+  "source_folder": "1001- WTTG3 Merramun PDA Slots",
+  "credits": "FLX — перенос в GAMMA; исходные изображения, flipbook и звуки — Welcome to the Game III / Reflect Studios."
 }

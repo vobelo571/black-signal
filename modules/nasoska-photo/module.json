@@ -11,5 +11,6 @@
   "notes": "Персональный мод для Ycatan_; материал пользователя. Необязательный компонент.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "Ycatan_ - Nasoska Photo"
+  "source_folder": "Ycatan_ - Nasoska Photo",
+  "credits": "FLX, персональный мод для Ycatan_; исходное изображение предоставлено пользователем."
 }

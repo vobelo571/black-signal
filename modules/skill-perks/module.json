@@ -13,5 +13,6 @@
   "notes": "Первая тестовая версия. Содержит override Enhanced Recoil текущей GAMMA.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "FLX Skill Perks"
+  "source_folder": "FLX Skill Perks",
+  "credits": "FLX; Skill System — HarukaSai, Enhanced Recoil — Grokitach и участники GAMMA."
 }

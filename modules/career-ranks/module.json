@@ -10,5 +10,6 @@
   "notes": "RU/EN. Сохраняет отдельные шкалы фракций.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "Duty and Military Career Ranks - FLX"
+  "source_folder": "Duty and Military Career Ranks - FLX",
+  "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
 }

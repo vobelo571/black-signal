@@ -10,5 +10,6 @@
   "notes": "Меняет оружие обычных NPC с сохранением результата. Резервная копия сейва обязательна для отката изменений.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1015- FLX NPC Arsenal"
+  "source_folder": "1015- FLX NPC Arsenal",
+  "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
 }

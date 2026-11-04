@@ -1,7 +1,7 @@
 {
   "name": "BLACK SIGNAL",
   "author": "@Flixmo",
-  "version": "0.1.0-rc.1",
+  "version": "0.1.0",
   "target": "S.T.A.L.K.E.R. Anomaly 1.5.3 / G.A.M.M.A. 0.9.5",
   "modules": [
     {
@@ -16,7 +16,8 @@
       "notes": "Прототип 0.2.0. Меняет доступность ресурсов. More Dynamic Items поддерживается, но не обязателен.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1004- FLX Repeat Loot"
+      "source_folder": "1004- FLX Repeat Loot",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "pda-trader-restock",
@@ -30,7 +31,8 @@
       "notes": "Не открывает закрытые уровни ассортимента.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1005- FLX PDA Trader Restock"
+      "source_folder": "1005- FLX PDA Trader Restock",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "bhs-fixes",
@@ -45,7 +47,8 @@
       "notes": "Совместим с отдыхом и лечением у костра.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1006- BHS Fixes by flx"
+      "source_folder": "1006- BHS Fixes by flx",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "delete-all-saves",
@@ -59,7 +62,8 @@
       "notes": "Удаляет сохранения после подтверждения. Выбирать осознанно; заранее сделать копию savedgames.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1007- FLX Delete All Saves"
+      "source_folder": "1007- FLX Delete All Saves",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "arena-mutant-trader",
@@ -79,7 +83,8 @@
       "source_folder": "1008- FLX Arena Mutant Trader",
       "optional_modules": [
         "taskboard"
-      ]
+      ],
+      "credits": "FLX; базовые ресурсы — DuxFortis, Aoldri, maidresidence, HarukaSai, Frogs, Raven и участники GAMMA."
     },
     {
       "id": "stash-network",
@@ -93,7 +98,8 @@
       "notes": "Настройки и подробности в исходном README. Проверить на копии сохранения.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1008- FLX Stash Network"
+      "source_folder": "1008- FLX Stash Network",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "belt-presets",
@@ -107,7 +113,8 @@
       "notes": "Использует уже имеющиеся предметы.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1009- FLX Belt Presets"
+      "source_folder": "1009- FLX Belt Presets",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "mutant-magnetism-fix",
@@ -122,7 +129,8 @@
       "notes": "Не заменяет модели мутантов.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1009- FLX Mutants No Attack Magnetism"
+      "source_folder": "1009- FLX Mutants No Attack Magnetism",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "zone-field-gear",
@@ -137,7 +145,8 @@
       "notes": "При удалении сначала убрать добавленные предметы или вернуться к сохранению до установки. Основы: Anomaly, Blackgrowl, IENCE, LASS; см. CREDITS.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1010- FLX Zone Field Gear"
+      "source_folder": "1010- FLX Zone Field Gear",
+      "credits": "FLX; основы Anomaly и Blackgrowl, руки IENCE / THAP, базовые текстуры LASS; blender-xray — PavelBlend."
     },
     {
       "id": "soft-rays-weather",
@@ -152,7 +161,8 @@
       "notes": "Патч текущих DX11/r3-шейдеров. Не устанавливает 4K-паки и не меняет user.ltx или MCM. Результат на других версиях SSS не проверен.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1011- FLX Soft Rays HD and Gentle Weather"
+      "source_folder": "1011- FLX Soft Rays HD and Gentle Weather",
+      "credits": "FLX; Screen Space Shaders — Ascii1457; исходные погодные файлы — Anomaly / GAMMA."
     },
     {
       "id": "yantar-hunter",
@@ -170,7 +180,8 @@
       "notes": "Ассортимент рассчитан на текущую баллистику GAMMA; для чистой Anomaly не заявлен.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1012- FLX Yantar Hunter Trader"
+      "source_folder": "1012- FLX Yantar Hunter Trader",
+      "credits": "FLX; базовые модели и мебель — Anomaly / GAMMA, Aoldri, maidresidence, HarukaSai, facelessez и соавторы."
     },
     {
       "id": "artefact-weight-fix",
@@ -185,7 +196,8 @@
       "notes": "Установить после модов артефактов.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1013- FLX Artefact Weight Fix"
+      "source_folder": "1013- FLX Artefact Weight Fix",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "yantar-guide",
@@ -203,7 +215,8 @@
       "notes": "Поддержка существующих сохранений предусмотрена модулем.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1014- FLX Yantar Guide"
+      "source_folder": "1014- FLX Yantar Guide",
+      "credits": "FLX; базовые модели и мебель — Anomaly / GAMMA, Aoldri, maidresidence, HarukaSai, facelessez и соавторы."
     },
     {
       "id": "npc-arsenal",
@@ -217,7 +230,8 @@
       "notes": "Меняет оружие обычных NPC с сохранением результата. Резервная копия сейва обязательна для отката изменений.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1015- FLX NPC Arsenal"
+      "source_folder": "1015- FLX NPC Arsenal",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "qaw-food-meds",
@@ -232,7 +246,8 @@
       "notes": "Отключить G.A.M.M.A. Quick Action Wheel Balance; базовый Quick Action Wheel оставить включённым.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "999- FLX QAW Auto Food Meds"
+      "source_folder": "999- FLX QAW Auto Food Meds",
+      "credits": "FLX; Quick Action Wheel — HarukaSai."
     },
     {
       "id": "career-ranks",
@@ -246,7 +261,8 @@
       "notes": "RU/EN. Сохраняет отдельные шкалы фракций.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "Duty and Military Career Ranks - FLX"
+      "source_folder": "Duty and Military Career Ranks - FLX",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "scrounger-perk",
@@ -264,7 +280,8 @@
       "source_folder": "FLX Scrounger Perk",
       "optional_modules": [
         "skill-perks"
-      ]
+      ],
+      "credits": "FLX; Skill System — HarukaSai."
     },
     {
       "id": "skill-perks",
@@ -281,7 +298,8 @@
       "notes": "Первая тестовая версия. Содержит override Enhanced Recoil текущей GAMMA.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "FLX Skill Perks"
+      "source_folder": "FLX Skill Perks",
+      "credits": "FLX; Skill System — HarukaSai, Enhanced Recoil — Grokitach и участники GAMMA."
     },
     {
       "id": "footsteps-config",
@@ -295,7 +313,8 @@
       "notes": "Исходный автор oleh5230. Старый вариант; не является восстановленной звуковой частью Fireteam.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "NPC Audible Footsteps - Flixmo"
+      "source_folder": "NPC Audible Footsteps - Flixmo",
+      "credits": "Выделение — Flixmo; исходный конфиг Oleh — oleh5230."
     },
     {
       "id": "taskboard",
@@ -310,7 +329,8 @@
       "notes": "Основа — iTheon PDA Taskboard. Установить после оригинального Taskboard и его патчей.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "Taskbord edt by flx"
+      "source_folder": "Taskbord edt by flx",
+      "credits": "FLX; основа PDA Taskboard — iTheon."
     },
     {
       "id": "campfire-rest",
@@ -329,7 +349,8 @@
       "optional": [
         "mcm",
         "bhs"
-      ]
+      ],
+      "credits": "FLX / Chiki-Briki; исходное лечение — LNCT Campfire Healing, lnct."
     },
     {
       "id": "rf-frequency-plus",
@@ -343,7 +364,8 @@
       "notes": "RF-задания берутся из установленной GAMMA; собственных заданий не создаёт.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "RF-Частота+"
+      "source_folder": "RF-Частота+",
+      "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
     },
     {
       "id": "audible-footsteps",
@@ -358,7 +380,8 @@
       "notes": "Не включать вместе с полным Fireteam AI; дополнительные шаги могут суммироваться с обычными.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "Audible NPC Footsteps Plus"
+      "source_folder": "Audible NPC Footsteps Plus",
+      "credits": "FLX / Fireteam AI; звуковые сэмплы — G.A.M.M.A. Footsteps."
     },
     {
       "id": "merramun-casino",
@@ -373,7 +396,8 @@
       "notes": "Взята установленная версия. Использует изображения и звуки Welcome to the Game III; авторы оригинала сохраняются.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "1001- WTTG3 Merramun PDA Slots"
+      "source_folder": "1001- WTTG3 Merramun PDA Slots",
+      "credits": "FLX — перенос в GAMMA; исходные изображения, flipbook и звуки — Welcome to the Game III / Reflect Studios."
     },
     {
       "id": "nasoska-photo",
@@ -388,7 +412,8 @@
       "notes": "Персональный мод для Ycatan_; материал пользователя. Необязательный компонент.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "Ycatan_ - Nasoska Photo"
+      "source_folder": "Ycatan_ - Nasoska Photo",
+      "credits": "FLX, персональный мод для Ycatan_; исходное изображение предоставлено пользователем."
     },
     {
       "id": "personal-radio",
@@ -406,7 +431,8 @@
       "optional": [
         "python",
         "ffmpeg"
-      ]
+      ],
+      "credits": "FLX; штатный PDA-плеер Anomaly — Tronex. Личная музыка в архив не входит."
     },
     {
       "id": "laser-fix",
@@ -422,7 +448,8 @@
       "notes": "DX11/r3. Проверять с той же версией базовых шейдеров. Диагностические скрипты и кэш не включены.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "overwrite"
+      "source_folder": "overwrite",
+      "credits": "FLX; Laser Settings — Borksy."
     },
     {
       "id": "reticle-fix",
@@ -438,7 +465,8 @@
       "notes": "DX11/r3. Проверять с той же версией базовых шейдеров. Диагностические скрипты и кэш не включены.",
       "default": false,
       "author": "@Flixmo",
-      "source_folder": "410- 3DSS for GAMMA - Redotix99 & Andtheherois & party50"
+      "source_folder": "410- 3DSS for GAMMA - Redotix99 & Andtheherois & party50",
+      "credits": "FLX; 3DSS — Redotix99, Andtheherois, party50; Mark Switch — party50, meowie и соавторы."
     }
   ]
 }

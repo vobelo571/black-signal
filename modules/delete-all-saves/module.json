@@ -10,5 +10,6 @@
   "notes": "Удаляет сохранения после подтверждения. Выбирать осознанно; заранее сделать копию savedgames.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1007- FLX Delete All Saves"
+  "source_folder": "1007- FLX Delete All Saves",
+  "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
 }

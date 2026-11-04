@@ -11,5 +11,6 @@
   "notes": "Отключить G.A.M.M.A. Quick Action Wheel Balance; базовый Quick Action Wheel оставить включённым.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "999- FLX QAW Auto Food Meds"
+  "source_folder": "999- FLX QAW Auto Food Meds",
+  "credits": "FLX; Quick Action Wheel — HarukaSai."
 }

@@ -11,5 +11,6 @@
   "notes": "Патч текущих DX11/r3-шейдеров. Не устанавливает 4K-паки и не меняет user.ltx или MCM. Результат на других версиях SSS не проверен.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1011- FLX Soft Rays HD and Gentle Weather"
+  "source_folder": "1011- FLX Soft Rays HD and Gentle Weather",
+  "credits": "FLX; Screen Space Shaders — Ascii1457; исходные погодные файлы — Anomaly / GAMMA."
 }

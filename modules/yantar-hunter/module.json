@@ -14,5 +14,6 @@
   "notes": "Ассортимент рассчитан на текущую баллистику GAMMA; для чистой Anomaly не заявлен.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1012- FLX Yantar Hunter Trader"
+  "source_folder": "1012- FLX Yantar Hunter Trader",
+  "credits": "FLX; базовые модели и мебель — Anomaly / GAMMA, Aoldri, maidresidence, HarukaSai, facelessez и соавторы."
 }

@@ -11,5 +11,6 @@
   "notes": "Установить после модов артефактов.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1013- FLX Artefact Weight Fix"
+  "source_folder": "1013- FLX Artefact Weight Fix",
+  "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
 }

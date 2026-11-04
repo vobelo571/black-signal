@@ -11,5 +11,6 @@
   "notes": "При удалении сначала убрать добавленные предметы или вернуться к сохранению до установки. Основы: Anomaly, Blackgrowl, IENCE, LASS; см. CREDITS.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1010- FLX Zone Field Gear"
+  "source_folder": "1010- FLX Zone Field Gear",
+  "credits": "FLX; основы Anomaly и Blackgrowl, руки IENCE / THAP, базовые текстуры LASS; blender-xray — PavelBlend."
 }

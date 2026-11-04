@@ -1,37 +1,19 @@
-# BLACK SIGNAL — Отдых у костра
+# Отдых у костра
 
-**by @Flixmo**
-
-Модуль `campfire-rest` · версия **1.0.0**.
+BLACK SIGNAL · by @Flixmo · 1.0.0
 
 Посадка у костра, плавная камера и интеграция лечения.
 
-## Обязательные зависимости
+**Установка:** ZIP → Mod Organizer 2 → включить ниже базовых модов → перезапустить игру.
 
-- [G.A.M.M.A. / Anomaly 1.5.3](https://github.com/Grokitach/Stalker_GAMMA) — Grokitach and the Anomaly team. Целевая среда всех модулей — установленная GAMMA 0.9.5 из авторского профиля; отдельный ZIP означает независимую установку модуля, а не совместимость с чистой Anomaly.
-- [LNCT Campfire Healing (Vanilla & BHS)](https://www.moddb.com/mods/stalker-anomaly/addons/lnct-campfire-healing) — lnct. Референс: 0.7.1.0. Отдых у костра включает исправленный скрипт лечения, но требует настройки и прочие файлы LNCT.
+**Требуется:**
+- [G.A.M.M.A. / Anomaly 1.5.3](https://github.com/Grokitach/Stalker_GAMMA) — Grokitach and the Anomaly team.
+- [LNCT Campfire Healing (Vanilla & BHS)](https://www.moddb.com/mods/stalker-anomaly/addons/lnct-campfire-healing) — lnct.
 
-## Необязательные инструменты и зависимости
-
-- [Mod Configuration Menu (MCM)](https://www.moddb.com/mods/stalker-anomaly/addons/anomaly-mod-configuration-menu) — В GAMMA уже установлен. Конфигурационное меню также требуется ряду базовых модов.
-- [Grok’s Body Health System Redux](https://www.moddb.com/mods/stalker-anomaly/addons/100-groks-body-health-system-redux-for-151) — Использовать с GAMMA Medications Balance своего профиля.
-
-## Установка
-
-1. Закройте игру и сделайте резервную копию сохранений.
-2. Установите этот ZIP через Mod Organizer 2 как отдельный мод.
-3. Включите зависимости, затем этот модуль. В левой панели поставьте его ниже базовых модов, чтобы его файлы имели больший числовой приоритет.
-4. Отключите старую отдельную копию этого же модуля, если она уже установлена.
-5. Полностью перезапустите игру через MO2.
+**Необязательно:** [Mod Configuration Menu (MCM)](https://www.moddb.com/mods/stalker-anomaly/addons/anomaly-mod-configuration-menu), [Grok’s Body Health System Redux](https://www.moddb.com/mods/stalker-anomaly/addons/100-groks-body-health-system-redux-for-151).
 
 Ctrl+V; MCM для настроек необязателен. Включает override LNCT Campfire Healing.
 
-Устанавливайте либо отдельный ZIP, либо тот же компонент общего пака: не включайте две копии одновременно.
+**Авторы:** FLX / Chiki-Briki; исходное лечение — LNCT Campfire Healing, lnct.
 
-Сторонние библиотеки не включены; ссылки выше ведут на страницы авторов. Не обновляйте библиотеки внутри GAMMA без проверки совместимости.
-
-## Авторство и проверка
-
-Пак и доработки — @Flixmo. Оригинальные авторы базовых модов, моделей, текстур и звуков сохраняют авторство. См. CREDITS.md и upstream-docs/.
-
-Это компонент первого интеграционного кандидата 0.1.0-rc.1. Проверки упаковки не заменяют тестирование в игровом движке. Работа на чистой Anomaly и произвольных версиях GAMMA не заявлена.
+Исходные инструкции и уведомления сохранены в upstream-docs/.

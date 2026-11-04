@@ -10,5 +10,6 @@
   "notes": "Не открывает закрытые уровни ассортимента.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "1005- FLX PDA Trader Restock"
+  "source_folder": "1005- FLX PDA Trader Restock",
+  "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
 }

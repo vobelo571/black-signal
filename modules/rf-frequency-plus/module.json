@@ -10,5 +10,6 @@
   "notes": "RF-задания берутся из установленной GAMMA; собственных заданий не создаёт.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "RF-Частота+"
+  "source_folder": "RF-Частота+",
+  "credits": "Доработки — @Flixmo; базовые системы и ресурсы — Anomaly / GAMMA и их авторы."
 }

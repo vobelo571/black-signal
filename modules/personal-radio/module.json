@@ -14,5 +14,6 @@
   "optional": [
     "python",
     "ffmpeg"
-  ]
+  ],
+  "credits": "FLX; штатный PDA-плеер Anomaly — Tronex. Личная музыка в архив не входит."
 }

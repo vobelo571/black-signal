@@ -68,7 +68,7 @@ def validate(archives=False):
         if not (ROOT/rel).exists(): errors.append('FOMOD missing source: '+rel)
         if '..' in PurePosixPath(dest).parts or PurePosixPath(dest).is_absolute(): errors.append('Unsafe destination '+dest)
     # Provenance: game files are byte-for-byte copies except the reviewed radio filter.
-    original=json.loads((ROOT/'docs/source-manifest.json').read_text(encoding='utf-8'))
+    original=json.loads((ROOT/'tools/source-manifest.json').read_text(encoding='utf-8'))
     allowed_changes={('personal-radio','gamedata/scripts/ui_pda_radio_tab.script')}
     for item in original:
         f=ROOT/'modules'/item['module']/item['path']
@@ -93,8 +93,7 @@ def validate(archives=False):
     if archives:
         dist=ROOT/'dist'
         expected={filename(m) for m in pack['modules']}
-        expected|={f'BLACK-SIGNAL-{pack["version"]}-MO2.zip','BLACK-SIGNAL-CustomMods-source.zip','BLACK-SIGNAL-SaveReset-source.zip'}
-        if (ROOT/'utilities/SaveReset/bin/SaveReset.exe').is_file(): expected.add('BLACK-SIGNAL-SaveReset-win-x64.zip')
+        expected.add(f'BLACK-SIGNAL-{pack["version"]}-MO2.zip')
         if not expected.issubset({f.name for f in dist.glob('*.zip')}): errors.append('Missing expected release ZIPs')
         unexpected={f.name for f in dist.glob('*.zip')}-expected
         if unexpected: errors.append('Stale/unexpected ZIPs: '+', '.join(sorted(unexpected)))
@@ -109,6 +108,7 @@ def validate(archives=False):
                 if bad: errors.append('ZIP CRC failure: '+name+'/'+bad)
                 names=z.namelist()
                 for n in names:
+                    if PurePosixPath(n).name in {'CREDITS.md','RIGHTS.md'} or any(x in n for x in ['SaveReset','CustomMods']): errors.append('Removed content in archive: '+name+'/'+n)
                     if '..' in PurePosixPath(n).parts or PurePosixPath(n).is_absolute(): errors.append('Unsafe archive path: '+n)
                     if {'obj','backups','SaveReset_Backups','My Tracks','Imported Tracks Archive','__pycache__'} & set(PurePosixPath(n).parts): errors.append('Build/private directory in archive: '+name+'/'+n)
                     if name.endswith('-source.zip') and ('bin' in PurePosixPath(n).parts or n.endswith(('.exe','.pdb'))): errors.append('Binary in source archive: '+name+'/'+n)

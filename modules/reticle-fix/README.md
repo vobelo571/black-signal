@@ -1,33 +1,18 @@
-# BLACK SIGNAL — Ракурс и 1П76: исправление сеток
+# Ракурс и 1П76: исправление сеток
 
-**by @Flixmo**
-
-Модуль `reticle-fix` · версия **1.0.0**.
+BLACK SIGNAL · by @Flixmo · 1.0.0
 
 Ракурс и 1П76: исправление сеток. Совместимые файлы из исправленной локальной установки.
 
-## Обязательные зависимости
+**Установка:** ZIP → Mod Organizer 2 → включить ниже базовых модов → перезапустить игру.
 
-- [G.A.M.M.A. / Anomaly 1.5.3](https://github.com/Grokitach/Stalker_GAMMA) — Grokitach and the Anomaly team. Целевая среда всех модулей — установленная GAMMA 0.9.5 из авторского профиля; отдельный ZIP означает независимую установку модуля, а не совместимость с чистой Anomaly.
-- [3D Shader Scopes for GAMMA](https://www.moddb.com/mods/stalker-anomaly/addons/3d-shader-scopes-for-gamma) — Redotix99, Andtheherois, party50 and contributors. Референс: 5.02. Базовые прицелы для патча сеток.
-- [Mark Switch (GAMMA version)](https://github.com/andtheherois/Mark-Switch-10-GAMMA-version) — party50, meowie, Andtheherois. Компонент текущей GAMMA; правка числа сеток относится к Ракурсу и 1П76.
-
-## Установка
-
-1. Закройте игру и сделайте резервную копию сохранений.
-2. Установите этот ZIP через Mod Organizer 2 как отдельный мод.
-3. Включите зависимости, затем этот модуль. В левой панели поставьте его ниже базовых модов, чтобы его файлы имели больший числовой приоритет.
-4. Отключите старую отдельную копию этого же модуля, если она уже установлена.
-5. Полностью перезапустите игру через MO2.
+**Требуется:**
+- [G.A.M.M.A. / Anomaly 1.5.3](https://github.com/Grokitach/Stalker_GAMMA) — Grokitach and the Anomaly team.
+- [3D Shader Scopes for GAMMA](https://www.moddb.com/mods/stalker-anomaly/addons/3d-shader-scopes-for-gamma) — Redotix99, Andtheherois, party50 and contributors.
+- [Mark Switch (GAMMA version)](https://github.com/andtheherois/Mark-Switch-10-GAMMA-version) — party50, meowie, Andtheherois.
 
 DX11/r3. Проверять с той же версией базовых шейдеров. Диагностические скрипты и кэш не включены.
 
-Устанавливайте либо отдельный ZIP, либо тот же компонент общего пака: не включайте две копии одновременно.
+**Авторы:** FLX; 3DSS — Redotix99, Andtheherois, party50; Mark Switch — party50, meowie и соавторы.
 
-Сторонние библиотеки не включены; ссылки выше ведут на страницы авторов. Не обновляйте библиотеки внутри GAMMA без проверки совместимости.
-
-## Авторство и проверка
-
-Пак и доработки — @Flixmo. Оригинальные авторы базовых модов, моделей, текстур и звуков сохраняют авторство. См. CREDITS.md и upstream-docs/.
-
-Это компонент первого интеграционного кандидата 0.1.0-rc.1. Проверки упаковки не заменяют тестирование в игровом движке. Работа на чистой Anomaly и произвольных версиях GAMMA не заявлена.
+Исходные инструкции и уведомления сохранены в upstream-docs/.

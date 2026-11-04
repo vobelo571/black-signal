@@ -14,5 +14,6 @@
   "source_folder": "FLX Scrounger Perk",
   "optional_modules": [
     "skill-perks"
-  ]
+  ],
+  "credits": "FLX; Skill System — HarukaSai."
 }

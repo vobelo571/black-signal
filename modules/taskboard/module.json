@@ -11,5 +11,6 @@
   "notes": "Основа — iTheon PDA Taskboard. Установить после оригинального Taskboard и его патчей.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "Taskbord edt by flx"
+  "source_folder": "Taskbord edt by flx",
+  "credits": "FLX; основа PDA Taskboard — iTheon."
 }

@@ -12,5 +12,6 @@
   "notes": "DX11/r3. Проверять с той же версией базовых шейдеров. Диагностические скрипты и кэш не включены.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "410- 3DSS for GAMMA - Redotix99 & Andtheherois & party50"
+  "source_folder": "410- 3DSS for GAMMA - Redotix99 & Andtheherois & party50",
+  "credits": "FLX; 3DSS — Redotix99, Andtheherois, party50; Mark Switch — party50, meowie и соавторы."
 }

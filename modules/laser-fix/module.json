@@ -12,5 +12,6 @@
   "notes": "DX11/r3. Проверять с той же версией базовых шейдеров. Диагностические скрипты и кэш не включены.",
   "default": false,
   "author": "@Flixmo",
-  "source_folder": "overwrite"
+  "source_folder": "overwrite",
+  "credits": "FLX; Laser Settings — Borksy."
 }
